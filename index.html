@@ -57,9 +57,19 @@
                 </select>
             </div>
 
-            <!-- Lesson Grid -->
-            <div id="lesson-grid" class="lesson-grid">
-                <!-- Lesson cards will be injected here -->
+            <!-- Level Selection Screen (Initially Visible) -->
+            <div id="level-selection" class="level-menu">
+                <!-- 3 Big Level Titles will be injected here -->
+            </div>
+
+            <!-- Lesson Grid (Initially Hidden) -->
+            <div id="lesson-view" style="display: none;">
+                <button id="back-to-levels" class="glass" style="margin-bottom: 20px; padding: 10px 20px; border-radius: 12px; color: var(--text-secondary); cursor: pointer; border: 1px solid var(--glass-border);">
+                    <i class="fas fa-arrow-left"></i> Back to Levels
+                </button>
+                <div id="lesson-grid" class="lesson-grid">
+                    <!-- Lesson cards will be injected here -->
+                </div>
             </div>
         </main>
     </div>
@@ -79,6 +89,9 @@
         </div>
 
         <div id="exercise-info" style="margin-top: 20px; display: flex; flex-direction: column; align-items: center; gap: 15px;">
+            <div id="lesson-sequence-container" style="display: flex; gap: 8px; margin-bottom: 10px;">
+                <!-- Sequence dots will be injected here -->
+            </div>
             <div style="font-size: 1.1rem; color: var(--primary-color);">
                 Target Note: <span id="target-note" style="font-weight: 700;">---</span>
             </div>

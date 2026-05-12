@@ -63,6 +63,7 @@ class AudioProcessor {
         this.isRunning = false;
         this.animationId = null;
         this.onNoteDetected = () => {}; 
+        this.recentNotes = []; // For smoothing
     }
 
     async start() {
@@ -70,9 +71,20 @@ class AudioProcessor {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             this.microphone = this.audioContext.createMediaStreamSource(stream);
+
+            // --- IMPROVEMENT 1: Low Pass Filter ---
+            // Guitars don't produce much useful info above 1000Hz for pitch detection.
+            // Filtering harmonics helps YIN focus on the fundamental frequency.
+            this.filter = this.audioContext.createBiquadFilter();
+            this.filter.type = 'lowpass';
+            this.filter.frequency.setValueAtTime(1000, this.audioContext.currentTime);
+
             this.analyser = this.audioContext.createAnalyser();
             this.analyser.fftSize = 2048;
-            this.microphone.connect(this.analyser);
+
+            this.microphone.connect(this.filter);
+            this.filter.connect(this.analyser);
+
             this.isRunning = true;
             this.animate();
         } catch (error) {
@@ -98,17 +110,32 @@ class AudioProcessor {
         const rms = Math.sqrt(sum / bufferLength);
         const volume = rms * 100;
 
-        if (volume > 2) { // Minimum ses eşiği
+        if (volume > 3) { 
             const frequency = yinDetector(dataArray, this.audioContext.sampleRate);
-            if (frequency > 0) {
-                const note = this.frequencyToNote(frequency);
-                this.onNoteDetected(frequency, note);
+            if (frequency > 0 && frequency < 2000) { // Practical limit for guitar
+                const rawNote = this.frequencyToNote(frequency);
+                
+                // --- IMPROVEMENT 2: Smoothing ---
+                this.recentNotes.push(rawNote);
+                if (this.recentNotes.length > 3) this.recentNotes.shift();
+                
+                // Only report if we get the same note consistently
+                const mostFrequent = this.getMostFrequent(this.recentNotes);
+                this.onNoteDetected(frequency, mostFrequent);
             }
         } else {
+            this.recentNotes = [];
             this.onNoteDetected(0, '--');
         }
 
         this.animationId = requestAnimationFrame(() => this.animate());
+    }
+
+    getMostFrequent(arr) {
+        return arr.sort((a,b) =>
+              arr.filter(v => v===a).length
+            - arr.filter(v => v===b).length
+        ).pop();
     }
 
     frequencyToNote(frequency) {
