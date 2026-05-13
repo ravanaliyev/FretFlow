@@ -15,7 +15,7 @@ export function generateAccessToken(userId: number, email: string): string {
   return jwt.sign(
     { sub: userId, email, type: 'access' },
     JWT_SECRET,
-    { expiresIn: ACCESS_TOKEN_EXPIRES_IN }
+    { expiresIn: ACCESS_TOKEN_EXPIRES_IN as jwt.SignOptions['expiresIn'] }
   );
 }
 
@@ -24,13 +24,13 @@ export function generateRefreshToken(userId: number): string {
   return jwt.sign(
     { sub: userId, type: 'refresh', jti },
     JWT_SECRET,
-    { expiresIn: REFRESH_TOKEN_EXPIRES_IN }
+    { expiresIn: REFRESH_TOKEN_EXPIRES_IN as jwt.SignOptions['expiresIn'] }
   );
 }
 
 export function verifyAccessToken(token: string): TokenPayload | null {
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as TokenPayload;
+    const payload = jwt.verify(token, JWT_SECRET) as unknown as TokenPayload;
     if (payload.type !== 'access') return null;
     return payload;
   } catch {
@@ -40,7 +40,7 @@ export function verifyAccessToken(token: string): TokenPayload | null {
 
 export function verifyRefreshToken(token: string): TokenPayload | null {
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as TokenPayload;
+    const payload = jwt.verify(token, JWT_SECRET) as unknown as TokenPayload;
     if (payload.type !== 'refresh') return null;
     return payload;
   } catch {
@@ -50,7 +50,7 @@ export function verifyRefreshToken(token: string): TokenPayload | null {
 
 export function decodeToken(token: string): TokenPayload | null {
   try {
-    return jwt.decode(token) as TokenPayload;
+    return jwt.decode(token) as unknown as TokenPayload;
   } catch {
     return null;
   }

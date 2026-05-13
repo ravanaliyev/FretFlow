@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
-import db from '../../src/config/database.js';
-import { authenticate } from '../../src/middleware/auth.js';
+import db from '../../../../src/config/database.js';
+import { authenticate } from '../../../../src/middleware/auth.js';
 
 async function handler(req: Request, res: Response): Promise<void> {
   try {

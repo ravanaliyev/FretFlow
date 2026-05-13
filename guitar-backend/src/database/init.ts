@@ -162,6 +162,18 @@ export async function initializeDatabase() {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
         UNIQUE(user_id, date)
     );
+
+    -- Practice history table (synced from frontend)
+    CREATE TABLE IF NOT EXISTS practice_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        lesson_id INTEGER NOT NULL,
+        lesson_title TEXT NOT NULL,
+        date TEXT NOT NULL,
+        duration_seconds INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
   `;
 
   const statements = schema.split(';').filter(s => s.trim());
