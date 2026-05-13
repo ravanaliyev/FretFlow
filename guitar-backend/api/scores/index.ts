@@ -60,7 +60,7 @@ async function handler(req: Request, res: Response): Promise<void> {
       xp_earned: xpEarned,
       accuracy_percent: accuracy_percent || score,
     });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: 'Failed to submit score', code: 'SERVER_ERROR' });
   }
 }

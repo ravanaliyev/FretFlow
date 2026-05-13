@@ -34,7 +34,7 @@ async function handler(req: Request, res: Response): Promise<void> {
         hasMore: offset + result.rows.length < total,
       },
     });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: 'Failed to fetch scores', code: 'SERVER_ERROR' });
   }
 }
