@@ -838,7 +838,7 @@ const Dashboard: React.FC = () => {
   const activeLesson = (currentView === 'practice' || currentView === 'victory') ? lessons.find(l => l.id === urlLessonId) : null;
 
   useEffect(() => {
-    const shouldListen = (currentView === 'practice' && activeLesson) || currentView === 'tuner';
+    const shouldListen = ((currentView === 'practice' && activeLesson) || currentView === 'tuner') && !isVictory;
 
     if (shouldListen) {
       if (!processorRef.current) {
@@ -849,8 +849,8 @@ const Dashboard: React.FC = () => {
         setCurrentPitch(note);
         setCurrentFrequency(freq);
 
-        // Only trigger match logic if in practice view and NOT in tuner mode
-        if (currentView === 'practice' && activeLesson && note === activeLesson.sequence[currentSequenceIndex]) {
+        // Only trigger match logic if NOT in victory mode, NOT in tuner, and note matches
+        if (!isVictory && currentView === 'practice' && activeLesson && note === activeLesson.sequence[currentSequenceIndex]) {
           handleMatch();
         }
       };
@@ -867,7 +867,7 @@ const Dashboard: React.FC = () => {
       if (processorRef.current) processorRef.current.stop();
       updatePracticeTime();
     };
-  }, [currentView, urlLessonId, currentSequenceIndex]);
+  }, [currentView, urlLessonId, currentSequenceIndex, isVictory]);
 
 
   const startPractice = (lesson: Lesson) => {
