@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import db from '../../src/config/database.js';
-import { authenticate } from '../../src/middleware/auth.js';
+import { authenticate, requireAdmin } from '../../src/middleware/auth.js';
 
 async function handler(req: Request, res: Response): Promise<void> {
   try {
@@ -31,8 +31,19 @@ async function handler(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // POST - create lesson
+    // POST - create lesson (admin only)
     if (req.method === 'POST') {
+      // Check admin
+      const adminResult = await db.execute({
+        sql: 'SELECT id FROM admin_users WHERE user_id = ?',
+        args: [String(userId)],
+      });
+
+      if (adminResult.rows.length === 0) {
+        res.status(403).json({ error: 'Admin access required', code: 'FORBIDDEN' });
+        return;
+      }
+
       const { title, description, notes, difficulty, xp_reward, order_index } = req.body;
 
       if (!title || !description || !notes) {
