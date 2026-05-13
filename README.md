@@ -57,6 +57,16 @@ FretFlow is a premium, interactive web application designed to revolutionize the
 - `src/screens/dashboard`: The main student dashboard and practice environment.
 - `src/utils`: Audio processing and pitch detection logic.
 - `legacy/`: Preserved original project files for reference.
+- `guitar-app/`: Unified frontend (login + main app)
+- `guitar-backend/`: Express + Vercel serverless API
+- `js-guitar-pitch-detector/`: YIN pitch detection library
+
+## 🚀 Deploy
+
+- **Frontend**: Vercel (static React - free tier)
+- **Backend**: Vercel Serverless Functions (`guitar-backend/api/`) - auto-deploys on push
+- **Database**: Turso SQLite edge database (free tier)
+- **Environment**: Set `DATABASE_URL`, `JWT_SECRET`, `TURSO_AUTH_TOKEN` in Vercel env vars
 
 ## 📄 License
 
