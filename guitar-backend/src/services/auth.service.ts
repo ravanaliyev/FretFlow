@@ -10,12 +10,21 @@ interface User {
   avatar_url: string | null;
   xp_total: number;
   level: number;
+  role: 'ADMIN' | 'STUDENT';
 }
 
 interface AuthResult {
   user: Omit<User, 'password_hash'>;
   accessToken: string;
   refreshToken: string;
+}
+
+async function getUserRole(userId: number): Promise<'ADMIN' | 'STUDENT'> {
+  const adminResult = await db.execute({
+    sql: 'SELECT id FROM admin_users WHERE user_id = ?',
+    args: [userId],
+  });
+  return adminResult.rows.length > 0 ? 'ADMIN' : 'STUDENT';
 }
 
 export async function register(
@@ -55,7 +64,8 @@ export async function register(
     args: [userId],
   });
 
-  const user = userResult.rows[0] as User;
+  const user = userResult.rows[0] as unknown as User;
+  user.role = await getUserRole(userId);
 
   // Generate tokens
   const accessToken = generateAccessToken(user.id, user.email);
@@ -77,7 +87,7 @@ export async function login(
     throw new Error('Invalid credentials');
   }
 
-  const user = result.rows[0] as User & { password_hash: string };
+  const user = result.rows[0] as unknown as User & { password_hash: string };
 
   const valid = await verifyPassword(password, user.password_hash);
   if (!valid) {
@@ -90,6 +100,7 @@ export async function login(
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { password_hash, ...userWithoutPassword } = user;
+  userWithoutPassword.role = await getUserRole(user.id);
 
   return { user: userWithoutPassword, accessToken, refreshToken };
 }
@@ -109,7 +120,7 @@ export async function refreshTokens(refreshToken: string): Promise<{ accessToken
     throw new Error('User not found');
   }
 
-  const user = result.rows[0] as { id: number; email: string };
+  const user = result.rows[0] as unknown as { id: number; email: string };
 
   const newAccessToken = generateAccessToken(user.id, user.email);
   const newRefreshToken = generateRefreshToken(user.id);
@@ -123,7 +134,12 @@ export async function getUserById(userId: number): Promise<Omit<User, 'password_
     args: [userId],
   });
 
-  return result.rows[0] as Omit<User, 'password_hash'> | null;
+  if (result.rows.length === 0) return null;
+
+  const user = result.rows[0] as unknown as User;
+  user.role = await getUserRole(userId);
+
+  return user;
 }
 
 export async function updateUser(
