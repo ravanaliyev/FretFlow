@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import db from '../../src/config/database.js';
-import { authenticate, requireAdmin } from '../../src/middleware/auth.js';
+import { authenticate } from '../../src/middleware/auth.js';
 
 async function handler(req: Request, res: Response): Promise<void> {
   try {
@@ -73,8 +73,8 @@ async function handler(req: Request, res: Response): Promise<void> {
     }
 
     res.status(405).json({ error: 'Method not allowed', code: 'METHOD_NOT_ALLOWED' });
-  } catch (error) {
-    console.error('Lessons error:', error);
+  } catch (_error) {
+    console.error(_error);
     res.status(500).json({ error: 'Failed to process request', code: 'SERVER_ERROR' });
   }
 }

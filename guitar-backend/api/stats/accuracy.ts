@@ -24,7 +24,7 @@ async function handler(req: Request, res: Response): Promise<void> {
       data: result.rows,
       trend: result.rows.reverse(),
     });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: 'Failed to fetch accuracy stats', code: 'SERVER_ERROR' });
   }
 }

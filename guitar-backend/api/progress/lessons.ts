@@ -1,6 +1,5 @@
 import type { Request, Response } from 'express';
 import db from '../../src/config/database.js';
-import { authenticate } from '../../src/middleware/auth.js';
 import { calculateLessonXP, calculateLevel } from '../../src/utils/xpCalculator.js';
 
 async function getProgress(req: Request, res: Response): Promise<void> {
@@ -17,7 +16,7 @@ async function getProgress(req: Request, res: Response): Promise<void> {
     });
 
     res.json({ data: result.rows });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: 'Failed to fetch progress', code: 'SERVER_ERROR' });
   }
 }
@@ -118,7 +117,7 @@ async function submitProgress(req: Request, res: Response): Promise<void> {
       xp_earned: isCompleted ? xpEarned : 0,
       accuracy: accuracy || 0,
     });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: 'Failed to submit progress', code: 'SERVER_ERROR' });
   }
 }

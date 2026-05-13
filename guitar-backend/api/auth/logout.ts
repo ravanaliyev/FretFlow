@@ -14,7 +14,7 @@ export async function logout(req: Request, res: Response): Promise<void> {
     }
 
     res.json({ message: 'Logged out successfully' });
-  } catch (error) {
+  } catch (_error) {
     res.json({ message: 'Logged out successfully' });
   }
 }

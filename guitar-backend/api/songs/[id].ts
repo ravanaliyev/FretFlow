@@ -17,7 +17,7 @@ async function handler(req: Request, res: Response): Promise<void> {
     }
 
     res.json(result.rows[0]);
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: 'Failed to fetch song', code: 'SERVER_ERROR' });
   }
 }

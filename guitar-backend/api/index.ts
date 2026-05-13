@@ -112,8 +112,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     return res.status(404).json({ error: 'Not found', code: 'NOT_FOUND' });
-  } catch (error) {
-    console.error('API Error:', error);
+  } catch (_error) {
+    console.error(_error);
     return res.status(500).json({ error: 'Server error', code: 'SERVER_ERROR' });
   }
 }
@@ -368,11 +368,11 @@ async function handleRegister(req: VercelRequest, res: VercelResponse) {
       accessToken,
       refreshToken,
     });
-  } catch (error: any) {
-    if (error.message?.includes('UNIQUE constraint')) {
+  } catch (_error: any) {
+    if (_error.message?.includes('UNIQUE constraint')) {
       return res.status(400).json({ error: 'User already exists', code: 'REGISTRATION_FAILED' });
     }
-    throw error;
+    throw _error;
   }
 }
 
@@ -409,7 +409,7 @@ async function handleLogin(req: VercelRequest, res: VercelResponse) {
   const accessToken = jwt.sign({ sub: user.id, email: user.email, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
   const refreshToken = jwt.sign({ sub: user.id, type: 'refresh', jti: crypto.randomUUID() }, JWT_SECRET, { expiresIn: '7d' });
 
-  const { password_hash, ...userWithoutPassword } = user;
+  const { password_hash: _, ...userWithoutPassword } = user;
   return res.json({
     user: userWithoutPassword,
     accessToken,
@@ -516,7 +516,7 @@ async function handleLessons(req: VercelRequest, res: VercelResponse) {
 
   // If authenticated, get user's progress
   const userId = getUserId(req);
-  let progressMap: Record<number, any> = {};
+  const progressMap: Record<number, any> = {};
 
   if (userId) {
     const progressResult = await db.execute({
@@ -579,7 +579,7 @@ async function handleGetLesson(req: VercelRequest, res: VercelResponse) {
   if (typeof lesson.notes === 'string') {
     try {
       lesson.notes = JSON.parse(lesson.notes);
-    } catch (e) {
+    } catch (_e) {
       lesson.notes = [];
     }
   }
@@ -733,7 +733,7 @@ async function handleSongs(req: VercelRequest, res: VercelResponse) {
 
   // Get user's best scores
   const userId = getUserId(req);
-  let bestScores: Record<number, number> = {};
+  const bestScores: Record<number, number> = {};
 
   if (userId) {
     const scoresResult = await db.execute({
@@ -782,7 +782,7 @@ async function handleGetSong(req: VercelRequest, res: VercelResponse) {
   if (typeof song.notes === 'string') {
     try {
       song.notes = JSON.parse(song.notes);
-    } catch (e) {
+    } catch (_e) {
       song.notes = [];
     }
   }

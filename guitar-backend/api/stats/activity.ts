@@ -42,7 +42,7 @@ async function handler(req: Request, res: Response): Promise<void> {
       most_played_notes: topNotes,
       total_unique_notes: Object.keys(noteCounts).length,
     });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: 'Failed to fetch activity stats', code: 'SERVER_ERROR' });
   }
 }

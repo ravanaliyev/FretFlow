@@ -2,14 +2,6 @@ import type { Request, Response } from 'express';
 import db from '../../src/config/database.js';
 import { authenticate } from '../../src/middleware/auth.js';
 
-interface HistoryRow {
-  id: number;
-  lesson_id: number;
-  lesson_title: string;
-  date: string;
-  duration_seconds: number;
-}
-
 async function handler(req: Request, res: Response): Promise<void> {
   const userId = (req as any).userId;
 
@@ -25,7 +17,7 @@ async function handler(req: Request, res: Response): Promise<void> {
       });
 
       res.json({ data: result.rows });
-    } catch (error) {
+    } catch (_error) {
       res.status(500).json({ error: 'Failed to fetch history', code: 'SERVER_ERROR' });
     }
     return;
@@ -47,7 +39,7 @@ async function handler(req: Request, res: Response): Promise<void> {
       });
 
       res.json({ success: true, id: Number(result.lastInsertRowid) });
-    } catch (error) {
+    } catch (_error) {
       res.status(500).json({ error: 'Failed to save history', code: 'SERVER_ERROR' });
     }
     return;
