@@ -38,26 +38,24 @@ interface HistoryItem {
 }
 
 const DEFAULT_LESSONS: Lesson[] = [
-  // Level 1 — The Foundation
-  { id: 1, title: 'The Low E String', level: 1, difficulty: 'easy', status: 'available', sequence: ['E2'], desc: 'The thickest string on the guitar. Pluck it and listen.' },
-  { id: 2, title: 'Open Strings Tour', level: 1, difficulty: 'easy', status: 'locked', sequence: ['E2', 'A2', 'D3'], desc: 'Discover the three lowest open strings.' },
-  { id: 3, title: 'High Strings', level: 1, difficulty: 'easy', status: 'locked', sequence: ['G3', 'B3', 'E4'], desc: 'Now explore the three highest open strings.' },
-  { id: 4, title: 'All Six Strings', level: 1, difficulty: 'easy', status: 'locked', sequence: ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'], desc: 'Play all six open strings in order.' },
-  { id: 5, title: 'String Challenge', level: 1, difficulty: 'medium', status: 'locked', sequence: ['E4', 'B3', 'G3', 'D3'], desc: 'Navigate strings from high to low. Stay focused!' },
+  // Level 1 — Open String Mastery
+  { id: 1,  title: 'The Low E String',      level: 1, difficulty: 'easy',   status: 'available', sequence: ['E2'],                   desc: 'The thickest string. Pluck the 6th string and feel the vibration.' },
+  { id: 2,  title: 'The A String',          level: 1, difficulty: 'easy',   status: 'locked',    sequence: ['A2'],                   desc: 'The 5th string. A fundamental note for many power chords.' },
+  { id: 3,  title: 'The D String',          level: 1, difficulty: 'easy',   status: 'locked',    sequence: ['D3'],                   desc: 'The 4th string. Move your pick down to the next string.' },
+  { id: 4,  title: 'The G String',          level: 1, difficulty: 'easy',   status: 'locked',    sequence: ['G3'],                   desc: 'The 3rd string. Getting into the higher, melodic territory.' },
+  { id: 5,  title: 'The B String',          level: 1, difficulty: 'easy',   status: 'locked',    sequence: ['B3'],                   desc: 'The 2nd string. Very common in lead melodies and solos.' },
+  { id: 6,  title: 'The High E String',     level: 1, difficulty: 'easy',   status: 'locked',    sequence: ['E4'],                   desc: 'The thinnest string. Sharp, bright, and easy to snap!' },
 
-  // Level 2 — Fretboard Explorer
-  { id: 6, title: 'First Fret Drill', level: 2, difficulty: 'easy', status: 'locked', sequence: ['F2', 'A2'], desc: 'Press the first fret and feel the difference.' },
-  { id: 7, title: 'The G Note', level: 2, difficulty: 'easy', status: 'locked', sequence: ['G2'], desc: 'Find G on the 3rd fret of the low E string.' },
-  { id: 8, title: 'Power Duo', level: 2, difficulty: 'medium', status: 'locked', sequence: ['E2', 'G2', 'E2'], desc: 'Alternate between two notes cleanly.' },
-  { id: 9, title: 'Mini Scale', level: 2, difficulty: 'medium', status: 'locked', sequence: ['C3', 'D3', 'E3', 'F3'], desc: 'Your first four-note scale fragment.' },
-  { id: 10, title: 'Fretboard Navigator', level: 2, difficulty: 'hard', status: 'locked', sequence: ['F2', 'G2', 'A2', 'B2'], desc: 'Move up the neck one fret at a time.' },
+  // Level 2 — String Combinations
+  { id: 7,  title: 'Lower Duo',             level: 2, difficulty: 'easy',   status: 'locked',    sequence: ['E2', 'A2'],             desc: 'Switch between the two thickest strings.' },
+  { id: 8,  title: 'Upper Trio',            level: 2, difficulty: 'medium', status: 'locked',    sequence: ['G3', 'B3', 'E4'],       desc: 'A quick tour of the melody strings.' },
+  { id: 9,  title: 'The Bass Jump',         level: 2, difficulty: 'medium', status: 'locked',    sequence: ['E2', 'D3', 'E2'],       desc: 'A wider jump between non-adjacent strings.' },
+  { id: 10, title: 'Across the Fretboard',  level: 2, difficulty: 'hard',   status: 'locked',    sequence: ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'], desc: 'The ultimate open string coordination test.' },
 
-  // Level 3 — Rhythm & Riffs
-  { id: 11, title: 'Classic Rock Riff', level: 3, difficulty: 'medium', status: 'locked', sequence: ['E2', 'G2', 'A2'], desc: 'The beginning of a legend. Rock on! 🎸' },
-  { id: 12, title: 'Pentatonic Start', level: 3, difficulty: 'medium', status: 'locked', sequence: ['E2', 'G2', 'A2', 'C3', 'D3'], desc: 'Your first pentatonic pattern — the backbone of blues & rock.' },
-  { id: 13, title: 'The Blues Lick', level: 3, difficulty: 'hard', status: 'locked', sequence: ['G2', 'Bb2', 'B2', 'D3'], desc: 'A classic blues phrase every guitarist must know.' },
-  { id: 14, title: 'Full Scale Run', level: 3, difficulty: 'hard', status: 'locked', sequence: ['C3', 'D3', 'E3', 'F3', 'G3', 'A3'], desc: 'Six notes in a row. Speed and accuracy.' },
-  { id: 15, title: 'Grand Finale Riff', level: 3, difficulty: 'hard', status: 'locked', sequence: ['E2', 'G2', 'A2', 'E2', 'D3', 'C3'], desc: "Combine everything you've learned into one epic riff." },
+  // Level 3 — First Riffs
+  { id: 11, title: 'Simple Rhythm',         level: 3, difficulty: 'medium', status: 'locked',    sequence: ['A2', 'A2', 'E2'],        desc: 'A basic 1-2 rhythm using open strings.' },
+  { id: 12, title: 'Rock Foundation',       level: 3, difficulty: 'medium', status: 'locked',    sequence: ['E2', 'G2', 'A2'],        desc: 'Standard rock progression fragment.' },
+  { id: 13, title: 'The Blues Walk',        level: 3, difficulty: 'hard',   status: 'locked',    sequence: ['E2', 'G2', 'A2', 'B2'],  desc: 'A simple blues walking bass line.' },
 ];
 
 const STRINGS = ['E4', 'B3', 'G3', 'D3', 'A2', 'E2'];
