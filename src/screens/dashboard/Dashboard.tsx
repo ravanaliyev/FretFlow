@@ -89,7 +89,7 @@ const LessonGrid: React.FC<LessonGridProps> = ({
   startPractice 
 }) => (
   <div className="p-6 space-y-6">
-    <div className="flex items-center gap-2 mb-8">
+    <div className="flex items-center gap-2 mb-8 relative z-20">
       <button 
         onClick={() => navigate('/dashboard')}
         className="glass-panel flex items-center justify-center w-12 h-12 md:w-auto md:px-6 rounded-2xl text-gray-400 hover:text-white transition-colors shrink-0"

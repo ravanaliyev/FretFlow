@@ -26,7 +26,7 @@
   }
   
   .glass-input {
-    @apply bg-white/5 border border-white/10 text-white placeholder-white/40 focus:bg-white/10 focus:border-primary-500/50 focus:ring-2 focus:ring-inset focus:ring-primary-500/30 transition-all duration-300 outline-none;
+    @apply bg-white/5 border border-white/10 text-white placeholder-white/40 focus:bg-white/15 focus:border-primary-500/80 transition-all duration-300 outline-none ring-0 shadow-none;
   }
   
   .neon-text-green {
