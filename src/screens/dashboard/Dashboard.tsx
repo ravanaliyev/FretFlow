@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   History,
   Search,
-  Filter,
   ArrowLeft,
   Mic,
   MicOff,
@@ -19,6 +18,13 @@ import {
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AudioProcessor } from '../../utils/PitchProcessor';
+import { lessonsApi } from '../../api/lessons';
+import { progressApi } from '../../api/progress';
+import { gamificationApi } from '../../api/gamification';
+import { statsApi } from '../../api/stats';
+import { scoresApi } from '../../api/scores';
+import { adminApi } from '../../api/admin';
+import { useAuth } from '../../hooks/useAuth';
 import confetti from 'canvas-confetti';
 
 // --- Types ---
@@ -430,7 +436,7 @@ const AnalyticsChart: React.FC<{ stats: Record<string, number> }> = ({ stats }) 
 
 
 
-const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number }> = ({ lessons, streak }) => {
+const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number; achievements?: Array<{ id: number; name: string; description: string; icon: string; earned: boolean }> }> = ({ lessons, streak, achievements: apiAchievements }) => {
   const [showAll, setShowAll] = React.useState(false);
 
   const completedCount = lessons.filter(l => l.status === 'completed').length;
@@ -441,7 +447,20 @@ const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number }> = ({ lesson
   const lvl3Done = lessons.filter(l => l.level === 3 && l.status === 'completed').length;
   const lvl3Total = lessons.filter(l => l.level === 3).length;
 
-  const isUnlocked = (id: string): boolean => {
+  // Use API achievements if available, otherwise fallback to computed from local data
+  const displayBadges = apiAchievements && apiAchievements.length > 0
+    ? apiAchievements.map(a => ({
+        id: String(a.id),
+        name: a.name,
+        icon: a.icon,
+        desc: a.description,
+        color: 'from-primary-400 to-primary-600',
+        category: 'Achievement',
+        earned: a.earned,
+      }))
+    : BADGES.map(b => ({ ...b, earned: isUnlockedLocal(b.id) }));
+
+  const isUnlockedLocal = (id: string): boolean => {
     switch (id) {
       case 'first_note': return completedCount >= 1;
       case 'five_done': return completedCount >= 5;
@@ -470,9 +489,9 @@ const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number }> = ({ lesson
     }
   };
 
-  const unlockedBadges = BADGES.filter(b => isUnlocked(b.id));
+  const unlockedBadges = displayBadges.filter(b => b.earned);
   const unlockedCount = unlockedBadges.length;
-  const categories = ['Lessons', 'Streak', 'Mastery'];
+  const categories = ['Lessons', 'Streak', 'Mastery', 'Achievement'];
 
   return (
     <>
@@ -559,13 +578,16 @@ const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number }> = ({ lesson
                 />
               </div>
 
-              {categories.map(cat => (
-                <div key={cat} className="mb-8">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-600 mb-4">{cat}</p>
-                  <div className="grid grid-cols-1 gap-3">
-                    {BADGES.filter(b => b.category === cat).map(badge => {
-                      const unlocked = isUnlocked(badge.id);
-                      const progress = getProgress(badge.id);
+              {categories.map(cat => {
+                  const badgesInCategory = displayBadges.filter(b => b.category === cat);
+                  if (badgesInCategory.length === 0) return null;
+                  return (
+                    <div key={cat} className="mb-8">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-600 mb-4">{cat}</p>
+                      <div className="grid grid-cols-1 gap-3">
+                        {badgesInCategory.map(badge => {
+                          const unlocked = badge.earned;
+                          const progress = getProgress(badge.id);
                       return (
                         <div
                           key={badge.id}
@@ -597,10 +619,11 @@ const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number }> = ({ lesson
                           </div>
                         </div>
                       );
-                    })}
-                  </div>
-                </div>
-              ))}
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
             </motion.div>
           </div>
         )}
@@ -770,8 +793,9 @@ const LessonGrid: React.FC<LessonGridProps> = ({
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const userRole = localStorage.getItem('fretflow_user_role') || 'STUDENT';
   const location = useLocation();
+  const { user } = useAuth();
+  const userRole = user?.role || 'STUDENT';
 
   // Parse view and IDs from URL
   const pathParts = location.pathname.split('/').filter(Boolean);
@@ -789,6 +813,9 @@ const Dashboard: React.FC = () => {
     const saved = localStorage.getItem('fretflow_history');
     return saved ? JSON.parse(saved) : [];
   });
+
+  const [userXp, setUserXp] = useState(0);
+  const [userLevel, setUserLevel] = useState(1);
 
   const [currentSequenceIndex, setCurrentSequenceIndex] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
@@ -886,6 +913,94 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('fretflow_history', JSON.stringify(history));
   }, [history]);
+
+  // --- API Data Loading ---
+  useEffect(() => {
+    const loadApiData = async () => {
+      try {
+        const [lessonsRes, progressRes, profileRes] = await Promise.all([
+          lessonsApi.getAll(),
+          progressApi.getLessonProgress(),
+          gamificationApi.getProfile(),
+        ]);
+
+        const progressMap = new Map(
+          progressRes.data.map(p => [p.lesson_id, p])
+        );
+
+        const mapped: Lesson[] = lessonsRes.data.map((l, idx) => {
+          const progress = progressMap.get(l.id);
+          let status: Lesson['status'] = 'available';
+          if (progress?.is_completed) {
+            status = 'completed';
+          } else if (idx > 0) {
+            const prevProgress = progressMap.get(lessonsRes.data[idx - 1]?.id);
+            if (!prevProgress?.is_completed) {
+              status = 'locked';
+            }
+          }
+
+          return {
+            id: l.id,
+            title: l.title,
+            level: l.order_index,
+            difficulty: (['easy', 'medium', 'hard'] as const)[l.difficulty - 1] || 'easy',
+            status,
+            sequence: JSON.parse(l.notes || '[]'),
+            desc: l.description,
+          };
+        });
+
+        setLessons(mapped);
+
+        // Update streak data from API profile
+        setStreakData((prev: { count: number; isFrozen: boolean; lastUpdated: string; history: ('completed' | 'frozen' | 'empty')[] }) => ({
+          ...prev,
+          count: profileRes.streak.current,
+          isFrozen: false,
+          lastUpdated: profileRes.streak.last_practice || new Date().toDateString(),
+        }));
+
+        // Store XP and level for display
+        setUserXp(profileRes.xp_total);
+        setUserLevel(profileRes.level);
+
+        // Fetch achievements from API
+        const achievementsRes = await gamificationApi.getAchievements();
+        setAchievements(achievementsRes.data);
+      } catch (err) {
+        console.error('Failed to load from API, using defaults:', err);
+      }
+    };
+
+    loadApiData();
+  }, []);
+
+  const [achievements, setAchievements] = useState<Array<{ id: number; name: string; description: string; icon: string; xp_reward: number; earned: boolean; earned_at: string | null }>>([]);
+
+  // --- Fetch Stats from API ---
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const statsRes = await statsApi.getPractice('week');
+        // Transform API response to match Dashboard's expected format
+        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        const transformed: Record<string, number> = {};
+        statsRes.data?.forEach((dayStat) => {
+          const date = new Date(dayStat.date);
+          const dayName = days[date.getDay() === 0 ? 6 : date.getDay() - 1];
+          transformed[dayName] = Math.round((dayStat.total_practice_seconds || 0) / 60);
+        });
+        if (Object.keys(transformed).length > 0) {
+          setPracticeStats(transformed);
+        }
+      } catch (err) {
+        console.error('Failed to load stats from API:', err);
+      }
+    };
+
+    loadStats();
+  }, []);
 
   // --- Audio Logic Sync with Route ---
   const activeLesson = (currentView === 'practice' || currentView === 'victory') ? lessons.find(l => l.id === urlLessonId) : null;
@@ -1020,8 +1135,11 @@ const Dashboard: React.FC = () => {
 
         setIsVictory(true);
 
+        // Sync progress to backend
+        progressApi.submitProgress(activeLesson.id, 100, activeLesson.sequence).catch(console.error);
+
         // Update Streak
-        setStreakData(prev => {
+        setStreakData((prev: { count: number; isFrozen: boolean; lastUpdated: string; history: string[] }) => {
           const today = new Date().toDateString();
           if (prev.lastUpdated === today && !prev.isFrozen) return prev;
 
@@ -1270,8 +1388,16 @@ const Dashboard: React.FC = () => {
                 />
               </div>
             </div>
-            <div className="w-10 h-10 rounded-full bg-primary-500/10 border-2 border-primary-500/30 flex items-center justify-center text-primary-500">
-              <User size={20} />
+            <div className="flex items-center gap-2 px-2 py-1 rounded-full bg-white/5 border border-white/10">
+              <span className="text-[10px] text-gray-400 font-bold uppercase">Lv.{userLevel}</span>
+              <span className="text-xs font-black text-primary-400">{userXp.toLocaleString()} XP</span>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-primary-500/10 border-2 border-primary-500/30 flex items-center justify-center text-primary-500 overflow-hidden">
+              {user?.avatar_url ? (
+                <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <User size={20} />
+              )}
             </div>
           </div>
         </div>
@@ -1362,7 +1488,7 @@ const Dashboard: React.FC = () => {
                   <p className="text-gray-400">Track your progress, badges, and practice history.</p>
                 </div>
                 <AnalyticsChart stats={practiceStats} />
-                <BadgesSection lessons={lessons} streak={streakData.count} />
+                <BadgesSection lessons={lessons} streak={streakData.count} achievements={achievements} />
                 <div className="pt-10 border-t border-white/10">
                   <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-3">
@@ -1568,7 +1694,7 @@ const Dashboard: React.FC = () => {
               </div>
 
               <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                <form className="space-y-4" onSubmit={(e) => {
+                <form className="space-y-4" onSubmit={async (e) => {
                   e.preventDefault();
                   const formData = new FormData(e.currentTarget);
                   const sequenceRaw = formData.get('sequence') as string;
@@ -1583,6 +1709,27 @@ const Dashboard: React.FC = () => {
                     return;
                   }
                   setFormError(null);
+
+                  const difficultyMap: Record<string, number> = { easy: 1, medium: 2, hard: 3 };
+
+                  const apiLessonData = {
+                    title: formData.get('title') as string,
+                    description: formData.get('desc') as string,
+                    notes: JSON.stringify(sequence.map(n => ({ note: n, time: 0 }))),
+                    difficulty: difficultyMap[formData.get('difficulty') as string] || 1,
+                    xp_reward: 10,
+                    order_index: editingLesson ? editingLesson.level : (urlLevelId || 1),
+                  };
+
+                  try {
+                    if (editingLesson) {
+                      await adminApi.updateLesson(editingLesson.id, apiLessonData);
+                    } else {
+                      await adminApi.createLesson(apiLessonData);
+                    }
+                  } catch (err) {
+                    console.error('Failed to sync lesson to server:', err);
+                  }
 
                   const lessonData: Lesson = {
                     id: editingLesson ? editingLesson.id : Date.now(),
@@ -1599,7 +1746,7 @@ const Dashboard: React.FC = () => {
                   } else {
                     setLessons(prev => [...prev, lessonData]);
                   }
-                  
+
                   setShowAdminModal(false);
                   setEditingLesson(null);
                 }}>
@@ -1696,7 +1843,12 @@ const Dashboard: React.FC = () => {
                   Cancel
                 </button>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
+                    try {
+                      await adminApi.deleteLesson(editingLesson.id);
+                    } catch (err) {
+                      console.error('Failed to delete lesson from server:', err);
+                    }
                     setLessons(prev => prev.filter(l => l.id !== editingLesson.id));
                     setShowDeleteConfirm(false);
                     setShowAdminModal(false);
@@ -1814,7 +1966,7 @@ const Dashboard: React.FC = () => {
                 </section>
 
                 <section>
-                  <BadgesSection lessons={lessons} streak={streakData.count} />
+                  <BadgesSection lessons={lessons} streak={streakData.count} achievements={achievements} />
                 </section>
 
                 <section className="pt-10 border-t border-white/10">
