@@ -15,8 +15,8 @@ async function handler(req: Request, res: Response): Promise<void> {
     }
 
     res.json(user);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to update user';
+  } catch (_error) {
+    const message = _error instanceof Error ? _error.message : 'Failed to update user';
     res.status(400).json({ error: message, code: 'UPDATE_FAILED' });
   }
 }
