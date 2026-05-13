@@ -1,7 +1,5 @@
 import type { Request, Response } from 'express';
 import * as authService from '../../src/services/auth.service.js';
-import { validateBody } from '../../src/middleware/validate.js';
-import { registerSchema } from '../../src/validation/schemas.js';
 
 export async function register(req: Request, res: Response): Promise<void> {
   try {
@@ -14,8 +12,8 @@ export async function register(req: Request, res: Response): Promise<void> {
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,
     });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Registration failed';
+  } catch (_error) {
+    const message = _error instanceof Error ? _error.message : 'Registration failed';
     res.status(400).json({ error: message, code: 'REGISTRATION_FAILED' });
   }
 }
@@ -40,7 +38,7 @@ export async function login(req: Request, res: Response): Promise<void> {
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,
     });
-  } catch (error) {
+  } catch (_error) {
     res.status(401).json({ error: 'Invalid credentials', code: 'INVALID_CREDENTIALS' });
   }
 }
@@ -60,7 +58,7 @@ export async function refresh(req: Request, res: Response): Promise<void> {
     const tokens = await authService.refreshTokens(refreshToken);
 
     res.json(tokens);
-  } catch (error) {
+  } catch (_error) {
     res.status(401).json({ error: 'Invalid refresh token', code: 'INVALID_TOKEN' });
   }
 }
@@ -82,7 +80,7 @@ export async function me(req: Request, res: Response): Promise<void> {
     }
 
     res.json(user);
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: 'Failed to get user', code: 'SERVER_ERROR' });
   }
 }
