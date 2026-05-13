@@ -1,47 +1,73 @@
-# FretFlow | Interactive Student Dashboard
+# React + TypeScript + Vite
 
-A modern, high-end student dashboard for guitar learning applications. Featuring a **Glassmorphism** aesthetic and real-time **Pitch Detection** using the YIN algorithm.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-![Dashboard Preview](assets/bg.png) <!-- Note: Replace with a real screenshot before final push -->
+Currently, two official plugins are available:
 
-## 🚀 Features
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-- **Glassmorphism UI**: A minimalist, premium dark theme with neon accents and semi-transparent blurred surfaces.
-- **Real-time Pitch Detection**: Integrated YIN algorithm that listens to your guitar through the microphone and provides instant feedback.
-- **Interactive Fretboard**: A 6-string, 12-fret simulation that guides students by highlighting the target notes for each lesson.
-- **Syllabus & Progression**: A dynamic lesson grid with filtering (Difficulty/Status) and an overall progress tracker.
-- **Admin Dashboard**: A built-in interface to add, edit, and manage lessons without touching the code.
-- **Practice History (CRUD)**: Track your sessions and manage your learning log.
+## React Compiler
 
-## 🛠️ Tech Stack
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-- **HTML5 / CSS3**: Vanilla CSS for maximum flexibility and performance.
-- **JavaScript (Vanilla)**: Core logic, DOM manipulation, and Audio processing.
-- **Web Audio API**: Used for real-time microphone analysis and frequency detection.
+## Expanding the ESLint configuration
 
-## 📦 Getting Started
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-This is a purely client-side application. No server setup is required.
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/guitar-dashboard.git
-   ```
-2. Open `index.html` in any modern web browser (Chrome or Edge recommended for best Web Audio support).
-3. Allow microphone permissions when prompted to enable interactive practice.
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
 
-## 🔧 Project Structure
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
 
-- `index.html`: Main application entry point.
-- `style.css`: Design system and glassmorphism styles.
-- `script.js`: Dashboard logic and state management.
-- `pitchDetector.js`: Core audio processing and YIN algorithm implementation.
-- `assets/`: Background images and icons.
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-## 📜 License
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🤝 Contributing
-
-Feel free to fork this project and submit pull requests. For major changes, please open an issue first to discuss what you would like to change.
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
