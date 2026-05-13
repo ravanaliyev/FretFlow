@@ -65,6 +65,31 @@ const Dashboard: React.FC = () => {
   const [currentPitch, setCurrentPitch] = useState('--');
   const [isListening, setIsListening] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
+  const [showStreakModal, setShowStreakModal] = useState(false);
+  
+  // Dynamic streak logic
+  // Rolling 7-day logic
+  const getLastSevenDays = () => {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const result = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      result.push(days[d.getDay()]);
+    }
+    return result;
+  };
+
+  const rollingDays = getLastSevenDays();
+  const [streakData, setStreakData] = useState({ 
+    count: 12, 
+    isFrozen: true,
+    // Demo history for the rolling window (Last 7 days):
+    // [Completed, Completed, Completed, Completed, Completed, Frozen (Yesterday), Empty (Today)]
+    history: ['completed', 'completed', 'completed', 'completed', 'completed', 'frozen', 'empty']
+  }); 
+
+  const DAYS = rollingDays;
 
   const processorRef = useRef<AudioProcessor | null>(null);
 
@@ -174,11 +199,11 @@ const Dashboard: React.FC = () => {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={() => { setActiveLevel(level.id); setView('lessons'); }}
-          className="glass-panel p-8 rounded-3xl cursor-pointer hover:border-primary-500/50 transition-colors group"
+          className="glass-panel p-8 rounded-3xl cursor-pointer hover:border-primary-500/50 transition-colors group flex flex-col items-center text-center"
         >
-          <span className="text-xs font-bold text-primary-500 bg-primary-500/10 px-3 py-1 rounded-full mb-4 inline-block uppercase tracking-wider">Level {level.id}</span>
+          <span className="text-xs font-bold text-primary-500 bg-primary-500/10 px-3 py-1 rounded-full mb-4 uppercase tracking-wider">Level {level.id}</span>
           <h2 className="text-2xl font-bold text-white mb-2 group-hover:text-primary-500 transition-colors">{level.name}</h2>
-          <p className="text-gray-400">{level.desc}</p>
+          <p className="text-gray-400 text-sm">{level.desc}</p>
         </motion.div>
       ))}
     </div>
@@ -382,7 +407,49 @@ const Dashboard: React.FC = () => {
             </nav>
           </div>
           
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 md:gap-6">
+            {/* Pena Streak Component */}
+            <div 
+              onClick={() => setShowStreakModal(true)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group relative"
+            >
+              <div className="relative">
+                <svg 
+                  viewBox="0 0 26 31" 
+                  fill="none" 
+                  className={`w-6 h-6 transition-all duration-500 drop-shadow-[0_0_8px_rgba(var(--streak-color),0.5)] ${
+                    streakData.isFrozen ? 'text-cyan-400' : 
+                    streakData.count > 0 ? 'text-primary-500' : 'text-gray-600'
+                  }`}
+                  style={{ 
+                    filter: streakData.count > 0 ? 'drop-shadow(0 0 8px currentColor)' : 'none',
+                    '--streak-color': streakData.isFrozen ? '34, 211, 238' : '57, 255, 20' 
+                  } as any}
+                >
+                  <path 
+                    d="M13 1C6 1 1 6 1 12C1 19 8 30 13 30C18 30 25 19 25 12C25 6 20 1 13 1Z" 
+                    fill="currentColor"
+                  />
+                  {streakData.isFrozen && (
+                    <motion.path 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: [0.2, 0.5, 0.2] }}
+                      transition={{ repeat: Infinity, duration: 2 }}
+                      d="M13 1C6 1 1 6 1 12L13 30Z" 
+                      fill="white"
+                      fillOpacity="0.3"
+                    />
+                  )}
+                </svg>
+              </div>
+              <span className={`text-sm font-black ${
+                streakData.isFrozen ? 'text-cyan-400' : 
+                streakData.count > 0 ? 'text-primary-500' : 'text-gray-500'
+              }`}>
+                {streakData.count}
+              </span>
+            </div>
+
             <div className="hidden lg:flex flex-col items-end gap-1">
               <div className="flex items-center gap-3">
                 <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Progress</span>
@@ -466,11 +533,8 @@ const Dashboard: React.FC = () => {
           </div>
 
           <div className="glass-panel p-6 rounded-3xl bg-primary-500/5 border-primary-500/20">
-            <h3 className="font-bold mb-2">Daily Streak</h3>
-            <div className="flex items-center gap-4">
-              <div className="text-4xl font-black text-primary-500">7</div>
-              <p className="text-sm text-gray-400">Days of consistent practice. Keep it up!</p>
-            </div>
+            <h3 className="font-bold mb-2">Mastery Tip</h3>
+            <p className="text-sm text-gray-400">Consistency is the key to muscle memory. Practice even 5 minutes a day!</p>
           </div>
         </aside>
       </div>
@@ -560,6 +624,67 @@ const Dashboard: React.FC = () => {
                   Create Lesson
                 </button>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      {/* Streak Modal */}
+      <AnimatePresence>
+        {showStreakModal && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-dark-950/80 backdrop-blur-md"
+              onClick={() => setShowStreakModal(false)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="glass-panel w-full max-w-sm p-8 rounded-[2.5rem] relative z-10 text-center overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary-500 to-transparent opacity-50" />
+              
+              <div className="mb-6 inline-flex p-4 rounded-3xl bg-primary-500/10 border border-primary-500/20">
+                <svg viewBox="0 0 26 31" className={`w-12 h-12 ${streakData.isFrozen ? 'text-cyan-400' : 'text-primary-500'}`} fill="currentColor">
+                  <path d="M13 1C6 1 1 6 1 12C1 19 8 30 13 30C18 30 25 19 25 12C25 6 20 1 13 1Z" />
+                </svg>
+              </div>
+
+              <h2 className="text-3xl font-black mb-2">{streakData.count} Day Streak!</h2>
+              <p className="text-gray-400 text-sm mb-8">You're doing great. Keep the rhythm going!</p>
+
+              <div className="grid grid-cols-7 gap-2 mb-8">
+                {DAYS.map((day, i) => (
+                  <div key={day} className="flex flex-col items-center gap-2">
+                    <span className="text-[10px] font-bold text-gray-500 uppercase">{day}</span>
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
+                      streakData.history[i] === 'completed' ? 'bg-primary-500 text-dark-900 shadow-[0_0_15px_rgba(57,255,20,0.3)]' : 
+                      streakData.history[i] === 'frozen' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 shadow-[0_0_15px_rgba(34,211,238,0.2)]' :
+                      'bg-white/5 border border-white/10 text-gray-700'
+                    }`}>
+                      {streakData.history[i] === 'completed' ? <CheckCircle size={16} strokeWidth={3} /> : 
+                       streakData.history[i] === 'frozen' ? <span className="text-sm">❄️</span> :
+                       <div className="w-1 h-1 rounded-full bg-current" />}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="bg-white/5 rounded-2xl p-4 border border-white/10 mb-6">
+                <p className="text-sm font-bold text-white/90">
+                  {streakData.isFrozen ? "❄️ Your streak is frozen! Practice today to keep it alive." : "🔥 Come back tomorrow to continue your streak!"}
+                </p>
+              </div>
+
+              <button 
+                onClick={() => setShowStreakModal(false)}
+                className="w-full py-4 bg-dark-800 hover:bg-dark-700 text-white font-bold rounded-2xl transition-all active:scale-95 border border-white/5"
+              >
+                Rock On!
+              </button>
             </motion.div>
           </div>
         )}
