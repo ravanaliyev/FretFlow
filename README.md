@@ -1,73 +1,66 @@
-# React + TypeScript + Vite
+# 🎸 FretFlow | Modern Guitar Learning Experience
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+FretFlow is a premium, interactive web application designed to revolutionize the way students learn guitar. By combining high-fidelity design with real-time audio processing, FretFlow provides a seamless path from discovery to mastery.
 
-Currently, two official plugins are available:
+![FretFlow Preview](https://raw.githubusercontent.com/ravanaliyev/FretFlow/main/public/preview.png) *(Note: Add a real preview image to public/ folder for best results)*
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## ✨ Features
 
-## React Compiler
+- **🎯 Real-Time Pitch Detection:** Powered by the **YIN Algorithm**, providing instant feedback on your playing with high accuracy.
+- **🛣️ Level-Based Curriculum:** A structured path that guides students from basic string discovery to complex melodies.
+- **🎸 Interactive Fretboard:** A high-fidelity, responsive fretboard that highlights target notes across all strings, helping students master the entire neck.
+- **🌓 Premium Aesthetics:** A sleek "Dark Mode" interface with glassmorphism, smooth animations (Framer Motion), and a modern layout.
+- **📊 Progress Tracking:** Monitor your completion percentage and practice history as you level up your skills.
+- **🔑 Seamless Auth Experience:** Beautifully animated landing and login pages to welcome users to their learning journey.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🚀 Tech Stack
 
-## Expanding the ESLint configuration
+- **Core:** [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
+- **Build Tool:** [Vite](https://vitejs.dev/)
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+- **Animations:** [Framer Motion](https://www.framer.com/motion/)
+- **Icons:** [Lucide React](https://lucide.dev/)
+- **Audio Logic:** Custom Web Audio API implementation with YIN pitch detection.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## 🛠️ Getting Started
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Prerequisites
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- [Node.js](https://nodejs.org/) (v18 or higher recommended)
+- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### Installation
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/ravanaliyev/FretFlow.git
+   cd FretFlow
+   ```
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+3. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
+
+4. **Open your browser:**
+   Navigate to `http://localhost:5173` (or the port specified in the terminal).
+
+## 📁 Project Structure
+
+- `src/screens/landing`: High-fidelity landing page components.
+- `src/screens/login`: Animated authentication cards and sections.
+- `src/screens/dashboard`: The main student dashboard and practice environment.
+- `src/utils`: Audio processing and pitch detection logic.
+- `legacy/`: Preserved original project files for reference.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+Developed with ❤️ for guitarists everywhere.
