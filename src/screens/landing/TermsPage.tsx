@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import AnimatedBackground from './AnimatedBackground';
 import Navbar from './Navbar';
 import Footer from './Footer';

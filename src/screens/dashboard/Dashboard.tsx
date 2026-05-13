@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   History,
   Search,
-  Filter,
   ArrowLeft,
   Mic,
   MicOff,
@@ -38,6 +37,26 @@ interface HistoryItem {
   title: string;
   date: string;
 }
+
+interface LeaderboardItem {
+  id: number;
+  name: string;
+  score: number;
+  date: string;
+}
+
+const MOCK_LEADERBOARD: LeaderboardItem[] = [
+  { id: 1, name: 'Alex Shredder', score: 42, date: 'May 10' },
+  { id: 2, name: 'Luna Rocker', score: 38, date: 'May 12' },
+  { id: 3, name: 'FingerMaster', score: 35, date: 'May 11' },
+  { id: 4, name: 'Jimi Jr.', score: 31, date: 'May 13' },
+  { id: 5, name: 'GuitarHero99', score: 28, date: 'May 09' },
+  { id: 6, name: 'ScaleKing', score: 25, date: 'May 10' },
+  { id: 7, name: 'MetalHead', score: 22, date: 'May 11' },
+  { id: 8, name: 'JazzCat', score: 19, date: 'May 12' },
+  { id: 9, name: 'AcousticBoi', score: 15, date: 'May 13' },
+  { id: 10, name: 'NoviceNate', score: 12, date: 'May 08' },
+];
 
 const DEFAULT_LESSONS: Lesson[] = [
   // Level 1 — Open String Mastery
@@ -86,7 +105,7 @@ const BADGES = [
 // --- Sub-Components ---
 
 // --- Guitar Tuner Component ---
-const GuitarTuner: React.FC<{ currentPitch: string; frequency: number }> = ({ currentPitch, frequency }) => {
+const GuitarTuner: React.FC<{ currentPitch: string; frequency: number }> = ({ frequency }) => {
   const STANDARD_TUNING: Record<string, number> = {
     'E2': 82.41, 'A2': 110.00, 'D3': 146.83, 'G3': 196.00, 'B3': 246.94, 'E4': 329.63
   };
@@ -429,7 +448,65 @@ const AnalyticsChart: React.FC<{ stats: Record<string, number> }> = ({ stats }) 
   );
 };
 
+const LeaderboardComponent: React.FC<{ data: LeaderboardItem[] }> = ({ data }) => {
+  const sorted = [...data].sort((a, b) => b.score - a.score);
+  const top10 = sorted.slice(0, 10);
+  const userScore = Number(localStorage.getItem('fretflow_highscore') || 0);
+  
+  // To calculate rank, we need to know where the user's best score fits in the global list
+  // We'll treat the user's highscore as their entry
+  const userRank = sorted.findIndex(item => item.score <= userScore) + 1;
 
+  return (
+    <div className="w-full mt-16 pb-12 text-left">
+      <div className="flex items-center gap-3 mb-8">
+        <Trophy size={20} className="text-primary-500" />
+        <h3 className="text-sm font-black uppercase tracking-[0.3em] text-gray-500">Hall of Fame</h3>
+      </div>
+      
+      <div className="space-y-3">
+        {top10.map((item, i) => (
+          <div 
+            key={item.id} 
+            className={`flex items-center justify-between p-5 rounded-2xl border transition-all ${
+              i === 0 ? 'bg-primary-500/10 border-primary-500/30' : 
+              i === 1 ? 'bg-white/5 border-white/10' : 
+              i === 2 ? 'bg-white/[0.03] border-white/5' : 'bg-transparent border-white/5'
+            }`}
+          >
+            <div className="flex items-center gap-4">
+              <span className={`w-6 text-xs font-black ${i < 3 ? 'text-primary-500' : 'text-gray-600'}`}>
+                {i + 1}
+              </span>
+              <span className="font-bold text-sm text-white">{item.name}</span>
+            </div>
+            <div className="flex items-center gap-6">
+              <span className="text-[10px] text-gray-600 font-bold uppercase">{item.date}</span>
+              <span className="text-sm font-black text-primary-500">{item.score}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="pt-8 border-t border-white/5 mt-10">
+        <div className="flex items-center justify-between p-6 rounded-3xl bg-primary-500 text-dark-900 shadow-xl shadow-primary-500/20 transform transition-transform hover:scale-[1.02]">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-dark-900/10 flex items-center justify-center font-black text-lg">
+              #{userRank > 0 ? userRank : '??'}
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Your Standing</p>
+              <h4 className="font-bold">You (Personal Best)</h4>
+            </div>
+          </div>
+          <div className="text-right">
+            <span className="text-3xl font-black">{userScore}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number }> = ({ lessons, streak }) => {
   const [showAll, setShowAll] = React.useState(false);
@@ -781,7 +858,7 @@ const Dashboard: React.FC = () => {
   const urlLevelId = pathParts[2] ? parseInt(pathParts[2]) : null;
   const urlLessonId = pathParts[2] ? parseInt(pathParts[2]) : null;
   const currentView = urlView;
-  const [isTunerOpen, setIsTunerOpen] = useState(false);
+  const [isTunerOpen] = useState(false);
 
   const [showHistoryClearModal, setShowHistoryClearModal] = useState(false);
   const [lessons, setLessons] = useState<Lesson[]>(() => {
@@ -796,12 +873,12 @@ const Dashboard: React.FC = () => {
   const [currentSequenceIndex, setCurrentSequenceIndex] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter] = useState('all');
   const [currentFrequency, setCurrentFrequency] = useState(0);
   const [isListening, setIsListening] = useState(false);
   const [currentPitch, setCurrentPitch] = useState('--');
   const [showAdminModal, setShowAdminModal] = useState(false);
-  const [adminTab, setAdminTab] = useState<'Add New' | 'Manage'>('Add New');
+  const [, setAdminTab] = useState<'Add New' | 'Manage'>('Add New');
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -816,6 +893,15 @@ const Dashboard: React.FC = () => {
   const [gameHighScore, setGameHighScore] = useState(() => Number(localStorage.getItem('fretflow_highscore') || 0));
   const [gameCountdown, setGameCountdown] = useState(3);
 
+  const [leaderboard, setLeaderboard] = useState<LeaderboardItem[]>(() => {
+    const saved = localStorage.getItem('fretflow_leaderboard');
+    return saved ? JSON.parse(saved) : MOCK_LEADERBOARD;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('fretflow_leaderboard', JSON.stringify(leaderboard));
+  }, [leaderboard]);
+
 
   const [isVictory, setIsVictory] = useState(false);
   const [lastPlayedLessonId, setLastPlayedLessonId] = useState<number | null>(() => {
@@ -828,13 +914,10 @@ const Dashboard: React.FC = () => {
     if (saved) return JSON.parse(saved);
 
     // Generate realistic mock data if empty to show the chart working
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const todayIdx = new Date().getDay(); // 0 is Sun, 1 is Mon...
     const mockData: Record<string, number> = {};
-
-    // Fill previous days with realistic practice times (15-45 mins)
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const todayIdx = new Date().getDay(); 
     days.forEach((day, idx) => {
-      const dayPos = (idx + 1) % 7; // Map Mon=1...Sun=0
       if (idx < (todayIdx === 0 ? 6 : todayIdx - 1)) {
         mockData[day] = Math.floor(Math.random() * 30) + 15;
       }
@@ -900,38 +983,7 @@ const Dashboard: React.FC = () => {
   // --- Audio Logic Sync with Route ---
   const activeLesson = (currentView === 'practice' || currentView === 'victory') ? lessons.find(l => l.id === urlLessonId) : null;
 
-  useEffect(() => {
-    // Stop listening if Admin Modal or other blocking modals are open
-    const isUIBlocked = showAdminModal || showStreakModal || showHistoryDrawer || showHistoryClearModal;
-    const shouldListen = ((currentView === 'practice' && activeLesson) || currentView === 'tuner') && !isVictory && !isUIBlocked;
 
-    if (shouldListen) {
-      if (!processorRef.current) {
-        processorRef.current = new AudioProcessor();
-      }
-
-      processorRef.current.onNoteDetected = (freq, note) => {
-        setCurrentPitch(note);
-        setCurrentFrequency(freq);
-      };
-
-      if (!isListening) {
-        processorRef.current.start().then(() => setIsListening(true));
-      }
-    } else {
-      if (processorRef.current && isListening) {
-        processorRef.current.stop();
-        setIsListening(false);
-      }
-    }
-
-    return () => {
-      if (processorRef.current && isListening) {
-        processorRef.current.stop();
-        setIsListening(false);
-      }
-    };
-  }, [currentView, activeLesson, isVictory, showAdminModal, showStreakModal, showHistoryDrawer, showHistoryClearModal]);
 
   const pickRandomNote = () => {
     const notes = ['E2', 'F2', 'G2', 'A2', 'B2', 'C3', 'D3', 'E3', 'F3', 'G3', 'A3', 'B3', 'C4', 'D4', 'E4'];
@@ -966,10 +1018,29 @@ const Dashboard: React.FC = () => {
     } else if (gamePhase === 'playing') {
       timer = setInterval(() => {
         setGameTimeLeft(prev => {
-          if (prev <= 1) {
-            setGamePhase('result');
-            return 0;
-          }
+            if (prev <= 1) {
+              setGamePhase('result');
+              if (gameScore > gameHighScore) {
+                setGameHighScore(gameScore);
+                localStorage.setItem('fretflow_highscore', gameScore.toString());
+              }
+              
+              // Add to leaderboard
+              if (gameScore > 0) {
+                const newItem: LeaderboardItem = {
+                  id: Date.now(),
+                  name: 'You',
+                  score: gameScore,
+                  date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                };
+                setLeaderboard(prev => {
+                  // Keep only the best score for 'You' in the leaderboard calculation
+                  // or just add all of them. Let's add all and sort.
+                  return [...prev, newItem];
+                });
+              }
+              return 0;
+            }
           return prev - 1;
         });
       }, 1000);
@@ -1116,7 +1187,7 @@ const Dashboard: React.FC = () => {
         setIsVictory(true);
 
         // Update Streak
-        setStreakData(prev => {
+        setStreakData((prev: any) => {
           const today = new Date().toDateString();
           if (prev.lastUpdated === today && !prev.isFrozen) return prev;
 
@@ -1142,9 +1213,7 @@ const Dashboard: React.FC = () => {
     navigate(`/dashboard/lessons/${activeLesson?.level || 1}`);
   };
 
-  const deleteHistory = (id: number) => {
-    setHistory(prev => prev.filter(item => item.id !== id));
-  };
+
 
   const filteredLessons = lessons.filter(l => {
     const matchesLevel = l.level === urlLevelId;
@@ -1225,7 +1294,7 @@ const Dashboard: React.FC = () => {
 
         <div className="flex flex-col items-center gap-6 md:gap-8 w-full">
           <div className="flex gap-2 md:gap-4 overflow-x-auto no-scrollbar w-full justify-center py-2">
-            {activeLesson?.sequence.map((note, i) => (
+            {activeLesson?.sequence.map((_, i) => (
               <div
                 key={i}
                 className={`w-3 h-3 md:w-4 md:h-4 rounded-full flex-shrink-0 transition-all duration-500 ${i < currentSequenceIndex ? 'bg-green-500' :
@@ -1402,12 +1471,12 @@ const Dashboard: React.FC = () => {
               <h2 className="text-4xl font-bold mb-3 text-white">
                 {isAllCompleted ? "Master of the Strings! 🏆" : "Welcome back, Rock Star! 🎸"}
               </h2>
-              <p className="text-gray-400">
+              <div className="text-gray-400">
                 {isAllCompleted
                   ? "You've conquered every lesson. Time to refine your skills or start a review!"
                   : <MotivationQuote />
                 }
-              </p>
+              </div>
             </div>
           )}
 
@@ -1652,6 +1721,10 @@ const Dashboard: React.FC = () => {
                     </div>
                   )}
                 </div>
+
+                {gamePhase === 'idle' && (
+                  <LeaderboardComponent data={leaderboard} />
+                )}
               </motion.div>
             )}
           </AnimatePresence>
