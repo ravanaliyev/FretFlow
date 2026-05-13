@@ -169,14 +169,38 @@ const GuitarTuner: React.FC<{ currentPitch: string; frequency: number }> = ({ cu
               {cents < 0 ? 'Tighten String' : 'Loosen String'}
             </span>
           )}
-        </div>
+      </div>
       </div>
     </div>
   );
 };
 
 // --- Victory Modal ---
-const VictoryModal: React.FC<{ lesson: Lesson; onHome: () => void }> = ({ lesson, onHome }) => {
+const VictoryModal: React.FC<{ lesson: Lesson; onHome: () => void; onNext?: () => void }> = ({ lesson, onHome, onNext }) => {
+  const [countdown, setCountdown] = useState(3);
+  const onNextRef = useRef(onNext);
+
+  useEffect(() => {
+    onNextRef.current = onNext;
+  }, [onNext]);
+
+  useEffect(() => {
+    let timer: any;
+    if (onNext) {
+      timer = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            onNext();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => { if (timer) clearInterval(timer); };
+  }, [onNext, lesson.id]);
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -194,22 +218,24 @@ const VictoryModal: React.FC<{ lesson: Lesson; onHome: () => void }> = ({ lesson
         </div>
         <h2 className="text-4xl font-black text-white mb-2 italic">AWESOME! 🤘</h2>
         <p className="text-gray-400 mb-8">You just mastered <span className="text-white font-bold">{lesson.title}</span>.</p>
-        <div className="grid grid-cols-2 gap-4 mb-8">
-          <div className="bg-white/5 p-4 rounded-3xl border border-white/5 text-center">
-            <p className="text-[10px] text-gray-500 font-black uppercase mb-1">XP Earned</p>
-            <p className="text-xl font-bold text-primary-500">+150 XP</p>
-          </div>
-          <div className="bg-white/5 p-4 rounded-3xl border border-white/5 text-center">
-            <p className="text-[10px] text-gray-500 font-black uppercase mb-1">Accuracy</p>
-            <p className="text-xl font-bold text-white">100%</p>
-          </div>
+        
+        <div className="flex flex-col gap-3">
+          {onNext && (
+            <button 
+              onClick={onNext}
+              className="w-full py-5 bg-primary-500 text-dark-900 font-black rounded-2xl shadow-xl shadow-primary-500/20 hover:bg-primary-400 transition-all active:scale-95 flex items-center justify-center gap-3"
+            >
+              <span>Next Lesson</span>
+              <span className="bg-dark-900/20 px-2 py-0.5 rounded-lg text-xs">Starting in {countdown}s</span>
+            </button>
+          )}
+          <button 
+            onClick={onHome}
+            className="w-full py-5 bg-white/5 text-white font-black rounded-2xl border border-white/10 hover:bg-white/10 transition-all active:scale-95"
+          >
+            Back to Dashboard
+          </button>
         </div>
-        <button
-          onClick={onHome}
-          className="w-full py-5 bg-primary-500 text-dark-900 font-black rounded-2xl shadow-xl shadow-primary-500/20 hover:bg-primary-400 transition-all active:scale-95"
-        >
-          Keep Rocking
-        </button>
       </motion.div>
     </motion.div>
   );
@@ -744,6 +770,7 @@ const Dashboard: React.FC = () => {
   const [showStreakModal, setShowStreakModal] = useState(false);
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
 
+  const [isVictory, setIsVictory] = useState(false);
   const [lastPlayedLessonId, setLastPlayedLessonId] = useState<number | null>(() => {
     const saved = localStorage.getItem('fretflow_last_lesson');
     return saved ? parseInt(saved) : null;
@@ -808,7 +835,7 @@ const Dashboard: React.FC = () => {
   }, [history]);
 
   // --- Audio Logic Sync with Route ---
-  const activeLesson = currentView === 'practice' ? lessons.find(l => l.id === urlLessonId) : null;
+  const activeLesson = (currentView === 'practice' || currentView === 'victory') ? lessons.find(l => l.id === urlLessonId) : null;
 
   useEffect(() => {
     const shouldListen = (currentView === 'practice' && activeLesson) || currentView === 'tuner';
@@ -897,9 +924,12 @@ const Dashboard: React.FC = () => {
         });
 
         setLessons(prevLessons => {
-          const updated = prevLessons.map(l =>
-            l.id === activeLesson.id ? { ...l, status: 'completed' as const } : l
-          );
+          const nextLessonId = activeLesson.id + 1;
+          const updated = prevLessons.map(l => {
+            if (l.id === activeLesson.id) return { ...l, status: 'completed' as const };
+            if (l.id === nextLessonId && l.status === 'locked') return { ...l, status: 'available' as const };
+            return l;
+          });
           return updated;
         });
 
@@ -908,7 +938,7 @@ const Dashboard: React.FC = () => {
           ...prev
         ]);
 
-        navigate('/dashboard/victory');
+        setIsVictory(true);
         return prev;
       }
       return next;
@@ -1031,6 +1061,29 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {isVictory && activeLesson && (
+          <VictoryModal 
+            lesson={activeLesson} 
+            onHome={() => {
+              setIsVictory(false);
+              navigate('/dashboard');
+            }} 
+            onNext={() => {
+              const nextId = activeLesson.id + 1;
+              const hasNext = lessons.some(l => l.id === nextId);
+              setIsVictory(false);
+              setCurrentSequenceIndex(0);
+              if (hasNext) {
+                navigate(`/dashboard/practice/${nextId}`);
+              } else {
+                navigate('/dashboard');
+              }
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 
@@ -1291,6 +1344,15 @@ const Dashboard: React.FC = () => {
           <VictoryModal 
             lesson={activeLesson} 
             onHome={() => navigate('/dashboard')} 
+            onNext={() => {
+              const nextId = activeLesson.id + 1;
+              const hasNext = lessons.some(l => l.id === nextId);
+              if (hasNext) {
+                navigate(`/dashboard/practice/${nextId}`);
+              } else {
+                navigate('/dashboard');
+              }
+            }}
           />
         )}
       </AnimatePresence>
