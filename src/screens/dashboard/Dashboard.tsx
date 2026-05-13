@@ -12,7 +12,8 @@ import {
   PlayCircle,
   Plus,
   Trash2,
-  X
+  X,
+  Activity
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AudioProcessor } from '../../utils/PitchProcessor';
@@ -46,7 +47,153 @@ const DEFAULT_LESSONS: Lesson[] = [
 const STRINGS = ['E4', 'B3', 'G3', 'D3', 'A2', 'E2'];
 const FRET_COUNT = 12;
 
+const QUOTES = [
+  { text: "Music is the wine that fills the cup of silence.", author: "Robert Fripp" },
+  { text: "Sometimes you want to give up the guitar, you'll hate it. But if you stick with it, you'll be rewarded.", author: "Jimi Hendrix" },
+  { text: "Your talent is your art. It is your gift to yourself.", author: "Slash" },
+  { text: "I just play. I don't think. I just play.", author: "B.B. King" }
+];
+
+const BADGES = [
+  { id: 'starter', name: 'Rock Starter', icon: '🎸', desc: 'Complete your 1st lesson', color: 'from-blue-500 to-cyan-500' },
+  { id: 'warrior', name: '7-Day Warrior', icon: '🔥', desc: 'Reach a 7-day streak', color: 'from-orange-500 to-red-500' },
+  { id: 'master', name: 'String Master', icon: '✨', desc: 'Complete Level 1', color: 'from-primary-500 to-primary-700' }
+];
+
 // --- Sub-Components ---
+const MotivationQuote: React.FC = () => {
+  const quote = QUOTES[new Date().getDate() % QUOTES.length];
+  return (
+    <motion.div 
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      className="mb-8 p-4 rounded-2xl bg-white/[0.02] border-l-4 border-primary-500/50 italic text-gray-400 text-sm md:text-base max-w-2xl"
+    >
+      "{quote.text}" — <span className="text-primary-500/70 font-bold not-italic">{quote.author}</span>
+    </motion.div>
+  );
+};
+
+const QuickResume: React.FC<{ lesson: Lesson | null; onResume: (l: Lesson) => void }> = ({ lesson, onResume }) => {
+  if (!lesson) return null;
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ scale: 1.01 }}
+      className="glass-panel p-6 rounded-3xl mb-12 bg-gradient-to-r from-primary-500/10 to-transparent border-primary-500/20 flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative"
+    >
+      <div className="absolute -left-10 -top-10 w-40 h-40 bg-primary-500/5 rounded-full blur-3xl" />
+      <div className="relative z-10">
+        <span className="text-[10px] font-black uppercase tracking-widest text-primary-500 mb-2 block">Continue Learning</span>
+        <h3 className="text-2xl font-bold text-white mb-1">{lesson.title}</h3>
+        <p className="text-sm text-gray-400">Level {lesson.level} • {lesson.difficulty}</p>
+      </div>
+      <button 
+        onClick={() => onResume(lesson)}
+        className="relative z-10 px-8 py-4 bg-primary-500 text-dark-900 font-bold rounded-2xl shadow-xl shadow-primary-500/20 hover:bg-primary-400 transition-all active:scale-95 flex items-center gap-3"
+      >
+        <PlayCircle size={20} /> Resume Now
+      </button>
+    </motion.div>
+  );
+};
+
+const AnalyticsChart: React.FC<{ stats: Record<string, number> }> = ({ stats }) => {
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const data = days.map(day => stats[day] || 0);
+  const max = Math.max(...data, 60); // Max 60 mins for a good scale
+
+  return (
+    <div className="glass-panel p-6 rounded-3xl bg-white/[0.02] border-white/5 mb-8 relative overflow-hidden">
+      <div className="absolute top-0 right-0 p-4 opacity-5">
+        <Activity size={100} />
+      </div>
+      
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h4 className="text-sm font-bold text-white mb-1">Weekly Progress</h4>
+          <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Minutes Spent Practicing</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-primary-500 animate-pulse" />
+          <span className="text-[10px] font-bold text-primary-500 uppercase">Live Tracking</span>
+        </div>
+      </div>
+
+      <div className="relative h-40 flex items-end justify-between gap-2 px-2">
+        {/* Background Grid Lines */}
+        <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="w-full border-t border-dashed border-white/10" />
+          ))}
+        </div>
+
+        {data.map((val, i) => (
+          <div key={i} className="flex-1 flex flex-col items-center gap-3 group relative z-10">
+            <div className="w-full h-32 relative flex items-end justify-center">
+              {/* Ghost Bar (Always visible) */}
+              <div className="absolute inset-0 w-full max-w-[8px] mx-auto bg-white/[0.03] rounded-full" />
+              
+              {/* Actual Data Bar */}
+              <motion.div 
+                initial={{ height: 0 }}
+                animate={{ height: `${(val / max) * 100}%` }}
+                className={`w-full max-w-[8px] rounded-full relative transition-all duration-500 ${val > 0 ? 'bg-primary-500 shadow-[0_0_20px_rgba(57,255,20,0.4)]' : 'h-0'}`}
+              >
+                {val > 0 && (
+                  <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-dark-800 border border-white/10 px-2 py-1 rounded text-[9px] font-bold text-primary-500 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20">
+                    {val} min
+                  </div>
+                )}
+              </motion.div>
+            </div>
+            <span className={`text-[10px] font-bold transition-colors ${val > 0 ? 'text-primary-400' : 'text-gray-600'}`}>
+              {days[i]}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number }> = ({ lessons, streak }) => {
+  const completedCount = lessons.filter(l => l.status === 'completed').length;
+  const isUnlocked = (id: string) => {
+    if (id === 'starter') return completedCount >= 1;
+    if (id === 'warrior') return streak >= 7;
+    if (id === 'master') return lessons.filter(l => l.level === 1 && l.status === 'completed').length === lessons.filter(l => l.level === 1).length;
+    return false;
+  };
+
+  return (
+    <div className="mt-16">
+      <h3 className="text-sm font-black uppercase tracking-[0.3em] text-gray-500 mb-8">Mastery Badges</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {BADGES.map(badge => {
+          const unlocked = isUnlocked(badge.id);
+          return (
+            <motion.div 
+              key={badge.id}
+              whileHover={unlocked ? { y: -5 } : {}}
+              className={`glass-panel p-6 rounded-3xl flex items-center gap-4 border-white/5 transition-all ${unlocked ? 'bg-gradient-to-br from-white/5 to-transparent' : 'opacity-40 grayscale'}`}
+            >
+              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${unlocked ? badge.color : 'from-gray-700 to-gray-800'} flex items-center justify-center text-2xl shadow-lg`}>
+                {badge.icon}
+              </div>
+              <div>
+                <h4 className="font-bold text-white">{badge.name}</h4>
+                <p className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">{unlocked ? 'Unlocked' : badge.desc}</p>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 const LevelMenu: React.FC<{ navigate: any }> = ({ navigate }) => (
   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
     {[
@@ -207,6 +354,20 @@ const Dashboard: React.FC = () => {
   const [showStreakModal, setShowStreakModal] = useState(false);
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
   
+  const [lastPlayedLessonId, setLastPlayedLessonId] = useState<number | null>(() => {
+    const saved = localStorage.getItem('fretflow_last_lesson');
+    return saved ? parseInt(saved) : null;
+  });
+
+  const [practiceStats, setPracticeStats] = useState<Record<string, number>>(() => {
+    const saved = localStorage.getItem('fretflow_stats');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  const practiceStartTimeRef = useRef<number | null>(null);
+
+  const lastPlayedLesson = lessons.find(l => l.id === lastPlayedLessonId);
+  
   // Dynamic streak logic
   // Rolling 7-day logic
   const getLastSevenDays = () => {
@@ -267,6 +428,7 @@ const Dashboard: React.FC = () => {
 
     return () => {
       if (processorRef.current) processorRef.current.stop();
+      updatePracticeTime();
     };
   }, [currentView, urlLessonId]);
 
@@ -284,7 +446,25 @@ const Dashboard: React.FC = () => {
 
   // --- Logic ---
   const startPractice = (lesson: Lesson) => {
+    setLastPlayedLessonId(lesson.id);
+    localStorage.setItem('fretflow_last_lesson', lesson.id.toString());
+    practiceStartTimeRef.current = Date.now();
     navigate(`/dashboard/practice/${lesson.id}`);
+  };
+
+  const updatePracticeTime = () => {
+    if (practiceStartTimeRef.current) {
+      const durationMin = Math.round((Date.now() - practiceStartTimeRef.current) / 60000);
+      if (durationMin > 0) {
+        const today = new Date().toLocaleDateString('en-US', { weekday: 'short' });
+        setPracticeStats(prev => {
+          const updated = { ...prev, [today]: (prev[today] || 0) + durationMin };
+          localStorage.setItem('fretflow_stats', JSON.stringify(updated));
+          return updated;
+        });
+      }
+      practiceStartTimeRef.current = null;
+    }
   };
 
   const handleMatch = () => {
@@ -534,7 +714,8 @@ const Dashboard: React.FC = () => {
         <main className="w-full">
           <div className="mb-8 md:mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-2 text-center md:text-left">Welcome back, Rock Star! 🎸</h2>
-            <p className="text-gray-400 text-center md:text-left">Pick up where you left off and master those strings.</p>
+            <p className="text-gray-400 text-center md:text-left mb-6">Pick up where you left off and master those strings.</p>
+            <MotivationQuote />
           </div>
 
           <AnimatePresence mode="wait">
@@ -545,7 +726,10 @@ const Dashboard: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
               >
-                <LevelMenu navigate={navigate} />
+                <QuickResume lesson={lastPlayedLesson || null} onResume={startPractice} />
+                <div className="space-y-12">
+                  <LevelMenu navigate={navigate} />
+                </div>
               </motion.div>
             )}
             {currentView === 'lessons' && (
@@ -736,55 +920,90 @@ const Dashboard: React.FC = () => {
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="absolute right-0 top-0 bottom-0 w-full max-w-sm bg-dark-900 border-l border-white/10 p-8 shadow-2xl"
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="absolute right-0 top-0 bottom-0 w-full md:max-w-xl lg:max-w-2xl bg-dark-900 border-l border-white/10 p-6 md:p-10 shadow-2xl overflow-hidden flex flex-col"
             >
-              <div className="flex items-center justify-between mb-8">
-                <div className="flex items-center gap-3">
-                  <History size={24} className="text-primary-500" />
-                  <h3 className="text-2xl font-bold">Activity</h3>
+              <div className="flex items-center justify-between mb-10">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-primary-500/10 flex items-center justify-center">
+                    <History size={28} className="text-primary-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-3xl font-black text-white">Activity</h3>
+                    <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Your Mastery Journey</p>
+                  </div>
                 </div>
-                <button onClick={() => setShowHistoryDrawer(false)} className="p-2 hover:bg-white/5 rounded-full transition-colors text-gray-500 hover:text-white">
+                <button 
+                  onClick={() => setShowHistoryDrawer(false)} 
+                  className="w-12 h-12 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-2xl transition-all text-gray-400 hover:text-white"
+                >
                   <X size={24} />
                 </button>
               </div>
 
-              <div className="space-y-6 overflow-y-auto max-h-[calc(100vh-200px)] pr-2 no-scrollbar">
-                {history.length === 0 ? (
-                  <div className="text-center py-20">
-                    <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <PlayCircle className="text-gray-600" size={32} />
-                    </div>
-                    <p className="text-gray-400">No practice history yet.</p>
-                    <p className="text-sm text-gray-600 mt-2">Finish a lesson to see it here!</p>
+              <div className="flex-grow overflow-y-auto pr-2 no-scrollbar space-y-12 pb-24">
+                <section>
+                  <AnalyticsChart stats={practiceStats} />
+                </section>
+
+                <section>
+                  <BadgesSection lessons={lessons} streak={streakData.count} />
+                </section>
+                
+                <section className="pt-10 border-t border-white/10">
+                  <div className="flex items-center justify-between mb-8">
+                    <h4 className="text-sm font-black uppercase tracking-[0.2em] text-gray-500">Practice History</h4>
+                    <span className="text-[10px] font-bold text-gray-700 bg-white/5 px-2 py-1 rounded">{history.length} Lessons</span>
                   </div>
-                ) : (
-                  history.map(item => (
-                    <motion.div 
-                      key={item.id}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="glass-panel p-4 rounded-2xl flex items-center justify-between group hover:border-primary-500/20 transition-all"
-                    >
-                      <div>
-                        <p className="font-bold text-white group-hover:text-primary-500 transition-colors">{item.title}</p>
-                        <span className="text-xs text-gray-500">{item.date}</span>
+                  
+                  {history.length === 0 ? (
+                    <div className="text-center py-20 bg-white/[0.02] rounded-[2rem] border border-dashed border-white/5">
+                      <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <PlayCircle className="text-gray-600" size={32} />
                       </div>
-                      <button 
-                        onClick={() => deleteHistory(item.id)}
-                        className="p-2 text-gray-700 hover:text-red-500 transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </motion.div>
-                  ))
-                )}
+                      <p className="text-gray-400 font-bold">No history yet.</p>
+                      <p className="text-xs text-gray-600 mt-2">Finish a lesson to see it here!</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-4">
+                      {history.map(item => (
+                        <motion.div 
+                          key={item.id}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          className="glass-panel p-5 rounded-[1.5rem] flex items-center justify-between group hover:border-primary-500/30 transition-all bg-white/[0.02]"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-primary-500/10 transition-colors">
+                              <CheckCircle className="text-gray-600 group-hover:text-primary-500" size={18} />
+                            </div>
+                            <div>
+                              <p className="font-bold text-white group-hover:text-primary-500 transition-colors">{item.title}</p>
+                              <span className="text-[10px] font-bold text-gray-600 uppercase tracking-tighter">{item.date}</span>
+                            </div>
+                          </div>
+                          <button 
+                            onClick={() => deleteHistory(item.id)}
+                            className="w-10 h-10 flex items-center justify-center text-gray-700 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+                </section>
               </div>
 
               <div className="absolute bottom-8 left-8 right-8">
-                <div className="glass-panel p-6 rounded-3xl bg-primary-500/5 border-primary-500/20">
-                  <h3 className="font-bold mb-2 text-sm">Pro Tip</h3>
-                  <p className="text-xs text-gray-500">Consistency builds speed. Try to keep your streak alive!</p>
+                <div className="glass-panel p-6 rounded-[2rem] bg-gradient-to-r from-primary-500/10 to-transparent border-primary-500/20">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-2 h-2 rounded-full bg-primary-500 animate-pulse" />
+                    <h3 className="font-bold text-xs uppercase tracking-widest text-primary-500">Pro Tip</h3>
+                  </div>
+                  <p className="text-xs text-gray-400 leading-relaxed">
+                    Consistency is key. Even 5 minutes a day builds muscle memory faster than a single 2-hour session!
+                  </p>
                 </div>
               </div>
             </motion.div>
