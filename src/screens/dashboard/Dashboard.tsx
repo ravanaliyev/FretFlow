@@ -51,9 +51,9 @@ const DEFAULT_LESSONS: Lesson[] = [
   { id: 8,  title: 'Across the Fretboard',  level: 2, difficulty: 'hard',   status: 'locked',    sequence: ['A2', 'D3', 'G3', 'B3', 'E4'], desc: 'The ultimate open string coordination test.' },
 
   // Level 3 — First Riffs
-  { id: 11, title: 'Simple Rhythm',         level: 3, difficulty: 'medium', status: 'locked',    sequence: ['A2', 'A2', 'A2'],        desc: 'A basic rhythm using the La string.' },
-  { id: 12, title: 'Rock Foundation',       level: 3, difficulty: 'medium', status: 'locked',    sequence: ['A2', 'G3', 'A2'],        desc: 'Standard rock progression using open strings.' },
-  { id: 13, title: 'The Blues Walk',        level: 3, difficulty: 'hard',   status: 'locked',    sequence: ['A2', 'C3', 'D3', 'E3'],  desc: 'A simple blues walking line starting from A.' },
+  { id: 9,  title: 'Simple Rhythm',         level: 3, difficulty: 'medium', status: 'locked',    sequence: ['A2', 'A2', 'A2'],        desc: 'A basic rhythm using the La string.' },
+  { id: 10, title: 'Rock Foundation',       level: 3, difficulty: 'medium', status: 'locked',    sequence: ['A2', 'G3', 'A2'],        desc: 'Standard rock progression using open strings.' },
+  { id: 11, title: 'The Blues Walk',        level: 3, difficulty: 'hard',   status: 'locked',    sequence: ['A2', 'C3', 'D3', 'E3'],  desc: 'A simple blues walking line starting from A.' },
 ];
 
 const STRINGS = ['E4', 'B3', 'G3', 'D3', 'A2', 'E2'];
@@ -748,7 +748,7 @@ const Dashboard: React.FC = () => {
   const urlLessonId = pathParts[2] ? parseInt(pathParts[2]) : null;
 
   const [lessons, setLessons] = useState<Lesson[]>(() => {
-    const saved = localStorage.getItem('fretflow_lessons_v4');
+    const saved = localStorage.getItem('fretflow_lessons_v5');
     return saved ? JSON.parse(saved) : DEFAULT_LESSONS;
   });
   const [history, setHistory] = useState<HistoryItem[]>(() => {
@@ -827,7 +827,7 @@ const Dashboard: React.FC = () => {
 
   // --- Persistence ---
   useEffect(() => {
-    localStorage.setItem('fretflow_lessons_v4', JSON.stringify(lessons));
+    localStorage.setItem('fretflow_lessons_v5', JSON.stringify(lessons));
   }, [lessons]);
 
   useEffect(() => {
@@ -924,10 +924,12 @@ const Dashboard: React.FC = () => {
         });
 
         setLessons(prevLessons => {
-          const nextLessonId = activeLesson.id + 1;
+          const currentIndex = prevLessons.findIndex(l => l.id === activeLesson.id);
+          const nextLesson = prevLessons[currentIndex + 1];
+          
           const updated = prevLessons.map(l => {
             if (l.id === activeLesson.id) return { ...l, status: 'completed' as const };
-            if (l.id === nextLessonId && l.status === 'locked') return { ...l, status: 'available' as const };
+            if (nextLesson && l.id === nextLesson.id && l.status === 'locked') return { ...l, status: 'available' as const };
             return l;
           });
           return updated;
@@ -1071,12 +1073,13 @@ const Dashboard: React.FC = () => {
               navigate('/dashboard');
             }} 
             onNext={() => {
-              const nextId = activeLesson.id + 1;
-              const hasNext = lessons.some(l => l.id === nextId);
+              const currentIndex = lessons.findIndex(l => l.id === activeLesson.id);
+              const nextLesson = lessons[currentIndex + 1];
+              
               setIsVictory(false);
               setCurrentSequenceIndex(0);
-              if (hasNext) {
-                navigate(`/dashboard/practice/${nextId}`);
+              if (nextLesson) {
+                navigate(`/dashboard/practice/${nextLesson.id}`);
               } else {
                 navigate('/dashboard');
               }
