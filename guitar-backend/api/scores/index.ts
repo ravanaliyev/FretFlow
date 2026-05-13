@@ -16,30 +16,6 @@ async function handler(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    if (score < 0 || score > 100) {
-      res.status(400).json({
-        error: 'Score must be between 0 and 100',
-        code: 'VALIDATION_ERROR',
-      });
-      return;
-    }
-
-    if (song_id <= 0 || !Number.isInteger(song_id)) {
-      res.status(400).json({
-        error: 'song_id must be a positive integer',
-        code: 'VALIDATION_ERROR',
-      });
-      return;
-    }
-
-    if (accuracy_percent !== undefined && (accuracy_percent < 0 || accuracy_percent > 100)) {
-      res.status(400).json({
-        error: 'accuracy_percent must be between 0 and 100',
-        code: 'VALIDATION_ERROR',
-      });
-      return;
-    }
-
     // Get song info
     const songResult = await db.execute({
       sql: 'SELECT * FROM songs WHERE id = ?',

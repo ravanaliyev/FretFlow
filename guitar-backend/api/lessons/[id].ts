@@ -1,8 +1,6 @@
 import type { Request, Response } from 'express';
 import db from '../../src/config/database.js';
 import { authenticate } from '../../src/middleware/auth.js';
-import { validateBody, validateParams } from '../../src/middleware/validate.js';
-import { updateLessonSchema, idParamSchema } from '../../src/validation/schemas.js';
 
 const ALLOWED_FIELDS = ['title', 'description', 'notes', 'difficulty', 'xp_reward', 'order_index'];
 

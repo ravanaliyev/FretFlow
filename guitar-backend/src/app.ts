@@ -56,7 +56,7 @@ app.use('/api/songs/:id', songsId);
 app.use('/api/songs', songsIndex);
 app.use('/api/scores/me', scoresMe);
 app.use('/api/scores/leaderboard', leaderboard);
-app.use('/api/scores', scoresIndex);
+app.use('/api/scores', validateBody(submitScoreSchema), scoresIndex);
 app.use('/api/gamification/profile', profile);
 app.use('/api/gamification/quests/:id/claim', questClaim);
 app.use('/api/gamification/quests', quests);
