@@ -39,18 +39,16 @@ interface HistoryItem {
 
 const DEFAULT_LESSONS: Lesson[] = [
   // Level 1 — Open String Mastery
-  { id: 1,  title: 'The Low E String',      level: 1, difficulty: 'easy',   status: 'available', sequence: ['E2'],                   desc: 'The thickest string. Pluck the 6th string and feel the vibration.' },
-  { id: 2,  title: 'The A String',          level: 1, difficulty: 'easy',   status: 'locked',    sequence: ['A2'],                   desc: 'The 5th string. A fundamental note for many power chords.' },
-  { id: 3,  title: 'The D String',          level: 1, difficulty: 'easy',   status: 'locked',    sequence: ['D3'],                   desc: 'The 4th string. Move your pick down to the next string.' },
-  { id: 4,  title: 'The G String',          level: 1, difficulty: 'easy',   status: 'locked',    sequence: ['G3'],                   desc: 'The 3rd string. Getting into the higher, melodic territory.' },
-  { id: 5,  title: 'The B String',          level: 1, difficulty: 'easy',   status: 'locked',    sequence: ['B3'],                   desc: 'The 2nd string. Very common in lead melodies and solos.' },
-  { id: 6,  title: 'The High E String',     level: 1, difficulty: 'easy',   status: 'locked',    sequence: ['E4'],                   desc: 'The thinnest string. Sharp, bright, and easy to snap!' },
+  { id: 1,  title: 'The A String',          level: 1, difficulty: 'easy',   status: 'available', sequence: ['A2'],                   desc: 'The 5th string. A fundamental note for many power chords and your first lesson!' },
+  { id: 2,  title: 'The D String',          level: 1, difficulty: 'easy',   status: 'locked',    sequence: ['D3'],                   desc: 'The 4th string. Move your pick down to the next string.' },
+  { id: 3,  title: 'The G String',          level: 1, difficulty: 'easy',   status: 'locked',    sequence: ['G3'],                   desc: 'The 3rd string. Getting into the higher, melodic territory.' },
+  { id: 4,  title: 'The B String',          level: 1, difficulty: 'easy',   status: 'locked',    sequence: ['B3'],                   desc: 'The 2nd string. Very common in lead melodies and solos.' },
+  { id: 5,  title: 'The High E String',     level: 1, difficulty: 'easy',   status: 'locked',    sequence: ['E4'],                   desc: 'The thinnest string. Sharp, bright, and easy to snap!' },
 
   // Level 2 — String Combinations
-  { id: 7,  title: 'Lower Duo',             level: 2, difficulty: 'easy',   status: 'locked',    sequence: ['E2', 'A2'],             desc: 'Switch between the two thickest strings.' },
-  { id: 8,  title: 'Upper Trio',            level: 2, difficulty: 'medium', status: 'locked',    sequence: ['G3', 'B3', 'E4'],       desc: 'A quick tour of the melody strings.' },
-  { id: 9,  title: 'The Bass Jump',         level: 2, difficulty: 'medium', status: 'locked',    sequence: ['E2', 'D3', 'E2'],       desc: 'A wider jump between non-adjacent strings.' },
-  { id: 10, title: 'Across the Fretboard',  level: 2, difficulty: 'hard',   status: 'locked',    sequence: ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'], desc: 'The ultimate open string coordination test.' },
+  { id: 6,  title: 'Middle Duo',            level: 2, difficulty: 'easy',   status: 'locked',    sequence: ['A2', 'D3'],             desc: 'Switch between the La and Re strings.' },
+  { id: 7,  title: 'Upper Trio',            level: 2, difficulty: 'medium', status: 'locked',    sequence: ['G3', 'B3', 'E4'],       desc: 'A quick tour of the melody strings.' },
+  { id: 8,  title: 'Across the Fretboard',  level: 2, difficulty: 'hard',   status: 'locked',    sequence: ['A2', 'D3', 'G3', 'B3', 'E4'], desc: 'The ultimate open string coordination test.' },
 
   // Level 3 — First Riffs
   { id: 11, title: 'Simple Rhythm',         level: 3, difficulty: 'medium', status: 'locked',    sequence: ['A2', 'A2', 'E2'],        desc: 'A basic 1-2 rhythm using open strings.' },
@@ -724,7 +722,7 @@ const Dashboard: React.FC = () => {
   const urlLessonId = pathParts[2] ? parseInt(pathParts[2]) : null;
 
   const [lessons, setLessons] = useState<Lesson[]>(() => {
-    const saved = localStorage.getItem('fretflow_lessons_v2');
+    const saved = localStorage.getItem('fretflow_lessons_v3');
     return saved ? JSON.parse(saved) : DEFAULT_LESSONS;
   });
   const [history, setHistory] = useState<HistoryItem[]>(() => {
@@ -802,7 +800,7 @@ const Dashboard: React.FC = () => {
 
   // --- Persistence ---
   useEffect(() => {
-    localStorage.setItem('fretflow_lessons_v2', JSON.stringify(lessons));
+    localStorage.setItem('fretflow_lessons_v3', JSON.stringify(lessons));
   }, [lessons]);
 
   useEffect(() => {
