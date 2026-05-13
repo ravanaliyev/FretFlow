@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manual Microphone Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #eee; }
+        h1 { color: #4af; }
+        .controls { margin: 20px 0; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; margin-right: 10px; }
+        #readings { background: #111; padding: 20px; border-radius: 5px; font-size: 18px; }
+        .reading { margin: 10px 0; }
+        .freq { color: #4f4; font-size: 32px; }
+        .note { color: #ff4; font-size: 48px; font-weight: bold; }
+        .volume { color: #888; }
+        .confidence { color: #888; }
+        #history { margin-top: 20px; max-height: 200px; overflow-y: auto; font-size: 14px; }
+        .history-item { padding: 5px; border-bottom: 1px solid #333; }
+    </style>
+</head>
+<body>
+    <h1>Manual Microphone Test</h1>
+
+    <div class="controls">
+        <button id="startBtn">Start Microphone</button>
+        <button id="stopBtn" disabled>Stop</button>
+        <button id="clearBtn">Clear History</button>
+    </div>
+
+    <div>
+        <label>Test Duration (seconds):</label>
+        <input type="number" id="duration" value="10" min="1" max="60">
+    </div>
+
+    <div id="readings">
+        <div class="reading">
+            <div class="freq" id="freqDisplay">-- Hz</div>
+            <div class="note" id="noteDisplay">--</div>
+            <div class="volume" id="volumeDisplay">Volume: --%</div>
+            <div class="confidence" id="confDisplay">Confidence: --</div>
+        </div>
+    </div>
+
+    <h3>Detection History</h3>
+    <div id="history"></div>
+
+    <script src="app.js"></script>
+    <script>
+        let audioContext = null;
+        let analyser = null;
+        let microphone = null;
+        let animationId = null;
+        let intervalId = null;
+        let readings = [];
+
+        function updateDisplay(freq, note, volume, confidence) {
+            document.getElementById('freqDisplay').textContent = freq > 0 ? freq.toFixed(2) + ' Hz' : '-- Hz';
+            document.getElementById('noteDisplay').textContent = note;
+            document.getElementById('volumeDisplay').textContent = 'Volume: ' + volume.toFixed(1) + '%';
+            document.getElementById('confDisplay').textContent = 'Confidence: ' + (confidence > 0 ? (confidence * 100).toFixed(0) + '%' : '--');
+        }
+
+        function addToHistory(freq, note, volume) {
+            const time = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.className = 'history-item';
+            div.textContent = `[${time}] ${freq.toFixed(2)} Hz → ${note} (vol: ${volume.toFixed(1)}%)`;
+            document.getElementById('history').prepend(div);
+            readings.push({ time, freq, note, volume });
+        }
+
+        async function startListening() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                microphone = audioContext.createMediaStreamSource(stream);
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = getOptimalBufferSize();
+                microphone.connect(analyser);
+
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+
+                const dataArray = new Float32Array(analyser.frequencyBinCount);
+                const duration = parseInt(document.getElementById('duration').value) * 1000;
+                const endTime = Date.now() + duration;
+
+                intervalId = setInterval(() => {
+                    if (Date.now() > endTime) {
+                        stopListening();
+                        return;
+                    }
+
+                    analyser.getFloatTimeDomainData(dataArray);
+
+                    // Calculate volume
+                    let sum = 0;
+                    for (let i = 0; i < dataArray.length; i++) {
+                        sum += dataArray[i] * dataArray[i];
+                    }
+                    const rms = Math.sqrt(sum / dataArray.length);
+                    const volume = rms * 100;
+
+                    if (volume > 1) {
+                        const freq = yinDetector(dataArray, audioContext.sampleRate);
+                        const note = freq > 0 ? frequencyToNote(freq) : '--';
+                        const confidence = freq > 0 ? 1 - (yinBuffer ? yinBuffer[Math.round(44100/freq)] || 0 : 0) : 0;
+
+                        updateDisplay(freq, note, volume, confidence);
+                        addToHistory(freq, note, volume);
+                    } else {
+                        updateDisplay(0, '--', volume, 0);
+                    }
+                }, 100);
+
+            } catch (error) {
+                alert('Microphone error: ' + error.message);
+            }
+        }
+
+        function stopListening() {
+            if (intervalId) clearInterval(intervalId);
+            if (animationId) cancelAnimationFrame(animationId);
+
+            if (microphone) microphone.disconnect();
+            if (audioContext) audioContext.close();
+
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+
+            updateDisplay(0, '--', 0, 0);
+        }
+
+        function clearHistory() {
+            document.getElementById('history').innerHTML = '';
+            readings = [];
+        }
+
+        document.getElementById('startBtn').addEventListener('click', startListening);
+        document.getElementById('stopBtn').addEventListener('click', stopListening);
+        document.getElementById('clearBtn').addEventListener('click', clearHistory);
+    </script>
+</body>
+</html>

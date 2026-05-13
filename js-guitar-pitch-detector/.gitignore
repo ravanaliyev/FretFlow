@@ -1,0 +1,21 @@
+# IDE and Editor Settings (Specific to your machine, should not be uploaded)
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Operating System Trash Files
+.DS_Store
+Thumbs.db
+
+# Future sensitive data placeholders (API keys, passwords, personal notes)
+.env
+.env.local
+config.json
+secret.js
+secrets/
+*.log
+personal_notes.txt

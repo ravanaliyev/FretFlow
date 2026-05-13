@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Guitar Lesson App</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: sans-serif; padding: 20px; background: #1a1a1a; color: #eee; max-width: 800px; margin: 0 auto; }
+        h1 { color: #4af; }
+        h2 { color: #888; font-size: 16px; margin-top: 30px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #333; color: #eee; border: none; border-radius: 5px; }
+        button:hover { background: #444; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        button.primary { background: #4af; color: #000; }
+        button.primary:hover { background: #5bf; }
+        button.recording { background: #f44; }
+        select { padding: 10px; font-size: 16px; background: #333; color: #eee; border: none; border-radius: 5px; min-width: 200px; }
+
+        .section { background: #222; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+
+        .display { font-family: monospace; font-size: 24px; }
+        .freq { color: #888; font-size: 18px; }
+        .note-name { color: #4f4; font-size: 64px; font-weight: bold; margin: 10px 0; }
+        .note-full { color: #f84; font-size: 20px; margin-top: 5px; }
+        .volume { color: #666; font-size: 14px; margin-top: 15px; }
+
+        .level-bar-container { margin-top: 10px; width: 100%; height: 20px; background: #333; border-radius: 3px; overflow: hidden; }
+        .level-bar { height: 100%; background: linear-gradient(to right, #4f4, #ff4); width: 0%; transition: width 0.1s; }
+        .level-threshold { position: absolute; margin-left: 3%; width: 2px; height: 20px; background: #f44; }
+        .level-labels { display: flex; justify-content: space-between; font-size: 11px; color: #666; margin-top: 2px; }
+
+        .controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 20px 0; }
+        .controls label { margin-right: 10px; }
+
+        .song-info { background: #333; padding: 15px; border-radius: 8px; margin-top: 15px; }
+        .song-info h3 { margin: 0 0 10px 0; color: #4af; }
+        .song-meta { font-size: 14px; color: #888; }
+        .song-notes { margin-top: 10px; font-size: 13px; color: #666; }
+
+        .score-display { display: none; background: #333; padding: 20px; border-radius: 10px; margin-top: 20px; }
+        .score-display.show { display: block; }
+        .score-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .score-grade { font-size: 48px; font-weight: bold; color: #4f4; }
+        .score-overall { font-size: 24px; }
+        .score-breakdown { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 15px; }
+        .score-item { background: #222; padding: 15px; border-radius: 8px; text-align: center; }
+        .score-item-value { font-size: 28px; font-weight: bold; color: #4af; }
+        .score-item-label { font-size: 12px; color: #888; margin-top: 5px; }
+        .score-feedback { margin-top: 20px; padding: 15px; background: #222; border-radius: 8px; color: #4f4; }
+        .score-stats { margin-top: 15px; font-size: 14px; color: #888; }
+
+        .note-result { display: flex; gap: 10px; margin: 5px 0; padding: 8px; background: #222; border-radius: 5px; align-items: center; }
+        .note-result.hit { border-left: 3px solid #4f4; }
+        .note-result.missed { border-left: 3px solid #f44; }
+        .note-result.perfect { border-left: 3px solid #5f5; }
+        .note-result-status { font-size: 12px; padding: 2px 8px; border-radius: 3px; }
+        .note-result-status.perfect { background: #4f4; color: #000; }
+        .note-result-status.hit { background: #4af; color: #000; }
+        .note-result-status.missed { background: #f44; color: #fff; }
+
+        .recording-indicator { display: none; color: #f44; font-weight: bold; animation: blink 1s infinite; }
+        .recording-indicator.show { display: inline; }
+        @keyframes blink { 50% { opacity: 0.5; } }
+
+        .time-display { font-size: 14px; color: #888; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Guitar Lesson App</h1>
+
+    <div class="section">
+        <h2>Select a Song</h2>
+        <div class="controls">
+            <select id="songSelect">
+                <option value="">-- Select a song --</option>
+            </select>
+            <button id="loadBtn" class="primary">Load Song</button>
+        </div>
+
+        <div class="song-info" id="songInfo" style="display: none;">
+            <h3 id="songTitle">Song Title</h3>
+            <div class="song-meta">
+                Tempo: <span id="songTempo">120</span> BPM |
+                Difficulty: <span id="songDifficulty">beginner</span> |
+                Notes: <span id="songNoteCount">0</span>
+            </div>
+            <div class="song-notes" id="songNotesDisplay"></div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Listen & Play</h2>
+        <button id="startBtn" class="primary">Start Listening</button>
+        <span class="recording-indicator" id="recordingIndicator">● RECORDING</span>
+
+        <div class="display" style="margin-top: 20px;">
+            <div class="freq" id="frekansKutusu">Frequency: 0 Hz</div>
+            <div class="note-name" id="notaKutusu">--</div>
+            <div class="note-full" id="notaFullKutusu">Full note: --</div>
+            <div class="volume" id="volumeKutusu">Volume: --</div>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <div style="font-size: 14px; color: #888; margin-bottom: 5px;">Sound Level</div>
+            <div style="position: relative; display: inline-block; width: 100%;">
+                <div class="level-bar-container">
+                    <div class="level-bar" id="levelBar"></div>
+                </div>
+            </div>
+            <div class="level-labels">
+                <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
+            </div>
+        </div>
+
+        <div class="time-display" id="timeDisplay">Duration: 0.0s</div>
+    </div>
+
+    <div class="section">
+        <h2>Recording Controls</h2>
+        <div class="controls">
+            <button id="recordBtn" disabled>Start Recording</button>
+            <button id="stopRecordBtn" disabled>Stop Recording</button>
+            <button id="analyzeBtn" disabled>Analyze Performance</button>
+        </div>
+    </div>
+
+    <div class="score-display" id="scoreDisplay">
+        <div class="score-header">
+            <div>
+                <div class="score-overall">Score: <span id="scoreOverall">0</span>/100</div>
+                <div class="song-meta" id="scoreSongTitle"></div>
+            </div>
+            <div class="score-grade" id="scoreGrade">--</div>
+        </div>
+        <div class="score-breakdown">
+            <div class="score-item">
+                <div class="score-item-value" id="scorePitch">0</div>
+                <div class="score-item-label">Pitch Accuracy</div>
+            </div>
+            <div class="score-item">
+                <div class="score-item-value" id="scoreTiming">0</div>
+                <div class="score-item-label">Timing</div>
+            </div>
+            <div class="score-item">
+                <div class="score-item-value" id="scoreCompleteness">0</div>
+                <div class="score-item-label">Completeness</div>
+            </div>
+        </div>
+        <div class="score-feedback" id="scoreFeedback"></div>
+        <div class="score-stats" id="scoreStats"></div>
+        <h3 style="margin-top: 20px; color: #888;">Note-by-Note Results</h3>
+        <div id="noteResults"></div>
+    </div>
+
+    <script src="app.js"></script>
+    <script src="song-analysis.js"></script>
+    <script>
+        console.log('Main script starting...');
+        // Songs data (inline for now)
+        let songsData = [];
+        let currentSong = null;
+        let lastNoteBuffer = null;
+
+        // Load songs from JSON file
+        async function loadSongs() {
+            try {
+                const response = await fetch('songs/beginner-lessons.json');
+                if (!response.ok) throw new Error('Failed to fetch songs');
+                const data = await response.json();
+                songsData = data.songs || [];
+                console.log('Loaded songs:', songsData);
+                populateSongList();
+            } catch (e) {
+                console.error('Failed to load songs:', e);
+                // Fallback: use hardcoded songs if JSON fails
+                songsData = [
+                    { id: 'twinkle-twinkle', title: 'Twinkle Twinkle Little Star', tempo: 90, difficulty: 'beginner', notes: [
+                        { time: 0.0, note: 'C', duration: 0.5 }, { time: 0.5, note: 'C', duration: 0.5 },
+                        { time: 1.0, note: 'G', duration: 0.5 }, { time: 1.5, note: 'G', duration: 0.5 },
+                        { time: 2.0, note: 'A', duration: 0.5 }, { time: 2.5, note: 'A', duration: 0.5 },
+                        { time: 3.0, note: 'G', duration: 1.0 }, { time: 4.0, note: 'F', duration: 0.5 },
+                        { time: 4.5, note: 'F', duration: 0.5 }, { time: 5.0, note: 'E', duration: 0.5 },
+                        { time: 5.5, note: 'E', duration: 0.5 }, { time: 6.0, note: 'D', duration: 0.5 },
+                        { time: 6.5, note: 'D', duration: 0.5 }, { time: 7.0, note: 'C', duration: 1.0 }
+                    ]},
+                    { id: 'happy-birthday', title: 'Happy Birthday', tempo: 120, difficulty: 'beginner', notes: [
+                        { time: 0.0, note: 'C', duration: 0.5 }, { time: 0.5, note: 'C', duration: 0.5 },
+                        { time: 1.0, note: 'D', duration: 1.0 }, { time: 2.0, note: 'C', duration: 1.0 },
+                        { time: 3.0, note: 'F', duration: 1.0 }, { time: 4.0, note: 'E', duration: 2.0 }
+                    ]},
+                    { id: 'mary-lamb', title: 'Mary Had a Little Lamb', tempo: 100, difficulty: 'beginner', notes: [
+                        { time: 0.0, note: 'E', duration: 0.5 }, { time: 0.5, note: 'D', duration: 0.5 },
+                        { time: 1.0, note: 'C', duration: 0.5 }, { time: 1.5, note: 'D', duration: 0.5 },
+                        { time: 2.0, note: 'E', duration: 0.5 }, { time: 2.5, note: 'E', duration: 0.5 },
+                        { time: 3.0, note: 'E', duration: 1.0 }, { time: 4.0, note: 'D', duration: 0.5 },
+                        { time: 4.5, note: 'D', duration: 0.5 }, { time: 5.0, note: 'D', duration: 1.0 }
+                    ]}
+                ];
+                populateSongList();
+            }
+        }
+        loadSongs();
+
+        function populateSongList() {
+            const select = document.getElementById('songSelect');
+            songsData.forEach(song => {
+                let opt = document.createElement('option');
+                opt.value = song.id;
+                opt.textContent = `${song.title} (${song.tempo} BPM)`;
+                select.appendChild(opt);
+            });
+        }
+
+        document.getElementById('loadBtn').addEventListener('click', () => {
+            console.log('Load button clicked');
+            console.log('songSelect value:', document.getElementById('songSelect').value);
+            let songId = document.getElementById('songSelect').value;
+            if (!songId) { console.log('No song selected'); return; }
+
+            currentSong = songsData.find(s => s.id === songId);
+            if (!currentSong) { console.log('Song not found'); return; }
+
+            console.log('Loaded song:', currentSong);
+
+            document.getElementById('songInfo').style.display = 'block';
+            document.getElementById('songTitle').textContent = currentSong.title;
+            document.getElementById('songTempo').textContent = currentSong.tempo;
+            document.getElementById('songDifficulty').textContent = currentSong.difficulty;
+            document.getElementById('songNoteCount').textContent = currentSong.notes.length;
+
+            // Display first few notes
+            let notesDisplay = currentSong.notes.slice(0, 8).map(n => n.note).join(' → ');
+            if (currentSong.notes.length > 8) notesDisplay += ' → ...';
+            document.getElementById('songNotesDisplay').textContent = notesDisplay;
+
+            document.getElementById('recordBtn').disabled = false;
+        });
+
+        let timeUpdateInterval = null;
+
+        async function startListening() {
+            try {
+                await processor.start();
+                document.getElementById('startBtn').textContent = 'Stop Listening';
+                document.getElementById('startBtn').classList.remove('primary');
+                document.getElementById('recordBtn').disabled = currentSong ? false : true;
+            } catch (e) {
+                console.error('Start failed:', e);
+            }
+        }
+
+        function stopListening() {
+            processor.stop();
+            document.getElementById('startBtn').textContent = 'Start Listening';
+            document.getElementById('startBtn').classList.add('primary');
+            if (timeUpdateInterval) clearInterval(timeUpdateInterval);
+            document.getElementById('timeDisplay').textContent = 'Duration: 0.0s';
+        }
+
+        document.getElementById('startBtn').addEventListener('click', () => {
+            if (processor.isRunning) {
+                stopListening();
+            } else {
+                startListening();
+            }
+        });
+
+        document.getElementById('recordBtn').addEventListener('click', () => {
+            if (!processor.isRunning) {
+                alert('Please start listening first!');
+                return;
+            }
+            processor.startRecording();
+            document.getElementById('recordBtn').textContent = 'Recording...';
+            document.getElementById('recordBtn').classList.add('recording');
+            document.getElementById('recordingIndicator').classList.add('show');
+            document.getElementById('stopRecordBtn').disabled = false;
+            document.getElementById('analyzeBtn').disabled = true;
+
+            // Update time display
+            timeUpdateInterval = setInterval(() => {
+                let duration = processor.getRecordingDuration();
+                document.getElementById('timeDisplay').textContent = `Duration: ${duration.toFixed(1)}s`;
+            }, 100);
+        });
+
+        document.getElementById('stopRecordBtn').addEventListener('click', () => {
+            lastNoteBuffer = processor.stopRecording();
+            document.getElementById('recordBtn').textContent = 'Start Recording';
+            document.getElementById('recordBtn').classList.remove('recording');
+            document.getElementById('recordingIndicator').classList.remove('show');
+            document.getElementById('stopRecordBtn').disabled = true;
+            document.getElementById('analyzeBtn').disabled = !lastNoteBuffer;
+
+            if (timeUpdateInterval) clearInterval(timeUpdateInterval);
+            let duration = processor.getRecordingDuration();
+            document.getElementById('timeDisplay').textContent = `Duration: ${duration.toFixed(1)}s`;
+        });
+
+        document.getElementById('analyzeBtn').addEventListener('click', () => {
+            if (!lastNoteBuffer || !currentSong) {
+                alert('No recording or song selected!');
+                return;
+            }
+
+            try {
+                console.log('Analyzing...', { lastNoteBuffer, currentSong });
+                console.log('NoteBuffer class:', NoteBuffer);
+                console.log('SongAnalyzer class:', SongAnalyzer);
+                console.log('createSong function:', createSong);
+
+                if (!lastNoteBuffer) throw new Error('lastNoteBuffer is null');
+                if (!currentSong) throw new Error('currentSong is null');
+
+                let song = createSong(currentSong);
+                console.log('Created song:', song);
+
+                if (!song.notes) throw new Error('song.notes is undefined');
+
+                let analyzer = new SongAnalyzer(song);
+                console.log('Created analyzer:', analyzer);
+
+                let report = analyzer.analyze(lastNoteBuffer);
+                console.log('Report:', report);
+
+                displayScore(report);
+            } catch (e) {
+                console.error('Analysis error:', e);
+                alert('Error analyzing: ' + e.message);
+            }
+        });
+
+        function displayScore(report) {
+            console.log('Display score called with:', report);
+            if (!report) {
+                alert('No report generated');
+                return;
+            }
+
+            document.getElementById('scoreDisplay').classList.add('show');
+            document.getElementById('scoreSongTitle').textContent = currentSong ? currentSong.title : 'Unknown';
+            document.getElementById('scoreOverall').textContent = report.overallScore || 0;
+            document.getElementById('scoreGrade').textContent = report.grade || '--';
+            document.getElementById('scorePitch').textContent = report.pitchAccuracy || 0;
+            document.getElementById('scoreTiming').textContent = report.timingAccuracy || 0;
+            document.getElementById('scoreCompleteness').textContent = report.completeness || 0;
+            document.getElementById('scoreFeedback').textContent = report.feedback || 'No feedback';
+
+            let gradeColor = (report.overallScore || 0) >= 80 ? '#4f4' : (report.overallScore || 0) >= 60 ? '#ff4' : '#f44';
+            document.getElementById('scoreGrade').style.color = gradeColor;
+
+            let stats = report.stats || {};
+            document.getElementById('scoreStats').innerHTML = `
+                Notes hit: ${stats.notesHit || 0}/${stats.totalExpectedNotes || 0} |
+                Perfect: ${stats.notesPerfect || 0} |
+                Missed: ${stats.notesMissed || 0}<br>
+                Avg pitch: ${(stats.averageCentsOff || 0).toFixed(1)} cents off |
+                Avg timing: ${(stats.averageTimingMsOff || 0).toFixed(1)} ms off
+            `;
+
+            // Display note-by-note results
+            let perNote = report.perNote || [];
+            let resultsHtml = perNote.length === 0
+                ? '<div style="color: #888;">No note results available</div>'
+                : perNote.map(n => {
+                    let statusClass = n.status === 'missed' ? 'missed' : n.status === 'perfect' ? 'perfect' : 'hit';
+                    return `
+                        <div class="note-result ${statusClass}">
+                            <span class="note-result-status ${n.status}">${(n.status || 'unknown').toUpperCase()}</span>
+                            <span style="flex: 1;">${n.refNote ? n.refNote.note : '?'}</span>
+                            ${n.centsOff !== null ? `<span style="font-size: 12px; color: #888;">${n.centsOff}¢ ${n.timingDeviationMs}ms</span>` : ''}
+                        </div>
+                    `;
+                }).join('');
+            document.getElementById('noteResults').innerHTML = resultsHtml;
+        }
+
+        // Processor callback
+        processor.onNoteDetected = (frequency, note, volume) => {
+            document.getElementById('frekansKutusu').textContent = frequency > 0
+                ? `Frequency: ${frequency.toFixed(2)} Hz`
+                : 'Frequency: -- Hz';
+
+            if (frequency > 0) {
+                let noteName = frequencyToNoteName(frequency);
+                document.getElementById('notaKutusu').textContent = noteName;
+                document.getElementById('notaFullKutusu').textContent = `Full note: ${note}`;
+                document.getElementById('volumeKutusu').textContent = `Volume: ${volume.toFixed(1)}%`;
+            } else {
+                document.getElementById('notaKutusu').textContent = '--';
+                document.getElementById('notaFullKutusu').textContent = 'Full note: --';
+                document.getElementById('volumeKutusu').textContent = 'Volume: --';
+            }
+
+            let levelBar = document.getElementById('levelBar');
+            levelBar.style.width = Math.min(100, volume * 2) + '%';
+            levelBar.style.background = volume > 50 ? '#f84' : volume > 25 ? '#ff4' : '#4f4';
+        };
+        console.log('Main script finished, processor:', typeof processor);
+    </script>
+</body>
+</html>
