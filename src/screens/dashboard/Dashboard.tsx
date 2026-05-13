@@ -371,7 +371,7 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-dark-900 text-white font-sans overflow-x-hidden">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-dark-900/80 backdrop-blur-xl border-b border-white/5">
+      <header className={`sticky top-0 z-40 bg-dark-900/80 backdrop-blur-xl border-b border-white/5 ${view === 'practice' ? 'hidden' : ''}`}>
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-12">
             <h1 className="text-2xl font-black tracking-tighter bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">FRETFLOW</h1>
@@ -404,7 +404,7 @@ const Dashboard: React.FC = () => {
         </div>
       </header>
 
-      <div className="container mx-auto flex flex-col lg:flex-row gap-8 py-12 px-6">
+      <div className={`container mx-auto flex flex-col lg:flex-row gap-8 py-12 px-6 ${view === 'practice' ? 'hidden' : ''}`}>
         {/* Main Content */}
         <main className="flex-1 min-w-0">
           <div className="mb-8 md:mb-12">
@@ -479,11 +479,11 @@ const Dashboard: React.FC = () => {
       <AnimatePresence>
         {view === 'practice' && (
           <motion.div
-            initial={{ opacity: 0, scale: 1.1 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.1 }}
-            transition={{ duration: 0.4 }}
-            className="fixed inset-0 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-[100] bg-dark-950"
           >
             <PracticeView />
           </motion.div>
