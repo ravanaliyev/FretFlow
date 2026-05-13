@@ -69,9 +69,18 @@ const QUOTES = [
 ];
 
 const BADGES = [
-  { id: 'starter', name: 'Rock Starter', icon: '🎸', desc: 'Complete your 1st lesson', color: 'from-blue-500 to-cyan-500' },
-  { id: 'warrior', name: '7-Day Warrior', icon: '🔥', desc: 'Reach a 7-day streak', color: 'from-orange-500 to-red-500' },
-  { id: 'master', name: 'String Master', icon: '✨', desc: 'Complete Level 1', color: 'from-primary-500 to-primary-700' }
+  // Lesson milestones
+  { id: 'first_note',   name: 'First Note',      icon: '🎵', desc: 'Complete your very first lesson',     color: 'from-blue-400 to-blue-600',     category: 'Lessons' },
+  { id: 'five_done',    name: 'High Five',        icon: '✋', desc: 'Complete 5 lessons',                  color: 'from-violet-400 to-violet-600',  category: 'Lessons' },
+  { id: 'all_done',     name: 'Graduate',         icon: '🎓', desc: 'Complete all lessons',                color: 'from-amber-400 to-amber-600',    category: 'Lessons' },
+  // Streak milestones
+  { id: 'streak_3',     name: '3-Day Flame',      icon: '🔥', desc: 'Reach a 3-day streak',               color: 'from-orange-400 to-red-500',     category: 'Streak'  },
+  { id: 'streak_7',     name: '7-Day Warrior',    icon: '⚡', desc: 'Reach a 7-day streak',               color: 'from-yellow-400 to-orange-500',  category: 'Streak'  },
+  { id: 'streak_30',    name: 'Unstoppable',      icon: '💎', desc: 'Reach a 30-day streak',              color: 'from-cyan-400 to-blue-600',      category: 'Streak'  },
+  // Level mastery
+  { id: 'lvl1_master',  name: 'String Master',    icon: '🎸', desc: 'Complete all Level 1 lessons',        color: 'from-primary-400 to-primary-600', category: 'Mastery' },
+  { id: 'lvl2_master',  name: 'Fret Explorer',    icon: '🗺️', desc: 'Complete all Level 2 lessons',        color: 'from-emerald-400 to-teal-600',   category: 'Mastery' },
+  { id: 'lvl3_master',  name: 'Riff Legend',      icon: '🌟', desc: 'Complete all Level 3 lessons',        color: 'from-pink-400 to-rose-600',      category: 'Mastery' },
 ];
 
 // --- Sub-Components ---
@@ -173,38 +182,180 @@ const AnalyticsChart: React.FC<{ stats: Record<string, number> }> = ({ stats }) 
 };
 
 const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number }> = ({ lessons, streak }) => {
+  const [showAll, setShowAll] = React.useState(false);
   const completedCount = lessons.filter(l => l.status === 'completed').length;
-  const isUnlocked = (id: string) => {
-    if (id === 'starter') return completedCount >= 1;
-    if (id === 'warrior') return streak >= 7;
-    if (id === 'master') return lessons.filter(l => l.level === 1 && l.status === 'completed').length === lessons.filter(l => l.level === 1).length;
-    return false;
+  const lvl1Done = lessons.filter(l => l.level === 1 && l.status === 'completed').length;
+  const lvl1Total = lessons.filter(l => l.level === 1).length;
+  const lvl2Done = lessons.filter(l => l.level === 2 && l.status === 'completed').length;
+  const lvl2Total = lessons.filter(l => l.level === 2).length;
+  const lvl3Done = lessons.filter(l => l.level === 3 && l.status === 'completed').length;
+  const lvl3Total = lessons.filter(l => l.level === 3).length;
+
+  const isUnlocked = (id: string): boolean => {
+    switch(id) {
+      case 'first_note':  return completedCount >= 1;
+      case 'five_done':   return completedCount >= 5;
+      case 'all_done':    return completedCount >= lessons.length;
+      case 'streak_3':    return streak >= 3;
+      case 'streak_7':    return streak >= 7;
+      case 'streak_30':   return streak >= 30;
+      case 'lvl1_master': return lvl1Done === lvl1Total && lvl1Total > 0;
+      case 'lvl2_master': return lvl2Done === lvl2Total && lvl2Total > 0;
+      case 'lvl3_master': return lvl3Done === lvl3Total && lvl3Total > 0;
+      default: return false;
+    }
   };
 
+  const getProgress = (id: string): { current: number; max: number } | null => {
+    switch(id) {
+      case 'five_done':   return { current: Math.min(completedCount, 5), max: 5 };
+      case 'all_done':    return { current: completedCount, max: lessons.length };
+      case 'streak_3':    return { current: Math.min(streak, 3), max: 3 };
+      case 'streak_7':    return { current: Math.min(streak, 7), max: 7 };
+      case 'streak_30':   return { current: Math.min(streak, 30), max: 30 };
+      case 'lvl1_master': return { current: lvl1Done, max: lvl1Total };
+      case 'lvl2_master': return { current: lvl2Done, max: lvl2Total };
+      case 'lvl3_master': return { current: lvl3Done, max: lvl3Total };
+      default: return null;
+    }
+  };
+
+  const unlockedBadges = BADGES.filter(b => isUnlocked(b.id));
+  const unlockedCount = unlockedBadges.length;
+  const categories = ['Lessons', 'Streak', 'Mastery'];
+
   return (
-    <div className="mt-16">
-      <h3 className="text-sm font-black uppercase tracking-[0.3em] text-gray-500 mb-8">Mastery Badges</h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {BADGES.map(badge => {
-          const unlocked = isUnlocked(badge.id);
-          return (
-            <motion.div 
-              key={badge.id}
-              whileHover={unlocked ? { y: -5 } : {}}
-              className={`glass-panel p-6 rounded-3xl flex items-center gap-4 border-white/5 transition-all ${unlocked ? 'bg-gradient-to-br from-white/5 to-transparent' : 'opacity-40 grayscale'}`}
-            >
-              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${unlocked ? badge.color : 'from-gray-700 to-gray-800'} flex items-center justify-center text-2xl shadow-lg`}>
-                {badge.icon}
-              </div>
-              <div>
-                <h4 className="font-bold text-white">{badge.name}</h4>
-                <p className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">{unlocked ? 'Unlocked' : badge.desc}</p>
-              </div>
-            </motion.div>
-          );
-        })}
+    <>
+      {/* Compact unlocked-only view */}
+      <div>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <h3 className="text-sm font-black uppercase tracking-[0.3em] text-gray-500">Achievements</h3>
+            <span className="text-[10px] font-bold bg-primary-500/10 text-primary-500 px-2 py-0.5 rounded-full">
+              {unlockedCount}/{BADGES.length}
+            </span>
+          </div>
+          <button
+            onClick={() => setShowAll(true)}
+            className="text-[11px] font-bold text-gray-500 hover:text-primary-400 transition-colors uppercase tracking-wider"
+          >
+            View All →
+          </button>
+        </div>
+
+        {unlockedCount === 0 ? (
+          <div className="text-center py-10 bg-white/[0.02] rounded-2xl border border-dashed border-white/5">
+            <p className="text-gray-600 text-sm font-bold">No achievements yet.</p>
+            <p className="text-[11px] text-gray-700 mt-1">Complete your first lesson to earn one!</p>
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-3">
+            {unlockedBadges.map(badge => (
+              <motion.div
+                key={badge.id}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                whileHover={{ y: -3 }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-2xl bg-gradient-to-r ${badge.color} bg-opacity-10 border border-white/10 group cursor-default`}
+                title={badge.name}
+              >
+                <span className="text-xl">{badge.icon}</span>
+                <span className="text-xs font-bold text-white">{badge.name}</span>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
-    </div>
+
+      {/* All Achievements Modal */}
+      <AnimatePresence>
+        {showAll && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-dark-950/80 backdrop-blur-sm"
+              onClick={() => setShowAll(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="glass-panel w-full max-w-2xl max-h-[80vh] overflow-y-auto rounded-3xl p-8 relative z-10 no-scrollbar"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h2 className="text-2xl font-black text-white">All Achievements</h2>
+                  <p className="text-xs text-gray-500 mt-1">{unlockedCount} of {BADGES.length} unlocked</p>
+                </div>
+                <button
+                  onClick={() => setShowAll(false)}
+                  className="w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-xl transition-all text-gray-400 hover:text-white"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Progress bar */}
+              <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden mb-10">
+                <motion.div
+                  className="h-full bg-gradient-to-r from-primary-500 to-primary-400"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(unlockedCount / BADGES.length) * 100}%` }}
+                />
+              </div>
+
+              {categories.map(cat => (
+                <div key={cat} className="mb-8">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-600 mb-4">{cat}</p>
+                  <div className="grid grid-cols-1 gap-3">
+                    {BADGES.filter(b => b.category === cat).map(badge => {
+                      const unlocked = isUnlocked(badge.id);
+                      const progress = getProgress(badge.id);
+                      return (
+                        <motion.div
+                          key={badge.id}
+                          className={`flex items-center gap-4 p-4 rounded-2xl border border-white/5 transition-all relative overflow-hidden ${
+                            unlocked ? 'bg-white/[0.04]' : 'opacity-50'
+                          }`}
+                        >
+                          {unlocked && <div className={`absolute inset-0 bg-gradient-to-r ${badge.color} opacity-5`} />}
+                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0 ${
+                            unlocked ? `bg-gradient-to-br ${badge.color}` : 'bg-white/5 grayscale'
+                          }`}>
+                            {badge.icon}
+                          </div>
+                          <div className="flex-1 min-w-0 relative z-10">
+                            <div className="flex items-center gap-2">
+                              <h4 className={`font-bold text-sm ${unlocked ? 'text-white' : 'text-gray-500'}`}>{badge.name}</h4>
+                              {unlocked && <span className="text-[9px] font-black text-primary-500 uppercase bg-primary-500/10 px-2 py-0.5 rounded-full">✓ Unlocked</span>}
+                            </div>
+                            <p className="text-[11px] text-gray-600 mt-0.5">{badge.desc}</p>
+                            {!unlocked && progress && (
+                              <div className="mt-2 flex items-center gap-2">
+                                <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
+                                  <motion.div
+                                    className="h-full bg-primary-500/40"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${(progress.current / progress.max) * 100}%` }}
+                                  />
+                                </div>
+                                <span className="text-[9px] text-gray-700 font-bold shrink-0">{progress.current}/{progress.max}</span>
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 
@@ -726,11 +877,13 @@ const Dashboard: React.FC = () => {
       <div className={`container mx-auto py-12 px-6 max-w-5xl ${currentView === 'practice' ? 'hidden' : ''}`}>
         {/* Main Content - Full Width */}
         <main className="w-full">
-          <div className="mb-8 md:mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-2 text-center md:text-left">Welcome back, Rock Star! 🎸</h2>
-            <p className="text-gray-400 text-center md:text-left mb-6">Pick up where you left off and master those strings.</p>
-            <MotivationQuote />
-          </div>
+          {(currentView === 'levels' || currentView === 'lessons') && (
+            <div className="mb-8 md:mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold mb-2 text-center md:text-left">Welcome back, Rock Star! 🎸</h2>
+              <p className="text-gray-400 text-center md:text-left mb-6">Pick up where you left off and master those strings.</p>
+              <MotivationQuote />
+            </div>
+          )}
 
           <AnimatePresence mode="wait">
             {currentView === 'levels' && (
