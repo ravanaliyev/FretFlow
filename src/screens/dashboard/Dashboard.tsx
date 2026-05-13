@@ -39,21 +39,21 @@ interface HistoryItem {
 
 const DEFAULT_LESSONS: Lesson[] = [
   // Level 1 — Open String Mastery
-  { id: 1,  title: 'The A String',          level: 1, difficulty: 'easy',   status: 'available', sequence: ['A2'],                   desc: 'The 5th string. A fundamental note for many power chords and your first lesson!' },
-  { id: 2,  title: 'The D String',          level: 1, difficulty: 'easy',   status: 'locked',    sequence: ['D3'],                   desc: 'The 4th string. Move your pick down to the next string.' },
-  { id: 3,  title: 'The G String',          level: 1, difficulty: 'easy',   status: 'locked',    sequence: ['G3'],                   desc: 'The 3rd string. Getting into the higher, melodic territory.' },
-  { id: 4,  title: 'The B String',          level: 1, difficulty: 'easy',   status: 'locked',    sequence: ['B3'],                   desc: 'The 2nd string. Very common in lead melodies and solos.' },
-  { id: 5,  title: 'The High E String',     level: 1, difficulty: 'easy',   status: 'locked',    sequence: ['E4'],                   desc: 'The thinnest string. Sharp, bright, and easy to snap!' },
+  { id: 1, title: 'The A String', level: 1, difficulty: 'easy', status: 'available', sequence: ['A2'], desc: 'The 5th string. A fundamental note for many power chords and your first lesson!' },
+  { id: 2, title: 'The D String', level: 1, difficulty: 'easy', status: 'locked', sequence: ['D3'], desc: 'The 4th string. Move your pick down to the next string.' },
+  { id: 3, title: 'The G String', level: 1, difficulty: 'easy', status: 'locked', sequence: ['G3'], desc: 'The 3rd string. Getting into the higher, melodic territory.' },
+  { id: 4, title: 'The B String', level: 1, difficulty: 'easy', status: 'locked', sequence: ['B3'], desc: 'The 2nd string. Very common in lead melodies and solos.' },
+  { id: 5, title: 'The High E String', level: 1, difficulty: 'easy', status: 'locked', sequence: ['E4'], desc: 'The thinnest string. Sharp, bright, and easy to snap!' },
 
   // Level 2 — String Combinations
-  { id: 6,  title: 'Middle Duo',            level: 2, difficulty: 'easy',   status: 'locked',    sequence: ['A2', 'D3'],             desc: 'Switch between the La and Re strings.' },
-  { id: 7,  title: 'Upper Trio',            level: 2, difficulty: 'medium', status: 'locked',    sequence: ['G3', 'B3', 'E4'],       desc: 'A quick tour of the melody strings.' },
-  { id: 8,  title: 'Across the Fretboard',  level: 2, difficulty: 'hard',   status: 'locked',    sequence: ['A2', 'D3', 'G3', 'B3', 'E4'], desc: 'The ultimate open string coordination test.' },
+  { id: 6, title: 'Middle Duo', level: 2, difficulty: 'easy', status: 'locked', sequence: ['A2', 'D3'], desc: 'Switch between the La and Re strings.' },
+  { id: 7, title: 'Upper Trio', level: 2, difficulty: 'medium', status: 'locked', sequence: ['G3', 'B3', 'E4'], desc: 'A quick tour of the melody strings.' },
+  { id: 8, title: 'Across the Fretboard', level: 2, difficulty: 'hard', status: 'locked', sequence: ['A2', 'D3', 'G3', 'B3', 'E4'], desc: 'The ultimate open string coordination test.' },
 
   // Level 3 — First Riffs
-  { id: 9,  title: 'Simple Rhythm',         level: 3, difficulty: 'medium', status: 'locked',    sequence: ['A2', 'A2', 'A2'],        desc: 'A basic rhythm using the La string.' },
-  { id: 10, title: 'Rock Foundation',       level: 3, difficulty: 'medium', status: 'locked',    sequence: ['A2', 'G3', 'A2'],        desc: 'Standard rock progression using open strings.' },
-  { id: 11, title: 'The Blues Walk',        level: 3, difficulty: 'hard',   status: 'locked',    sequence: ['A2', 'C3', 'D3', 'E3'],  desc: 'A simple blues walking line starting from A.' },
+  { id: 9, title: 'Simple Rhythm', level: 3, difficulty: 'medium', status: 'locked', sequence: ['A2', 'A2', 'A2'], desc: 'A basic rhythm using the La string.' },
+  { id: 10, title: 'Rock Foundation', level: 3, difficulty: 'medium', status: 'locked', sequence: ['A2', 'G3', 'A2'], desc: 'Standard rock progression using open strings.' },
+  { id: 11, title: 'The Blues Walk', level: 3, difficulty: 'hard', status: 'locked', sequence: ['A2', 'C3', 'D3', 'E3'], desc: 'A simple blues walking line starting from A.' },
 ];
 
 const STRINGS = ['E4', 'B3', 'G3', 'D3', 'A2', 'E2'];
@@ -154,8 +154,8 @@ const GuitarTuner: React.FC<{ currentPitch: string; frequency: number }> = ({ cu
 
       <div className="mt-6 md:mt-8 text-center relative z-10">
         <div className={`inline-flex items-center gap-2 md:gap-3 px-4 md:px-6 py-2 rounded-full border transition-all duration-500 ${frequency === 0 ? 'bg-white/5 border-white/5 text-gray-600' :
-            isPerfect ? 'bg-primary-500/10 border-primary-500 text-primary-500 shadow-[0_0_20px_rgba(57,255,20,0.1)]' :
-              cents < 0 ? 'bg-amber-500/10 border-amber-500/50 text-amber-500' : 'bg-rose-500/10 border-rose-500/50 text-rose-500'
+          isPerfect ? 'bg-primary-500/10 border-primary-500 text-primary-500 shadow-[0_0_20px_rgba(57,255,20,0.1)]' :
+            cents < 0 ? 'bg-amber-500/10 border-amber-500/50 text-amber-500' : 'bg-rose-500/10 border-rose-500/50 text-rose-500'
           }`}>
           {frequency === 0 ? (
             <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">Waiting for input...</span>
@@ -169,7 +169,7 @@ const GuitarTuner: React.FC<{ currentPitch: string; frequency: number }> = ({ cu
               {cents < 0 ? 'Tighten String' : 'Loosen String'}
             </span>
           )}
-      </div>
+        </div>
       </div>
     </div>
   );
@@ -218,10 +218,10 @@ const VictoryModal: React.FC<{ lesson: Lesson; onHome: () => void; onNext?: () =
         </div>
         <h2 className="text-4xl font-black text-white mb-2 italic">AWESOME! 🤘</h2>
         <p className="text-gray-400 mb-8">You just mastered <span className="text-white font-bold">{lesson.title}</span>.</p>
-        
+
         <div className="flex flex-col gap-3">
           {onNext && (
-            <button 
+            <button
               onClick={onNext}
               className="w-full py-5 bg-primary-500 text-dark-900 font-black rounded-2xl shadow-xl shadow-primary-500/20 hover:bg-primary-400 transition-all active:scale-95 flex items-center justify-center gap-3"
             >
@@ -229,7 +229,7 @@ const VictoryModal: React.FC<{ lesson: Lesson; onHome: () => void; onNext?: () =
               <span className="bg-dark-900/20 px-2 py-0.5 rounded-lg text-xs">Starting in {countdown}s</span>
             </button>
           )}
-          <button 
+          <button
             onClick={onHome}
             className="w-full py-5 bg-white/5 text-white font-black rounded-2xl border border-white/10 hover:bg-white/10 transition-all active:scale-95"
           >
@@ -711,7 +711,7 @@ const LessonGrid: React.FC<LessonGridProps> = ({
         >
           <div className="flex justify-between items-start mb-4">
             <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md ${lesson.difficulty === 'easy' ? 'bg-green-500/20 text-green-500' :
-                lesson.difficulty === 'medium' ? 'bg-yellow-500/20 text-yellow-500' : 'bg-red-500/20 text-red-500'
+              lesson.difficulty === 'medium' ? 'bg-yellow-500/20 text-yellow-500' : 'bg-red-500/20 text-red-500'
               }`}>
               {lesson.difficulty}
             </span>
@@ -798,7 +798,15 @@ const Dashboard: React.FC = () => {
 
   const practiceStartTimeRef = useRef<number | null>(null);
 
+  const isAllCompleted = lessons.every(l => l.status === 'completed');
   const lastPlayedLesson = lessons.find(l => l.id === lastPlayedLessonId);
+  const lastCompletedIndex = [...lessons].reverse().findIndex(l => l.status === 'completed');
+  const actualLastIndex = lastCompletedIndex !== -1 ? (lessons.length - 1 - lastCompletedIndex) : -1;
+  
+  const suggestedLesson = isAllCompleted 
+                          ? (lastPlayedLesson || lessons[0]) 
+                          : (lessons.find(l => l.status === 'available') || 
+                             (actualLastIndex !== -1 && actualLastIndex < lessons.length - 1 ? lessons[actualLastIndex + 1] : lessons[0]));
 
   // Dynamic streak logic
   // Rolling 7-day logic
@@ -814,13 +822,20 @@ const Dashboard: React.FC = () => {
   };
 
   const rollingDays = getLastSevenDays();
-  const [streakData, setStreakData] = useState({
-    count: 12,
-    isFrozen: true,
-    // Demo history for the rolling window (Last 7 days):
-    // [Completed, Completed, Completed, Completed, Completed, Frozen (Yesterday), Empty (Today)]
-    history: ['completed', 'completed', 'completed', 'completed', 'completed', 'frozen', 'empty']
+  const [streakData, setStreakData] = useState(() => {
+    const saved = localStorage.getItem('fretflow_streak');
+    if (saved) return JSON.parse(saved);
+    return {
+      count: 12,
+      isFrozen: true,
+      lastUpdated: new Date().toDateString(),
+      history: ['completed', 'completed', 'completed', 'completed', 'completed', 'frozen', 'empty'] as ('completed' | 'frozen' | 'empty')[]
+    };
   });
+
+  useEffect(() => {
+    localStorage.setItem('fretflow_streak', JSON.stringify(streakData));
+  }, [streakData]);
 
   const DAYS = rollingDays;
 
@@ -928,7 +943,7 @@ const Dashboard: React.FC = () => {
 
         const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
-        const interval: any = setInterval(function() {
+        const interval: any = setInterval(function () {
           const timeLeft = animationEnd - Date.now();
 
           if (timeLeft <= 0) {
@@ -944,12 +959,16 @@ const Dashboard: React.FC = () => {
         setLessons(prevLessons => {
           const currentIndex = prevLessons.findIndex(l => l.id === activeLesson.id);
           const nextLesson = prevLessons[currentIndex + 1];
-          
+
           const updated = prevLessons.map(l => {
             if (l.id === activeLesson.id) return { ...l, status: 'completed' as const };
             if (nextLesson && l.id === nextLesson.id && l.status === 'locked') return { ...l, status: 'available' as const };
             return l;
           });
+          if (nextLesson) {
+            localStorage.setItem('fretflow_last_lesson', nextLesson.id.toString());
+            setLastPlayedLessonId(nextLesson.id);
+          }
           return updated;
         });
 
@@ -962,6 +981,24 @@ const Dashboard: React.FC = () => {
         });
 
         setIsVictory(true);
+
+        // Update Streak
+        setStreakData(prev => {
+          const today = new Date().toDateString();
+          if (prev.lastUpdated === today && !prev.isFrozen) return prev;
+
+          const newHistory = [...prev.history];
+          newHistory[newHistory.length - 1] = 'completed';
+
+          return {
+            ...prev,
+            count: prev.count + 1,
+            isFrozen: false,
+            lastUpdated: today,
+            history: newHistory
+          };
+        });
+
         return prev;
       }
       return next;
@@ -1059,7 +1096,7 @@ const Dashboard: React.FC = () => {
               <div
                 key={i}
                 className={`w-3 h-3 md:w-4 md:h-4 rounded-full flex-shrink-0 transition-all duration-500 ${i < currentSequenceIndex ? 'bg-green-500' :
-                    i === currentSequenceIndex ? 'bg-primary-500 animate-pulse scale-125 shadow-[0_0_10px_rgba(57,255,20,0.5)]' : 'bg-gray-800'
+                  i === currentSequenceIndex ? 'bg-primary-500 animate-pulse scale-125 shadow-[0_0_10px_rgba(57,255,20,0.5)]' : 'bg-gray-800'
                   }`}
               />
             ))}
@@ -1087,16 +1124,16 @@ const Dashboard: React.FC = () => {
 
       <AnimatePresence>
         {isVictory && activeLesson && (
-          <VictoryModal 
-            lesson={activeLesson} 
+          <VictoryModal
+            lesson={activeLesson}
             onHome={() => {
               setIsVictory(false);
               navigate('/dashboard');
-            }} 
+            }}
             onNext={() => {
               const currentIndex = lessons.findIndex(l => l.id === activeLesson.id);
               const nextLesson = lessons[currentIndex + 1];
-              
+
               setIsVictory(false);
               setCurrentSequenceIndex(0);
               if (nextLesson) {
@@ -1151,7 +1188,7 @@ const Dashboard: React.FC = () => {
                   viewBox="0 0 26 31"
                   fill="none"
                   className={`w-6 h-6 transition-all duration-500 drop-shadow-[0_0_8px_rgba(var(--streak-color),0.5)] ${streakData.isFrozen ? 'text-cyan-400' :
-                      streakData.count > 0 ? 'text-primary-500' : 'text-gray-600'
+                    streakData.count > 0 ? 'text-primary-500' : 'text-gray-600'
                     }`}
                   style={{
                     filter: streakData.count > 0 ? 'drop-shadow(0 0 8px currentColor)' : 'none',
@@ -1175,7 +1212,7 @@ const Dashboard: React.FC = () => {
                 </svg>
               </div>
               <span className={`text-sm font-black ${streakData.isFrozen ? 'text-cyan-400' :
-                  streakData.count > 0 ? 'text-primary-500' : 'text-gray-500'
+                streakData.count > 0 ? 'text-primary-500' : 'text-gray-500'
                 }`}>
                 {streakData.count}
               </span>
@@ -1223,8 +1260,15 @@ const Dashboard: React.FC = () => {
         <main className="w-full">
           {(currentView === 'levels' || currentView === 'lessons') && (
             <div className="mb-12">
-              <h2 className="text-4xl font-bold mb-3 text-white">Welcome back, Rock Star! 🎸</h2>
-              <MotivationQuote />
+              <h2 className="text-4xl font-bold mb-3 text-white">
+                {isAllCompleted ? "Master of the Strings! 🏆" : "Welcome back, Rock Star! 🎸"}
+              </h2>
+              <p className="text-gray-400">
+                {isAllCompleted 
+                  ? "You've conquered every lesson. Time to refine your skills or start a review!" 
+                  : <MotivationQuote />
+                }
+              </p>
             </div>
           )}
 
@@ -1236,7 +1280,7 @@ const Dashboard: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
               >
-                <QuickResume lesson={lastPlayedLesson || null} onResume={startPractice} />
+                <QuickResume lesson={suggestedLesson || null} onResume={startPractice} />
                 <div className="space-y-12">
                   <LevelMenu navigate={navigate} />
                 </div>
@@ -1282,7 +1326,7 @@ const Dashboard: React.FC = () => {
                       </div>
                       <h4 className="text-sm font-black uppercase tracking-[0.2em] text-gray-500">Practice History</h4>
                     </div>
-                    <button 
+                    <button
                       onClick={() => setShowHistoryClearModal(true)}
                       className="text-[10px] font-bold text-gray-700 hover:text-rose-500 bg-white/5 px-3 py-1 rounded transition-colors uppercase tracking-widest"
                     >
@@ -1372,9 +1416,9 @@ const Dashboard: React.FC = () => {
       {/* Victory View Overlay */}
       <AnimatePresence>
         {currentView === 'victory' && activeLesson && (
-          <VictoryModal 
-            lesson={activeLesson} 
-            onHome={() => navigate('/dashboard')} 
+          <VictoryModal
+            lesson={activeLesson}
+            onHome={() => navigate('/dashboard')}
             onNext={() => {
               const nextId = activeLesson.id + 1;
               const hasNext = lessons.some(l => l.id === nextId);
@@ -1392,7 +1436,7 @@ const Dashboard: React.FC = () => {
       <AnimatePresence>
         {showHistoryClearModal && (
           <div className="fixed inset-0 z-[500] flex items-center justify-center p-6 bg-dark-950/80 backdrop-blur-md">
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               className="glass-panel p-8 rounded-[2rem] max-w-sm w-full text-center border-rose-500/20 shadow-2xl shadow-rose-500/10"
@@ -1402,9 +1446,9 @@ const Dashboard: React.FC = () => {
               </div>
               <h3 className="text-xl font-bold mb-2">Clear History?</h3>
               <p className="text-gray-400 text-sm mb-8 leading-relaxed">This will permanently delete all your practice logs. This action cannot be undone.</p>
-              
+
               <div className="flex flex-col gap-3">
-                <button 
+                <button
                   onClick={() => {
                     setHistory([]);
                     localStorage.removeItem('fretflow_history');
@@ -1414,7 +1458,7 @@ const Dashboard: React.FC = () => {
                 >
                   Yes, Clear Everything
                 </button>
-                <button 
+                <button
                   onClick={() => setShowHistoryClearModal(false)}
                   className="w-full py-4 bg-white/5 text-gray-400 font-bold rounded-2xl hover:bg-white/10 transition-all active:scale-95"
                 >
@@ -1555,8 +1599,8 @@ const Dashboard: React.FC = () => {
                   <div key={day} className="flex flex-col items-center gap-2">
                     <span className="text-[10px] font-bold text-gray-500 uppercase">{day}</span>
                     <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${streakData.history[i] === 'completed' ? 'bg-primary-500 text-dark-900 shadow-[0_0_15px_rgba(57,255,20,0.3)]' :
-                        streakData.history[i] === 'frozen' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 shadow-[0_0_15px_rgba(34,211,238,0.2)]' :
-                          'bg-white/5 border border-white/10 text-gray-700'
+                      streakData.history[i] === 'frozen' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 shadow-[0_0_15px_rgba(34,211,238,0.2)]' :
+                        'bg-white/5 border border-white/10 text-gray-700'
                       }`}>
                       {streakData.history[i] === 'completed' ? <CheckCircle size={16} strokeWidth={3} /> :
                         streakData.history[i] === 'frozen' ? <span className="text-sm">❄️</span> :
@@ -1636,7 +1680,7 @@ const Dashboard: React.FC = () => {
                       </div>
                       <h4 className="text-sm font-black uppercase tracking-[0.2em] text-gray-500">Practice History</h4>
                     </div>
-                    <button 
+                    <button
                       onClick={() => setShowHistoryClearModal(true)}
                       className="text-[10px] font-bold text-gray-700 hover:text-rose-500 bg-white/5 px-3 py-1 rounded transition-colors uppercase tracking-widest"
                     >
