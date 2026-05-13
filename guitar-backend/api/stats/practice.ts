@@ -66,7 +66,7 @@ async function handler(req: Request, res: Response): Promise<void> {
       ...totals,
       daily: result.rows,
     });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: 'Failed to fetch practice stats', code: 'SERVER_ERROR' });
   }
 }

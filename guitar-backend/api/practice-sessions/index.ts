@@ -37,7 +37,7 @@ async function handler(req: Request, res: Response): Promise<void> {
       await updateStreak(userId, today);
 
       res.json({ success: true, id: sessionId });
-    } catch (error) {
+    } catch (_error) {
       res.status(500).json({ error: 'Failed to record practice session', code: 'SERVER_ERROR' });
     }
     return;
@@ -56,7 +56,7 @@ async function handler(req: Request, res: Response): Promise<void> {
       });
 
       res.json({ data: result.rows });
-    } catch (error) {
+    } catch (_error) {
       res.status(500).json({ error: 'Failed to fetch practice sessions', code: 'SERVER_ERROR' });
     }
     return;

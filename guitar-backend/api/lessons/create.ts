@@ -1,6 +1,5 @@
 import type { Request, Response } from 'express';
 import db from '../../src/config/database.js';
-import { authenticate } from '../../src/middleware/auth.js';
 
 export async function createLesson(req: Request, res: Response): Promise<void> {
   try {
@@ -28,8 +27,8 @@ export async function createLesson(req: Request, res: Response): Promise<void> {
     });
 
     res.status(201).json(lesson.rows[0]);
-  } catch (error) {
-    console.error('Create lesson error:', error);
+  } catch (_error) {
+    console.error(_error);
     res.status(500).json({ error: 'Failed to create lesson', code: 'SERVER_ERROR' });
   }
 }

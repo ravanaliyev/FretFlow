@@ -63,7 +63,7 @@ export function requireAdmin(
 
       req.isAdmin = true;
       next();
-    } catch (error) {
+    } catch (_error) {
       res.status(500).json({
         error: 'Authorization check failed',
         code: 'SERVER_ERROR',

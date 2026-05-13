@@ -13,7 +13,7 @@ async function handler(req: Request, res: Response): Promise<void> {
     }
 
     res.json(user);
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: 'Failed to get user', code: 'SERVER_ERROR' });
   }
 }

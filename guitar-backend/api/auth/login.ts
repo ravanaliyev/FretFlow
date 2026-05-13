@@ -21,7 +21,7 @@ export async function login(req: Request, res: Response): Promise<void> {
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,
     });
-  } catch (error) {
+  } catch (_error) {
     res.status(401).json({ error: 'Invalid credentials', code: 'INVALID_CREDENTIALS' });
   }
 }

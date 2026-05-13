@@ -64,7 +64,7 @@ async function handler(req: Request, res: Response): Promise<void> {
         songs_completed: songsResult.rows[0].count || 0,
       },
     });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: 'Failed to fetch summary', code: 'SERVER_ERROR' });
   }
 }
