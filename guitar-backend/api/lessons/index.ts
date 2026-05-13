@@ -4,9 +4,10 @@ import { authenticate, requireAdmin } from '../../src/middleware/auth.js';
 
 async function handler(req: Request, res: Response): Promise<void> {
   try {
+    const userId = (req as any).userId;
+
     // GET - list lessons
     if (req.method === 'GET') {
-      const userId = (req as any).userId;
       const { page = 1, limit = 20 } = req.query;
 
       const offset = (Number(page) - 1) * Number(limit);

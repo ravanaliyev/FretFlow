@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import { initializeDatabase } from './database/init.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { validateBody } from './middleware/validate.js';
+import { registerSchema, loginSchema, submitScoreSchema, paginationSchema } from './validation/schemas.js';
 
 const app = express();
 
@@ -41,8 +43,8 @@ import statsSummary from '../api/stats/summary';
 import history from '../api/history';
 import practiceSessions from '../api/practice-sessions';
 
-app.use('/api/auth/register', register);
-app.use('/api/auth/login', login);
+app.use('/api/auth/register', validateBody(registerSchema), register);
+app.use('/api/auth/login', validateBody(loginSchema), login);
 app.use('/api/auth/refresh', refresh);
 app.use('/api/auth/logout', logout);
 app.use('/api/auth/me', me);
@@ -54,7 +56,7 @@ app.use('/api/songs/:id', songsId);
 app.use('/api/songs', songsIndex);
 app.use('/api/scores/me', scoresMe);
 app.use('/api/scores/leaderboard', leaderboard);
-app.use('/api/scores', scoresIndex);
+app.use('/api/scores', validateBody(submitScoreSchema), scoresIndex);
 app.use('/api/gamification/profile', profile);
 app.use('/api/gamification/quests/:id/claim', questClaim);
 app.use('/api/gamification/quests', quests);

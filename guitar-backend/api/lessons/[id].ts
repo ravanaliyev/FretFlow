@@ -2,13 +2,15 @@ import type { Request, Response } from 'express';
 import db from '../../src/config/database.js';
 import { authenticate } from '../../src/middleware/auth.js';
 
+const ALLOWED_FIELDS = ['title', 'description', 'notes', 'difficulty', 'xp_reward', 'order_index'];
+
 async function handler(req: Request, res: Response): Promise<void> {
-  const { id } = req.params;
+  const id = Number(req.params.id);
 
   if (req.method === 'GET') {
     const result = await db.execute({
       sql: 'SELECT * FROM lessons WHERE id = ?',
-      args: [id],
+      args: [String(id)],
     });
 
     if (result.rows.length === 0) {
@@ -31,19 +33,19 @@ async function handler(req: Request, res: Response): Promise<void> {
   }
 
   if (req.method === 'PUT') {
-    const { title, description, notes, difficulty, xp_reward, order_index } = req.body;
+    const body = req.body as Record<string, unknown>;
     const fields: string[] = [];
     const args: (string | number)[] = [];
 
-    if (title !== undefined) { fields.push('title = ?'); args.push(title); }
-    if (description !== undefined) { fields.push('description = ?'); args.push(description); }
-    if (notes !== undefined) { fields.push('notes = ?'); args.push(notes); }
-    if (difficulty !== undefined) { fields.push('difficulty = ?'); args.push(difficulty); }
-    if (xp_reward !== undefined) { fields.push('xp_reward = ?'); args.push(xp_reward); }
-    if (order_index !== undefined) { fields.push('order_index = ?'); args.push(order_index); }
+    for (const field of ALLOWED_FIELDS) {
+      if (field in body) {
+        fields.push(`${field} = ?`);
+        args.push(body[field] as string | number);
+      }
+    }
 
     if (fields.length === 0) {
-      res.status(400).json({ error: 'No fields to update', code: 'VALIDATION_ERROR' });
+      res.status(400).json({ error: 'No valid fields to update', code: 'VALIDATION_ERROR' });
       return;
     }
 
@@ -56,7 +58,7 @@ async function handler(req: Request, res: Response): Promise<void> {
 
     const lesson = await db.execute({
       sql: 'SELECT * FROM lessons WHERE id = ?',
-      args: [id],
+      args: [String(id)],
     });
 
     if (lesson.rows.length === 0) {
@@ -71,7 +73,7 @@ async function handler(req: Request, res: Response): Promise<void> {
   if (req.method === 'DELETE') {
     const result = await db.execute({
       sql: 'DELETE FROM lessons WHERE id = ?',
-      args: [id],
+      args: [String(id)],
     });
 
     if (result.rowsAffected === 0) {
