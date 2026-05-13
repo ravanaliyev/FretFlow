@@ -1,0 +1,87 @@
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { useAuth } from '../../context/AuthContext';
+
+const LandingHero: React.FC = () => {
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  const handleStartClick = () => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    } else {
+      navigate('/login');
+    }
+  };
+
+  return (
+    <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between min-h-[85vh] px-6 max-w-6xl mx-auto overflow-hidden py-10 gap-16">
+
+      {/* Left Text Content */}
+      <motion.div
+        initial={{ opacity: 0, x: -30 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.6 }}
+        className="w-full lg:w-[55%] text-center lg:text-left flex flex-col items-center lg:items-start"
+      >
+        <h1 className="text-5xl md:text-6xl lg:text-[4.5rem] font-black tracking-tight mb-8 leading-[1.1] text-white">
+          The free, fun, and effective way to learn guitar!
+        </h1>
+
+        <p className="text-xl md:text-2xl text-gray-400 mb-12 font-bold max-w-xl">
+          Learn chords, master songs, and build a daily habit with bite-sized lessons.
+        </p>
+
+        <div className="flex flex-col w-full sm:w-auto gap-4">
+          <button onClick={handleStartClick} className="btn-duo btn-duo-primary w-full lg:w-80 py-4 text-xl">
+            {isAuthenticated ? 'GO TO DASHBOARD' : 'GET STARTED'}
+          </button>
+          {!isAuthenticated && (
+            <Link to="/login" className="btn-duo btn-duo-secondary w-full lg:w-80 py-4 text-xl uppercase">
+              I ALREADY HAVE AN ACCOUNT
+            </Link>
+          )}
+        </div>
+      </motion.div>
+
+      {/* Right Image/Illustration area */}
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+        className="w-full lg:w-[45%] flex justify-center lg:justify-end"
+      >
+         <div className="relative w-[300px] h-[400px] md:w-[420px] md:h-[500px]">
+           {/* Main playful graphic */}
+           <div className="absolute inset-0 bg-dark-800 rounded-[3rem] border-4 border-dark-700 border-b-8 flex flex-col items-center justify-center p-8 text-center shadow-xl">
+             <div className="w-48 h-48 bg-primary-500 rounded-full flex items-center justify-center mb-6 border-b-8 border-primary-600">
+                <span className="text-8xl transform -rotate-12">🎸</span>
+             </div>
+             <h3 className="text-2xl font-black text-white">Rock On!</h3>
+           </div>
+           
+           {/* Floating badges */}
+           <motion.div 
+              animate={{ y: [0, -10, 0] }}
+              transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+              className="absolute -top-6 -right-6 bg-accent-500 text-white font-extrabold text-2xl py-3 px-6 rounded-2xl border-b-4 border-[#1899d6] shadow-lg"
+           >
+             Level 5!
+           </motion.div>
+
+           <motion.div 
+              animate={{ y: [0, 10, 0] }}
+              transition={{ repeat: Infinity, duration: 4, ease: "easeInOut", delay: 1 }}
+              className="absolute -bottom-6 -left-6 bg-ambient-500 text-white font-extrabold text-2xl py-3 px-6 rounded-2xl border-b-4 border-[#d6a500] flex items-center gap-2 shadow-lg"
+           >
+             <span className="text-3xl">🔥</span> 14 Days
+           </motion.div>
+         </div>
+      </motion.div>
+
+    </div>
+  );
+};
+
+export default LandingHero;

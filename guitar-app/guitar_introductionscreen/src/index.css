@@ -1,0 +1,62 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+@theme {
+  --color-dark-900: #131f24;
+  --color-dark-800: #202f36;
+  --color-dark-700: #37464f;
+  --color-primary-500: #58cc02;
+  --color-primary-600: #58a700;
+  --color-accent-500: #1cb0f6;
+  --color-ambient-500: #ffc800;
+  --font-sans: 'Nunito', sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-dark-900 text-white font-sans antialiased overflow-x-hidden;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-dark-800 border-2 border-dark-700 shadow-none;
+  }
+  
+  .glass-input {
+    @apply bg-dark-900 border-2 border-dark-700 text-white placeholder-gray-500 focus:bg-dark-900 focus:border-accent-500 transition-all duration-300 outline-none;
+  }
+
+  /* Duolingo tactile buttons */
+  .btn-duo {
+    @apply relative inline-flex items-center justify-center font-extrabold tracking-wide rounded-2xl transition-all duration-150 active:translate-y-1 select-none;
+  }
+  .btn-duo-primary {
+    @apply bg-primary-500 text-white border-b-4 border-primary-600 hover:bg-[#61e002] active:border-b-0 active:mt-1;
+  }
+  .btn-duo-secondary {
+    @apply bg-dark-800 text-white border-2 border-b-4 border-dark-700 hover:bg-[#2a3c45] active:border-b-2 active:mt-0.5;
+  }
+  .btn-duo-accent {
+    @apply bg-accent-500 text-white border-b-4 border-[#1899d6] hover:bg-[#20bdff] active:border-b-0 active:mt-1;
+  }
+  
+  .duo-card {
+    @apply bg-dark-800 rounded-[1.5rem] border-2 border-dark-700 border-b-4 text-white p-6 transition-transform hover:-translate-y-1;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #131f24;
+}
+::-webkit-scrollbar-thumb {
+  background: #37464f;
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4a5d68;
+}
