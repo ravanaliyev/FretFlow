@@ -1,18 +1,11 @@
 import type { Request, Response } from 'express';
 import * as authService from '../../src/services/auth.service.js';
+import { validateBody } from '../../src/middleware/validate.js';
+import { registerSchema } from '../../src/validation/schemas.js';
 
 export async function register(req: Request, res: Response): Promise<void> {
   try {
     const { email, password, username } = req.body;
-
-    if (!email || !password || !username) {
-      res.status(400).json({
-        error: 'Missing required fields',
-        code: 'VALIDATION_ERROR',
-        details: { required: ['email', 'password', 'username'] },
-      });
-      return;
-    }
 
     const result = await authService.register(email, password, username);
 
