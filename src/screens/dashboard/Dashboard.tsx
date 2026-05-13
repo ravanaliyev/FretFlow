@@ -747,6 +747,7 @@ const Dashboard: React.FC = () => {
   const urlLevelId = pathParts[2] ? parseInt(pathParts[2]) : null;
   const urlLessonId = pathParts[2] ? parseInt(pathParts[2]) : null;
 
+  const [showHistoryClearModal, setShowHistoryClearModal] = useState(false);
   const [lessons, setLessons] = useState<Lesson[]>(() => {
     const saved = localStorage.getItem('fretflow_lessons_v5');
     return saved ? JSON.parse(saved) : DEFAULT_LESSONS;
@@ -824,6 +825,7 @@ const Dashboard: React.FC = () => {
   const DAYS = rollingDays;
 
   const processorRef = useRef<AudioProcessor | null>(null);
+  const lastMatchTimeRef = useRef<number>(0);
 
   // --- Persistence ---
   useEffect(() => {
@@ -912,16 +914,32 @@ const Dashboard: React.FC = () => {
   };
 
   const handleMatch = () => {
+    const now = Date.now();
+    if (now - lastMatchTimeRef.current < 1000) return; // 1 second cooldown
+    lastMatchTimeRef.current = now;
+
     setCurrentSequenceIndex(prev => {
       const next = prev + 1;
       if (activeLesson && next >= activeLesson.sequence.length) {
         playSuccessSound();
-        confetti({
-          particleCount: 150,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#39FF14', '#ffffff', '#1a1a1a']
-        });
+        const duration = 3 * 1000;
+        const animationEnd = Date.now() + duration;
+        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+        const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+        const interval: any = setInterval(function() {
+          const timeLeft = animationEnd - Date.now();
+
+          if (timeLeft <= 0) {
+            return clearInterval(interval);
+          }
+
+          const particleCount = 50 * (timeLeft / duration);
+          // since particles fall down, start a bit higher than random
+          confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }, colors: ['#39FF14', '#ffffff', '#FFD700'], shapes: ['star', 'circle'] });
+          confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }, colors: ['#39FF14', '#ffffff', '#FFD700'], shapes: ['star', 'circle'] });
+        }, 250);
 
         setLessons(prevLessons => {
           const currentIndex = prevLessons.findIndex(l => l.id === activeLesson.id);
@@ -935,10 +953,13 @@ const Dashboard: React.FC = () => {
           return updated;
         });
 
-        setHistory(prev => [
-          { id: Date.now(), title: activeLesson.title, date: new Date().toLocaleDateString() },
-          ...prev
-        ]);
+        setHistory(prev => {
+          if (prev.length > 0 && prev[0].title === activeLesson.title) return prev;
+          return [
+            { id: Date.now(), title: activeLesson.title, date: new Date().toLocaleDateString() },
+            ...prev
+          ];
+        });
 
         setIsVictory(true);
         return prev;
@@ -1255,45 +1276,52 @@ const Dashboard: React.FC = () => {
                 <BadgesSection lessons={lessons} streak={streakData.count} />
                 <div className="pt-10 border-t border-white/10">
                   <div className="flex items-center justify-between mb-8">
-                    <h4 className="text-sm font-black uppercase tracking-[0.2em] text-gray-500">Practice History</h4>
-                    <span className="text-[10px] font-bold text-gray-700 bg-white/5 px-2 py-1 rounded">{history.length} Lessons</span>
-                  </div>
-                  {history.length === 0 ? (
-                    <div className="text-center py-20 bg-white/[0.02] rounded-[2rem] border border-dashed border-white/5">
-                      <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <PlayCircle className="text-gray-600" size={32} />
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-primary-500/10 flex items-center justify-center text-primary-500">
+                        <Activity size={18} />
                       </div>
-                      <p className="text-gray-400 font-bold">No history yet.</p>
-                      <p className="text-xs text-gray-600 mt-2">Finish a lesson to see it here!</p>
+                      <h4 className="text-sm font-black uppercase tracking-[0.2em] text-gray-500">Practice History</h4>
                     </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {history.map(item => (
+                    <button 
+                      onClick={() => setShowHistoryClearModal(true)}
+                      className="text-[10px] font-bold text-gray-700 hover:text-rose-500 bg-white/5 px-3 py-1 rounded transition-colors uppercase tracking-widest"
+                    >
+                      Clear All ({history.length})
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {history.length === 0 ? (
+                      <div className="text-center py-20 bg-white/[0.02] rounded-[2rem] border border-dashed border-white/5">
+                        <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <PlayCircle className="text-gray-600" size={32} />
+                        </div>
+                        <p className="text-gray-400 font-bold">No history yet.</p>
+                      </div>
+                    ) : (
+                      history.slice(0, 5).map((item) => (
                         <motion.div
                           key={item.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
                           className="glass-panel p-5 rounded-[1.5rem] flex items-center justify-between group hover:border-primary-500/30 transition-all bg-white/[0.02]"
                         >
                           <div className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-primary-500/10 transition-colors">
-                              <CheckCircle className="text-gray-600 group-hover:text-primary-500" size={18} />
+                              <CheckCircle className="text-green-500" size={18} />
                             </div>
                             <div>
                               <p className="font-bold text-white group-hover:text-primary-500 transition-colors">{item.title}</p>
                               <span className="text-[10px] font-bold text-gray-600 uppercase tracking-tighter">{item.date}</span>
                             </div>
                           </div>
-                          <button
-                            onClick={() => deleteHistory(item.id)}
-                            className="w-10 h-10 flex items-center justify-center text-gray-700 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                          <div className="px-3 py-1 rounded-full bg-white/5 text-[10px] font-black uppercase text-gray-600">
+                            Done
+                          </div>
                         </motion.div>
-                      ))}
-                    </div>
-                  )}
+                      ))
+                    )}
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -1357,6 +1385,44 @@ const Dashboard: React.FC = () => {
               }
             }}
           />
+        )}
+      </AnimatePresence>
+
+      {/* History Clear Confirmation Modal */}
+      <AnimatePresence>
+        {showHistoryClearModal && (
+          <div className="fixed inset-0 z-[500] flex items-center justify-center p-6 bg-dark-950/80 backdrop-blur-md">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="glass-panel p-8 rounded-[2rem] max-w-sm w-full text-center border-rose-500/20 shadow-2xl shadow-rose-500/10"
+            >
+              <div className="w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-6 text-rose-500">
+                <Trash2 size={32} />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Clear History?</h3>
+              <p className="text-gray-400 text-sm mb-8 leading-relaxed">This will permanently delete all your practice logs. This action cannot be undone.</p>
+              
+              <div className="flex flex-col gap-3">
+                <button 
+                  onClick={() => {
+                    setHistory([]);
+                    localStorage.removeItem('fretflow_history');
+                    setShowHistoryClearModal(false);
+                  }}
+                  className="w-full py-4 bg-rose-500 text-white font-bold rounded-2xl hover:bg-rose-600 transition-all active:scale-95 shadow-lg shadow-rose-500/20"
+                >
+                  Yes, Clear Everything
+                </button>
+                <button 
+                  onClick={() => setShowHistoryClearModal(false)}
+                  className="w-full py-4 bg-white/5 text-gray-400 font-bold rounded-2xl hover:bg-white/10 transition-all active:scale-95"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
@@ -1564,21 +1630,30 @@ const Dashboard: React.FC = () => {
 
                 <section className="pt-10 border-t border-white/10">
                   <div className="flex items-center justify-between mb-8">
-                    <h4 className="text-sm font-black uppercase tracking-[0.2em] text-gray-500">Practice History</h4>
-                    <span className="text-[10px] font-bold text-gray-700 bg-white/5 px-2 py-1 rounded">{history.length} Lessons</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-primary-500/10 flex items-center justify-center text-primary-500">
+                        <Activity size={18} />
+                      </div>
+                      <h4 className="text-sm font-black uppercase tracking-[0.2em] text-gray-500">Practice History</h4>
+                    </div>
+                    <button 
+                      onClick={() => setShowHistoryClearModal(true)}
+                      className="text-[10px] font-bold text-gray-700 hover:text-rose-500 bg-white/5 px-3 py-1 rounded transition-colors uppercase tracking-widest"
+                    >
+                      Clear All ({history.length})
+                    </button>
                   </div>
 
-                  {history.length === 0 ? (
-                    <div className="text-center py-20 bg-white/[0.02] rounded-[2rem] border border-dashed border-white/5">
-                      <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <PlayCircle className="text-gray-600" size={32} />
+                  <div className="space-y-4">
+                    {history.length === 0 ? (
+                      <div className="text-center py-20 bg-white/[0.02] rounded-[2rem] border border-dashed border-white/5">
+                        <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <PlayCircle className="text-gray-600" size={32} />
+                        </div>
+                        <p className="text-gray-400 font-bold">No history yet.</p>
                       </div>
-                      <p className="text-gray-400 font-bold">No history yet.</p>
-                      <p className="text-xs text-gray-600 mt-2">Finish a lesson to see it here!</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 gap-4">
-                      {history.map(item => (
+                    ) : (
+                      history.slice(0, 5).map((item) => (
                         <motion.div
                           key={item.id}
                           initial={{ opacity: 0, x: 20 }}
@@ -1587,23 +1662,20 @@ const Dashboard: React.FC = () => {
                         >
                           <div className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-primary-500/10 transition-colors">
-                              <CheckCircle className="text-gray-600 group-hover:text-primary-500" size={18} />
+                              <CheckCircle className="text-green-500" size={18} />
                             </div>
                             <div>
                               <p className="font-bold text-white group-hover:text-primary-500 transition-colors">{item.title}</p>
                               <span className="text-[10px] font-bold text-gray-600 uppercase tracking-tighter">{item.date}</span>
                             </div>
                           </div>
-                          <button
-                            onClick={() => deleteHistory(item.id)}
-                            className="w-10 h-10 flex items-center justify-center text-gray-700 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                          <div className="px-3 py-1 rounded-full bg-white/5 text-[10px] font-black uppercase text-gray-600">
+                            Done
+                          </div>
                         </motion.div>
-                      ))}
-                    </div>
-                  )}
+                      ))
+                    )}
+                  </div>
                 </section>
               </div>
 
