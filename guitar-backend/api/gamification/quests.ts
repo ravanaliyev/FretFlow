@@ -15,7 +15,7 @@ async function handler(req: Request, res: Response): Promise<void> {
     });
 
     res.json({ data: result.rows });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: 'Failed to fetch quests', code: 'SERVER_ERROR' });
   }
 }

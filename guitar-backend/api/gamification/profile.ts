@@ -56,7 +56,7 @@ async function handler(req: Request, res: Response): Promise<void> {
       lessons_completed: lessonProgressResult.rows[0].completed,
       songs_completed: songScoresResult.rows[0].completed,
     });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: 'Failed to fetch profile', code: 'SERVER_ERROR' });
   }
 }

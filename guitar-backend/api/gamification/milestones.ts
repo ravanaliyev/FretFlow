@@ -69,7 +69,7 @@ async function handler(req: Request, res: Response): Promise<void> {
     ];
 
     res.json({ data: milestones });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: 'Failed to fetch milestones', code: 'SERVER_ERROR' });
   }
 }

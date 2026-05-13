@@ -25,7 +25,7 @@ async function handler(req: Request, res: Response): Promise<void> {
     }));
 
     res.json({ data: achievements });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: 'Failed to fetch achievements', code: 'SERVER_ERROR' });
   }
 }

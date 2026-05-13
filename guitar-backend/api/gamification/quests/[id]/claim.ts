@@ -58,7 +58,7 @@ async function handler(req: Request, res: Response): Promise<void> {
       xp_earned: quest.xp_reward,
       quest_id: id,
     });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: 'Failed to claim quest', code: 'SERVER_ERROR' });
   }
 }
