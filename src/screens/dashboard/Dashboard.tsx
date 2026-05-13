@@ -14,7 +14,8 @@ import {
   Trash2,
   X,
   Activity,
-  User
+  User,
+  Edit2
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AudioProcessor } from '../../utils/PitchProcessor';
@@ -638,6 +639,9 @@ interface LessonGridProps {
   setDifficultyFilter: (val: string) => void;
   filteredLessons: Lesson[];
   startPractice: (lesson: Lesson) => void;
+  userRole: string;
+  onAdd: () => void;
+  onEdit: (lesson: Lesson) => void;
 }
 
 const LessonGrid: React.FC<LessonGridProps> = ({
@@ -647,7 +651,10 @@ const LessonGrid: React.FC<LessonGridProps> = ({
   difficultyFilter,
   setDifficultyFilter,
   filteredLessons,
-  startPractice
+  startPractice,
+  userRole,
+  onAdd,
+  onEdit
 }) => (
   <div className="p-6 space-y-6">
     <div className="flex items-center gap-2 mb-8 relative z-20">
@@ -715,9 +722,19 @@ const LessonGrid: React.FC<LessonGridProps> = ({
               }`}>
               {lesson.difficulty}
             </span>
-            <div className="text-primary-500">
-              {lesson.status === 'completed' ? <CheckCircle size={20} className="drop-shadow-[0_0_8px_rgba(57,255,20,0.4)]" /> :
-                lesson.status === 'locked' ? <Lock size={20} className="text-gray-500" /> : <PlayCircle size={20} className="group-hover:scale-110 transition-transform" />}
+            <div className="flex items-center gap-2">
+              {userRole === 'ADMIN' && (
+                <button 
+                  onClick={(e) => { e.stopPropagation(); onEdit(lesson); }}
+                  className="w-8 h-8 rounded-lg bg-white/5 text-gray-400 hover:text-primary-500 hover:bg-primary-500/10 transition-all flex items-center justify-center"
+                >
+                  <Edit2 size={14} />
+                </button>
+              )}
+              <div className="text-primary-500">
+                {lesson.status === 'completed' ? <CheckCircle size={20} className="drop-shadow-[0_0_8px_rgba(57,255,20,0.4)]" /> :
+                  lesson.status === 'locked' ? <Lock size={20} className="text-gray-500" /> : <PlayCircle size={20} className="group-hover:scale-110 transition-transform" />}
+              </div>
             </div>
           </div>
           <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary-500 transition-colors">{lesson.title}</h3>
@@ -732,12 +749,28 @@ const LessonGrid: React.FC<LessonGridProps> = ({
           </button>
         </motion.div>
       ))}
+      {userRole === 'ADMIN' && (
+        <motion.div
+          variants={{
+            hidden: { opacity: 0, y: 20 },
+            show: { opacity: 1, y: 0 }
+          }}
+          onClick={onAdd}
+          className="glass-panel p-6 rounded-3xl flex flex-col items-center justify-center border-dashed border-2 border-white/10 hover:border-primary-500/50 hover:bg-primary-500/5 transition-all cursor-pointer group min-h-[200px]"
+        >
+          <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-gray-500 group-hover:text-primary-500 group-hover:bg-primary-500/10 transition-all mb-4">
+            <Plus size={24} />
+          </div>
+          <p className="font-bold text-gray-500 group-hover:text-primary-500 transition-colors uppercase tracking-widest text-xs">Add New Lesson</p>
+        </motion.div>
+      )}
     </motion.div>
   </div>
 );
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const userRole = localStorage.getItem('fretflow_user_role') || 'STUDENT';
   const location = useLocation();
 
   // Parse view and IDs from URL
@@ -765,11 +798,14 @@ const Dashboard: React.FC = () => {
   const [currentFrequency, setCurrentFrequency] = useState(0);
   const [isListening, setIsListening] = useState(false);
   const [currentPitch, setCurrentPitch] = useState('--');
-
-
   const [showAdminModal, setShowAdminModal] = useState(false);
+  const [adminTab, setAdminTab] = useState<'Add New' | 'Manage'>('Add New');
+  const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [showStreakModal, setShowStreakModal] = useState(false);
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
+
 
   const [isVictory, setIsVictory] = useState(false);
   const [lastPlayedLessonId, setLastPlayedLessonId] = useState<number | null>(() => {
@@ -802,11 +838,11 @@ const Dashboard: React.FC = () => {
   const lastPlayedLesson = lessons.find(l => l.id === lastPlayedLessonId);
   const lastCompletedIndex = [...lessons].reverse().findIndex(l => l.status === 'completed');
   const actualLastIndex = lastCompletedIndex !== -1 ? (lessons.length - 1 - lastCompletedIndex) : -1;
-  
-  const suggestedLesson = isAllCompleted 
-                          ? (lastPlayedLesson || lessons[0]) 
-                          : (lessons.find(l => l.status === 'available') || 
-                             (actualLastIndex !== -1 && actualLastIndex < lessons.length - 1 ? lessons[actualLastIndex + 1] : lessons[0]));
+
+  const suggestedLesson = isAllCompleted
+    ? (lastPlayedLesson || lessons[0])
+    : (lessons.find(l => l.status === 'available') ||
+      (actualLastIndex !== -1 && actualLastIndex < lessons.length - 1 ? lessons[actualLastIndex + 1] : lessons[0]));
 
   // Dynamic streak logic
   // Rolling 7-day logic
@@ -855,7 +891,9 @@ const Dashboard: React.FC = () => {
   const activeLesson = (currentView === 'practice' || currentView === 'victory') ? lessons.find(l => l.id === urlLessonId) : null;
 
   useEffect(() => {
-    const shouldListen = ((currentView === 'practice' && activeLesson) || currentView === 'tuner') && !isVictory;
+    // Stop listening if Admin Modal or other blocking modals are open
+    const isUIBlocked = showAdminModal || showStreakModal || showHistoryDrawer || showHistoryClearModal;
+    const shouldListen = ((currentView === 'practice' && activeLesson) || currentView === 'tuner') && !isVictory && !isUIBlocked;
 
     if (shouldListen) {
       if (!processorRef.current) {
@@ -1264,8 +1302,8 @@ const Dashboard: React.FC = () => {
                 {isAllCompleted ? "Master of the Strings! 🏆" : "Welcome back, Rock Star! 🎸"}
               </h2>
               <p className="text-gray-400">
-                {isAllCompleted 
-                  ? "You've conquered every lesson. Time to refine your skills or start a review!" 
+                {isAllCompleted
+                  ? "You've conquered every lesson. Time to refine your skills or start a review!"
                   : <MotivationQuote />
                 }
               </p>
@@ -1301,6 +1339,13 @@ const Dashboard: React.FC = () => {
                   setDifficultyFilter={setDifficultyFilter}
                   filteredLessons={filteredLessons}
                   startPractice={startPractice}
+                  userRole={userRole}
+                  onAdd={() => { setEditingLesson(null); setAdminTab('Add New'); setShowAdminModal(true); }}
+                  onEdit={(lesson) => { 
+                    setEditingLesson(lesson);
+                    setAdminTab('Add New'); 
+                    setShowAdminModal(true); 
+                  }}
                 />
               </motion.div>
             )}
@@ -1470,13 +1515,7 @@ const Dashboard: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Admin FAB */}
-      <button
-        onClick={() => setShowAdminModal(true)}
-        className="fixed bottom-8 right-8 w-14 h-14 bg-dark-800 border border-white/10 rounded-full flex items-center justify-center text-primary-500 shadow-2xl hover:bg-dark-700 transition-all z-40"
-      >
-        <Plus size={24} />
-      </button>
+      {/* Admin FAB removed - integrated into grid */}
 
       {/* Bottom Navigation (Mobile Only) */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[60] px-6 pb-8 pt-4 bg-dark-900/80 backdrop-blur-2xl border-t border-white/5 flex justify-between items-center">
@@ -1509,59 +1548,165 @@ const Dashboard: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="absolute inset-0 bg-dark-950/80 backdrop-blur-sm"
-              onClick={() => setShowAdminModal(false)}
+              onClick={() => { setShowAdminModal(false); setEditingLesson(null); }}
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="glass-panel w-full max-w-lg p-8 rounded-3xl relative z-10"
+              className="glass-panel w-full max-w-lg p-8 rounded-3xl relative z-10 max-h-[80vh] flex flex-col overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold">Add Custom Lesson</h2>
-                <button onClick={() => setShowAdminModal(false)} className="text-gray-500 hover:text-white transition-colors">
+                <h2 className="text-2xl font-bold">{editingLesson ? 'Edit Lesson' : 'Add New Lesson'}</h2>
+                <button 
+                  onClick={() => { setShowAdminModal(false); setEditingLesson(null); }} 
+                  className="text-gray-500 hover:text-white transition-colors"
+                >
                   <X size={24} />
                 </button>
               </div>
-              <form className="space-y-4" onSubmit={(e) => {
-                e.preventDefault();
-                const formData = new FormData(e.currentTarget);
-                const newLesson: Lesson = {
-                  id: Date.now(),
-                  title: formData.get('title') as string,
-                  level: urlLevelId || 1,
-                  difficulty: formData.get('difficulty') as any,
-                  status: 'available',
-                  sequence: (formData.get('sequence') as string).split(',').map(s => s.trim()),
-                  desc: formData.get('desc') as string,
-                };
-                setLessons(prev => [...prev, newLesson]);
-                setShowAdminModal(false);
-              }}>
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 block">Title</label>
-                  <input name="title" required className="glass-input w-full px-4 py-3 rounded-xl text-sm" placeholder="e.g. Blues Riff" />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 block">Difficulty</label>
-                  <select name="difficulty" className="glass-input w-full px-4 py-3 rounded-xl text-sm appearance-none">
-                    <option value="easy">Easy</option>
-                    <option value="medium">Medium</option>
-                    <option value="hard">Hard</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 block">Sequence (comma separated)</label>
-                  <input name="sequence" required className="glass-input w-full px-4 py-3 rounded-xl text-sm" placeholder="e.g. E2, G2, A2" />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 block">Description</label>
-                  <textarea name="desc" className="glass-input w-full px-4 py-3 rounded-xl text-sm" rows={3} placeholder="What will they learn?" />
-                </div>
-                <button type="submit" className="w-full bg-primary-500 text-dark-900 font-bold py-4 rounded-xl mt-4 shadow-lg shadow-primary-500/20 hover:bg-primary-600 transition-all">
-                  Create Lesson
+
+              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                <form className="space-y-4" onSubmit={(e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.currentTarget);
+                  const sequenceRaw = formData.get('sequence') as string;
+                  const sequence = sequenceRaw.split(',').map(s => s.trim().toUpperCase());
+
+                  // Validation: Check if notes are valid (e.g. E2, G#3, A4)
+                  const noteRegex = /^[A-G][#]?[0-9]$/;
+                  const invalidNotes = sequence.filter(n => !noteRegex.test(n));
+
+                  if (invalidNotes.length > 0) {
+                    setFormError(`Invalid notes: ${invalidNotes.join(', ')}`);
+                    return;
+                  }
+                  setFormError(null);
+
+                  const lessonData: Lesson = {
+                    id: editingLesson ? editingLesson.id : Date.now(),
+                    title: formData.get('title') as string,
+                    level: editingLesson ? editingLesson.level : (urlLevelId || 1),
+                    difficulty: formData.get('difficulty') as any,
+                    status: editingLesson ? editingLesson.status : 'available',
+                    sequence: sequence,
+                    desc: formData.get('desc') as string,
+                  };
+
+                  if (editingLesson) {
+                    setLessons(prev => prev.map(l => l.id === editingLesson.id ? lessonData : l));
+                  } else {
+                    setLessons(prev => [...prev, lessonData]);
+                  }
+                  
+                  setShowAdminModal(false);
+                  setEditingLesson(null);
+                }}>
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 block">Title</label>
+                    <input name="title" required defaultValue={editingLesson?.title} className="glass-input w-full px-4 py-3 rounded-xl text-sm" placeholder="e.g. Blues Riff" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 block">Difficulty</label>
+                    <select name="difficulty" defaultValue={editingLesson?.difficulty} className="glass-input w-full px-4 py-3 rounded-xl text-sm appearance-none">
+                      <option value="easy">Easy</option>
+                      <option value="medium">Medium</option>
+                      <option value="hard">Hard</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 block">Sequence (comma separated)</label>
+                    <input 
+                      name="sequence" 
+                      required 
+                      defaultValue={editingLesson?.sequence.join(', ')} 
+                      onChange={() => setFormError(null)}
+                      className="glass-input w-full px-4 py-3 rounded-xl text-sm mb-1" 
+                      placeholder="e.g. E2, G3, A3" 
+                    />
+                    <p className="text-[10px] text-gray-600 font-medium">Supported: E2, A2, D3, G3, B3, E4 (and sharps like C#3, G#3)</p>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 block">Description</label>
+                    <textarea name="desc" defaultValue={editingLesson?.desc} className="glass-input w-full px-4 py-3 rounded-xl text-sm" rows={3} placeholder="What will they learn?" />
+                  </div>
+                  {formError && (
+                    <motion.div 
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-bold flex items-center gap-2 mb-2"
+                    >
+                      <Activity size={14} />
+                      {formError}
+                    </motion.div>
+                  )}
+                  <div className="flex gap-3 mt-4">
+                    {editingLesson && (
+                      <button
+                        type="button"
+                        onClick={() => setShowDeleteConfirm(true)}
+                        className="px-6 bg-rose-500/10 text-rose-500 font-bold rounded-xl hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center"
+                        title="Delete Lesson"
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                    )}
+                    <button type="submit" className="flex-1 bg-primary-500 text-dark-900 font-bold py-4 rounded-xl shadow-lg shadow-primary-500/20 hover:bg-primary-600 transition-all">
+                      {editingLesson ? 'Save Changes' : 'Create Lesson'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteConfirm && editingLesson && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-dark-950/90 backdrop-blur-md"
+              onClick={() => setShowDeleteConfirm(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="glass-panel w-full max-w-sm p-8 rounded-[2.5rem] relative z-10 text-center overflow-hidden border-rose-500/20"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-20 h-20 bg-rose-500/20 text-rose-500 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                <Trash2 size={40} />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">Are you sure?</h3>
+              <p className="text-gray-400 text-sm mb-8">
+                You are about to delete <span className="text-white font-bold">"{editingLesson.title}"</span>. This action cannot be undone.
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="py-4 rounded-2xl bg-white/5 text-gray-400 font-bold hover:bg-white/10 transition-all"
+                >
+                  Cancel
                 </button>
-              </form>
+                <button
+                  onClick={() => {
+                    setLessons(prev => prev.filter(l => l.id !== editingLesson.id));
+                    setShowDeleteConfirm(false);
+                    setShowAdminModal(false);
+                    setEditingLesson(null);
+                  }}
+                  className="py-4 rounded-2xl bg-rose-500 text-white font-bold hover:bg-rose-600 shadow-lg shadow-rose-500/20 transition-all"
+                >
+                  Delete
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

@@ -7,9 +7,17 @@ const AuthCard: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const navigate = useNavigate();
 
+  const [email, setEmail] = useState('');
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, you'd do auth here
+    
+    // Simple Role-Based Logic for the Project Requirements
+    const role = email.toLowerCase() === 'admin@fretflow.com' ? 'ADMIN' : 'STUDENT';
+    
+    localStorage.setItem('fretflow_user_role', role);
+    localStorage.setItem('fretflow_user_email', email);
+    
     navigate('/dashboard');
   };
 
@@ -53,7 +61,10 @@ const AuthCard: React.FC = () => {
             <input 
               type="email" 
               placeholder="Email address" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="glass-input w-full pl-12 pr-4 py-3 rounded-xl text-sm"
+              required
             />
           </div>
           <div className="relative group">
