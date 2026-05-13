@@ -3,7 +3,7 @@ import cors from 'cors';
 import { initializeDatabase } from './database/init.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { validateBody } from './middleware/validate.js';
-import { registerSchema, loginSchema, submitScoreSchema, paginationSchema } from './validation/schemas.js';
+import { registerSchema, loginSchema, submitScoreSchema } from './validation/schemas.js';
 
 const app = express();
 
