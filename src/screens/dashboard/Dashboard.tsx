@@ -254,17 +254,6 @@ const Dashboard: React.FC = () => {
         </div>
 
         <div className="shrink-0 flex gap-2">
-          {/* Real Level Switcher */}
-          <select 
-            value={urlLevelId || 1}
-            onChange={(e) => navigate(`/dashboard/lessons/${e.target.value}`)}
-            className="glass-panel h-12 px-3 md:px-4 rounded-2xl text-[10px] md:text-sm text-primary-500 font-bold outline-none cursor-pointer border-primary-500/20 bg-primary-500/5"
-          >
-            <option value="1">Level 1</option>
-            <option value="2">Level 2</option>
-            <option value="3">Level 3</option>
-          </select>
-
           <select 
             value={difficultyFilter}
             onChange={(e) => setDifficultyFilter(e.target.value)}
