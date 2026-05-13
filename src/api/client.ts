@@ -54,6 +54,14 @@ async function getAccessToken(): Promise<string | null> {
   }
 }
 
+// Recovery timeout for stuck refresh
+setInterval(() => {
+  if (isRefreshing) {
+    isRefreshing = false;
+    refreshSubscribers = [];
+  }
+}, 10000);
+
 interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean>;
 }
@@ -95,7 +103,11 @@ class ApiClient {
 
     if (response.status === 401) {
       const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
-      if (refreshToken && !refreshSubscribers.length) {
+<<<<<<< HEAD
+      if (refreshToken && !isRefreshing && !refreshSubscribers.length) {
+=======
+      if (refreshToken && !isRefreshing && !refreshSubscribers.length) {
+>>>>>>> origin/main
         try {
           const tokens = await doRefresh(refreshToken);
           const retryResponse = await fetch(url, {

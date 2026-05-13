@@ -7,12 +7,14 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   accessToken: string | null;
+  authError: string | null;
 }
 
 interface AuthContextValue extends AuthState {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, username: string) => Promise<void>;
   logout: () => void;
+  clearAuthError: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -21,12 +23,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  const clearAuthError = useCallback(() => {
+    setAuthError(null);
+  }, []);
 
   const logout = useCallback(() => {
+    const refreshToken = localStorage.getItem('fretflow_refresh_token');
     setUser(null);
     setAccessToken(null);
     clearTokens();
-    apiClient.post('/api/auth/logout').catch(() => {});
+    if (refreshToken) {
+      apiClient.post('/api/auth/logout', { refreshToken }).catch(() => {});
+    }
   }, []);
 
   useEffect(() => {
@@ -38,7 +48,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setAccessToken(data.accessToken);
           setUser(data.user);
         })
-        .catch(() => {
+        .catch((err) => {
+          setAuthError(err instanceof Error ? err.message : 'Authentication failed');
           clearTokens();
         })
         .finally(() => {
@@ -70,9 +81,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!user,
         isLoading,
         accessToken,
+        authError,
         login,
         register,
         logout,
+        clearAuthError,
       }}
     >
       {children}

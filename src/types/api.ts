@@ -55,7 +55,7 @@ export interface DashboardLesson {
   desc: string;
 }
 
-export interface LessonProgress {
+export interface Progress {
   id: number;
   user_id: number;
   lesson_id: number;
@@ -117,6 +117,10 @@ export interface PracticeStats {
     xp_earned: number;
     avg_accuracy: number | null;
   }>;
+  total_sessions: number;
+  total_minutes: number;
+  current_streak: number;
+  lessons_completed: number;
 }
 
 export interface StatsSummary {
@@ -129,4 +133,11 @@ export interface StatsSummary {
   songs_completed: number;
   today_practice_seconds: number;
   today_xp: number;
+}
+
+export interface LeaderboardEntry {
+  id: number;
+  username: string;
+  score: number;
+  last_updated: string;
 }
