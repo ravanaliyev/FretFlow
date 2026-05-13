@@ -356,7 +356,7 @@ async function handleRegister(req: VercelRequest, res: VercelResponse) {
 
     await db.execute({
       sql: 'INSERT INTO streaks (user_id) VALUES (?)',
-      args: [userId],
+      args: [String(userId)],
     });
 
     const JWT_SECRET = process.env.JWT_SECRET || 'guitar-app-secret-key';
