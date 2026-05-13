@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import { initializeDatabase } from './database/init.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { validateBody } from './middleware/validate.js';
+import { registerSchema, loginSchema, submitScoreSchema, paginationSchema } from './validation/schemas.js';
 
 const app = express();
 
@@ -41,8 +43,8 @@ import statsSummary from '../api/stats/summary';
 import history from '../api/history';
 import practiceSessions from '../api/practice-sessions';
 
-app.use('/api/auth/register', register);
-app.use('/api/auth/login', login);
+app.use('/api/auth/register', validateBody(registerSchema), register);
+app.use('/api/auth/login', validateBody(loginSchema), login);
 app.use('/api/auth/refresh', refresh);
 app.use('/api/auth/logout', logout);
 app.use('/api/auth/me', me);
