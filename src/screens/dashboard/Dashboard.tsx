@@ -74,6 +74,7 @@ const Dashboard: React.FC = () => {
   const [isListening, setIsListening] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [showStreakModal, setShowStreakModal] = useState(false);
+  const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
   
   // Dynamic streak logic
   // Rolling 7-day logic
@@ -428,9 +429,18 @@ const Dashboard: React.FC = () => {
           <div className="flex items-center gap-12">
             <h1 className="text-2xl font-black tracking-tighter bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">FRETFLOW</h1>
             <nav className="hidden md:flex items-center gap-8">
-              <a href="#" className="text-sm font-semibold text-white border-b-2 border-primary-500 pb-1">Dashboard</a>
-              <a href="#" className="text-sm font-semibold text-gray-400 hover:text-white transition-colors">Course Library</a>
-              <a href="#" className="text-sm font-semibold text-gray-400 hover:text-white transition-colors">Stats</a>
+              <button 
+                onClick={() => navigate('/dashboard')}
+                className={`text-sm font-semibold transition-colors ${currentView === 'levels' || currentView === 'lessons' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
+              >
+                Dashboard
+              </button>
+              <button 
+                onClick={() => setShowHistoryDrawer(true)}
+                className="text-sm font-semibold text-gray-400 hover:text-white transition-colors flex items-center gap-2"
+              >
+                <History size={16} /> Activity
+              </button>
             </nav>
           </div>
           
@@ -498,9 +508,9 @@ const Dashboard: React.FC = () => {
         </div>
       </header>
 
-      <div className={`container mx-auto flex flex-col lg:flex-row gap-8 py-12 px-6 ${currentView === 'practice' ? 'hidden' : ''}`}>
-        {/* Main Content */}
-        <main className="flex-1 min-w-0">
+      <div className={`container mx-auto py-12 px-6 max-w-5xl ${currentView === 'practice' ? 'hidden' : ''}`}>
+        {/* Main Content - Full Width */}
+        <main className="w-full">
           <div className="mb-8 md:mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-2 text-center md:text-left">Welcome back, Rock Star! 🎸</h2>
             <p className="text-gray-400 text-center md:text-left">Pick up where you left off and master those strings.</p>
@@ -529,41 +539,6 @@ const Dashboard: React.FC = () => {
             )}
           </AnimatePresence>
         </main>
-
-        {/* Sidebar */}
-        <aside className="w-full lg:w-80 space-y-8">
-          <div className="glass-panel p-6 rounded-3xl">
-            <div className="flex items-center gap-3 mb-6">
-              <History size={20} className="text-primary-500" />
-              <h3 className="font-bold text-lg">Practice History</h3>
-            </div>
-            <div className="space-y-4 max-h-[400px] overflow-y-auto no-scrollbar">
-              {history.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center py-4">No sessions yet. Start playing!</p>
-              ) : (
-                history.map(item => (
-                  <div key={item.id} className="flex items-center justify-between group">
-                    <div>
-                      <p className="text-sm font-semibold text-white">{item.title}</p>
-                      <span className="text-[10px] text-gray-500">{item.date}</span>
-                    </div>
-                    <button 
-                      onClick={() => deleteHistory(item.id)}
-                      className="text-gray-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          <div className="glass-panel p-6 rounded-3xl bg-primary-500/5 border-primary-500/20">
-            <h3 className="font-bold mb-2">Mastery Tip</h3>
-            <p className="text-sm text-gray-400">Consistency is the key to muscle memory. Practice even 5 minutes a day!</p>
-          </div>
-        </aside>
       </div>
 
       {/* Practice View Overlay */}
@@ -712,6 +687,77 @@ const Dashboard: React.FC = () => {
               >
                 Rock On!
               </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* History Drawer */}
+      <AnimatePresence>
+        {showHistoryDrawer && (
+          <div className="fixed inset-0 z-[120]">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-dark-950/60 backdrop-blur-sm"
+              onClick={() => setShowHistoryDrawer(false)}
+            />
+            <motion.div 
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="absolute right-0 top-0 bottom-0 w-full max-w-sm bg-dark-900 border-l border-white/10 p-8 shadow-2xl"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <History size={24} className="text-primary-500" />
+                  <h3 className="text-2xl font-bold">Activity</h3>
+                </div>
+                <button onClick={() => setShowHistoryDrawer(false)} className="p-2 hover:bg-white/5 rounded-full transition-colors text-gray-500 hover:text-white">
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="space-y-6 overflow-y-auto max-h-[calc(100vh-200px)] pr-2 no-scrollbar">
+                {history.length === 0 ? (
+                  <div className="text-center py-20">
+                    <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <PlayCircle className="text-gray-600" size={32} />
+                    </div>
+                    <p className="text-gray-400">No practice history yet.</p>
+                    <p className="text-sm text-gray-600 mt-2">Finish a lesson to see it here!</p>
+                  </div>
+                ) : (
+                  history.map(item => (
+                    <motion.div 
+                      key={item.id}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="glass-panel p-4 rounded-2xl flex items-center justify-between group hover:border-primary-500/20 transition-all"
+                    >
+                      <div>
+                        <p className="font-bold text-white group-hover:text-primary-500 transition-colors">{item.title}</p>
+                        <span className="text-xs text-gray-500">{item.date}</span>
+                      </div>
+                      <button 
+                        onClick={() => deleteHistory(item.id)}
+                        className="p-2 text-gray-700 hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </motion.div>
+                  ))
+                )}
+              </div>
+
+              <div className="absolute bottom-8 left-8 right-8">
+                <div className="glass-panel p-6 rounded-3xl bg-primary-500/5 border-primary-500/20">
+                  <h3 className="font-bold mb-2 text-sm">Pro Tip</h3>
+                  <p className="text-xs text-gray-500">Consistency builds speed. Try to keep your streak alive!</p>
+                </div>
+              </div>
             </motion.div>
           </div>
         )}
