@@ -51,9 +51,9 @@ const DEFAULT_LESSONS: Lesson[] = [
   { id: 8,  title: 'Across the Fretboard',  level: 2, difficulty: 'hard',   status: 'locked',    sequence: ['A2', 'D3', 'G3', 'B3', 'E4'], desc: 'The ultimate open string coordination test.' },
 
   // Level 3 — First Riffs
-  { id: 11, title: 'Simple Rhythm',         level: 3, difficulty: 'medium', status: 'locked',    sequence: ['A2', 'A2', 'E2'],        desc: 'A basic 1-2 rhythm using open strings.' },
-  { id: 12, title: 'Rock Foundation',       level: 3, difficulty: 'medium', status: 'locked',    sequence: ['E2', 'G2', 'A2'],        desc: 'Standard rock progression fragment.' },
-  { id: 13, title: 'The Blues Walk',        level: 3, difficulty: 'hard',   status: 'locked',    sequence: ['E2', 'G2', 'A2', 'B2'],  desc: 'A simple blues walking bass line.' },
+  { id: 11, title: 'Simple Rhythm',         level: 3, difficulty: 'medium', status: 'locked',    sequence: ['A2', 'A2', 'A2'],        desc: 'A basic rhythm using the La string.' },
+  { id: 12, title: 'Rock Foundation',       level: 3, difficulty: 'medium', status: 'locked',    sequence: ['A2', 'G3', 'A2'],        desc: 'Standard rock progression using open strings.' },
+  { id: 13, title: 'The Blues Walk',        level: 3, difficulty: 'hard',   status: 'locked',    sequence: ['A2', 'C3', 'D3', 'E3'],  desc: 'A simple blues walking line starting from A.' },
 ];
 
 const STRINGS = ['E4', 'B3', 'G3', 'D3', 'A2', 'E2'];
@@ -722,7 +722,7 @@ const Dashboard: React.FC = () => {
   const urlLessonId = pathParts[2] ? parseInt(pathParts[2]) : null;
 
   const [lessons, setLessons] = useState<Lesson[]>(() => {
-    const saved = localStorage.getItem('fretflow_lessons_v3');
+    const saved = localStorage.getItem('fretflow_lessons_v4');
     return saved ? JSON.parse(saved) : DEFAULT_LESSONS;
   });
   const [history, setHistory] = useState<HistoryItem[]>(() => {
@@ -800,7 +800,7 @@ const Dashboard: React.FC = () => {
 
   // --- Persistence ---
   useEffect(() => {
-    localStorage.setItem('fretflow_lessons_v3', JSON.stringify(lessons));
+    localStorage.setItem('fretflow_lessons_v4', JSON.stringify(lessons));
   }, [lessons]);
 
   useEffect(() => {
@@ -1257,7 +1257,7 @@ const Dashboard: React.FC = () => {
                 <GuitarTuner currentPitch={currentPitch} frequency={currentFrequency} />
 
                 <div className="grid grid-cols-6 gap-3 mt-12">
-                  {['E2', 'A2', 'D3', 'G3', 'B3', 'E4'].map(s => (
+                  {['A2', 'D3', 'G3', 'B3', 'E4'].map(s => (
                     <div key={s} className="bg-white/5 p-4 rounded-2xl border border-white/5 text-center flex flex-col items-center gap-1">
                       <p className="text-xs font-black text-primary-500">{s.replace(/\d/, '')}</p>
                       <p className="text-[8px] text-gray-600 font-bold uppercase">{s.match(/\d/)}th</p>
