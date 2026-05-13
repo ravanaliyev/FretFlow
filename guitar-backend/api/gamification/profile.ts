@@ -26,7 +26,7 @@ async function handler(req: Request, res: Response): Promise<void> {
       args: [userId],
     });
 
-    const streak = streakResult.rows.length > 0 ? streakResult.rows[0] : { current_streak: 0, longest_streak: 0 };
+    const streak = streakResult.rows.length > 0 ? streakResult.rows[0] as unknown as { current_streak: number; longest_streak: number; last_practice_date: string | null } : { current_streak: 0, longest_streak: 0, last_practice_date: null };
 
     // Get lesson progress count
     const lessonProgressResult = await db.execute({

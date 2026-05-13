@@ -103,7 +103,11 @@ class ApiClient {
 
     if (response.status === 401) {
       const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+<<<<<<< HEAD
       if (refreshToken && !isRefreshing && !refreshSubscribers.length) {
+=======
+      if (refreshToken && !isRefreshing && !refreshSubscribers.length) {
+>>>>>>> origin/main
         try {
           const tokens = await doRefresh(refreshToken);
           const retryResponse = await fetch(url, {

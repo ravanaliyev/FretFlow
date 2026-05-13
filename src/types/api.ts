@@ -8,6 +8,11 @@ export interface User {
   role?: 'ADMIN' | 'STUDENT';
 }
 
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
 export interface AuthResponse {
   user: User;
   accessToken: string;
@@ -17,6 +22,17 @@ export interface AuthResponse {
 export interface ApiError {
   error: string;
   code: string;
+  details?: Record<string, unknown>;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    hasMore: boolean;
+  };
 }
 
 export interface Lesson {
@@ -29,21 +45,25 @@ export interface Lesson {
   order_index: number;
 }
 
+export interface DashboardLesson {
+  id: number;
+  title: string;
+  level: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+  status: 'available' | 'locked' | 'completed';
+  sequence: string[];
+  desc: string;
+}
+
 export interface Progress {
+  id: number;
+  user_id: number;
   lesson_id: number;
   is_completed: boolean;
   attempts: number;
   best_accuracy: number | null;
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    hasMore: boolean;
-  };
+  last_attempt_result: string | null;
+  completed_at: string | null;
 }
 
 export interface GamificationProfile {
@@ -65,6 +85,7 @@ export interface GamificationProfile {
 
 export interface Quest {
   id: number;
+  user_id: number;
   title: string;
   description: string;
   quest_type: string;
@@ -82,9 +103,20 @@ export interface Achievement {
   description: string;
   icon: string;
   xp_reward: number;
+  earned: boolean;
+  earned_at: string | null;
 }
 
 export interface PracticeStats {
+  data: Array<{
+    date: string;
+    total_practice_seconds: number;
+    sessions_count: number;
+    lessons_completed: number;
+    songs_completed: number;
+    xp_earned: number;
+    avg_accuracy: number | null;
+  }>;
   total_sessions: number;
   total_minutes: number;
   current_streak: number;
@@ -94,10 +126,13 @@ export interface PracticeStats {
 export interface StatsSummary {
   total_xp: number;
   level: number;
+  level_name: string;
+  streak_current: number;
+  streak_longest: number;
   lessons_completed: number;
   songs_completed: number;
-  total_practice_minutes: number;
-  current_streak: number;
+  today_practice_seconds: number;
+  today_xp: number;
 }
 
 export interface LeaderboardEntry {

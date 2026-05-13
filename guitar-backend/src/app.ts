@@ -31,12 +31,15 @@ import scoresMe from '../api/scores/me';
 import leaderboard from '../api/scores/leaderboard';
 import profile from '../api/gamification/profile';
 import quests from '../api/gamification/quests';
+import questClaim from '../api/gamification/quests/[id]/claim';
 import achievements from '../api/gamification/achievements';
 import milestones from '../api/gamification/milestones';
 import statsPractice from '../api/stats/practice';
 import statsAccuracy from '../api/stats/accuracy';
 import statsActivity from '../api/stats/activity';
 import statsSummary from '../api/stats/summary';
+import history from '../api/history';
+import practiceSessions from '../api/practice-sessions';
 
 app.use('/api/auth/register', register);
 app.use('/api/auth/login', login);
@@ -53,6 +56,7 @@ app.use('/api/scores/me', scoresMe);
 app.use('/api/scores/leaderboard', leaderboard);
 app.use('/api/scores', scoresIndex);
 app.use('/api/gamification/profile', profile);
+app.use('/api/gamification/quests/:id/claim', questClaim);
 app.use('/api/gamification/quests', quests);
 app.use('/api/gamification/achievements', achievements);
 app.use('/api/gamification/milestones', milestones);
@@ -60,6 +64,8 @@ app.use('/api/stats/practice', statsPractice);
 app.use('/api/stats/accuracy', statsAccuracy);
 app.use('/api/stats/activity', statsActivity);
 app.use('/api/stats/summary', statsSummary);
+app.use('/api/history', history);
+app.use('/api/practice-sessions', practiceSessions);
 
 // Error handling
 app.use(notFoundHandler);

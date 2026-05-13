@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   History,
   Search,
-  Filter,
   ArrowLeft,
   Mic,
   MicOff,
@@ -15,10 +14,18 @@ import {
   X,
   Activity,
   User,
-  Edit2
+  Edit2,
+  Trophy
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AudioProcessor } from '../../utils/PitchProcessor';
+import { lessonsApi } from '../../api/lessons';
+import { progressApi } from '../../api/progress';
+import { gamificationApi } from '../../api/gamification';
+import { statsApi } from '../../api/stats';
+import { scoresApi } from '../../api/scores';
+import { adminApi } from '../../api/admin';
+import { useAuth } from '../../hooks/useAuth';
 import confetti from 'canvas-confetti';
 
 // --- Types ---
@@ -37,6 +44,26 @@ interface HistoryItem {
   title: string;
   date: string;
 }
+
+interface LeaderboardItem {
+  id: number;
+  name: string;
+  score: number;
+  date: string;
+}
+
+const MOCK_LEADERBOARD: LeaderboardItem[] = [
+  { id: 1, name: 'Alex Shredder', score: 42, date: 'May 10' },
+  { id: 2, name: 'Luna Rocker', score: 38, date: 'May 12' },
+  { id: 3, name: 'FingerMaster', score: 35, date: 'May 11' },
+  { id: 4, name: 'Jimi Jr.', score: 31, date: 'May 13' },
+  { id: 5, name: 'GuitarHero99', score: 28, date: 'May 09' },
+  { id: 6, name: 'ScaleKing', score: 25, date: 'May 10' },
+  { id: 7, name: 'MetalHead', score: 22, date: 'May 11' },
+  { id: 8, name: 'JazzCat', score: 19, date: 'May 12' },
+  { id: 9, name: 'AcousticBoi', score: 15, date: 'May 13' },
+  { id: 10, name: 'NoviceNate', score: 12, date: 'May 08' },
+];
 
 const DEFAULT_LESSONS: Lesson[] = [
   // Level 1 — Open String Mastery
@@ -85,7 +112,7 @@ const BADGES = [
 // --- Sub-Components ---
 
 // --- Guitar Tuner Component ---
-const GuitarTuner: React.FC<{ currentPitch: string; frequency: number }> = ({ currentPitch, frequency }) => {
+const GuitarTuner: React.FC<{ currentPitch: string; frequency: number }> = ({ frequency }) => {
   const STANDARD_TUNING: Record<string, number> = {
     'E2': 82.41, 'A2': 110.00, 'D3': 146.83, 'G3': 196.00, 'B3': 246.94, 'E4': 329.63
   };
@@ -428,9 +455,67 @@ const AnalyticsChart: React.FC<{ stats: Record<string, number> }> = ({ stats }) 
   );
 };
 
+const LeaderboardComponent: React.FC<{ data: LeaderboardItem[] }> = ({ data }) => {
+  const sorted = [...data].sort((a, b) => b.score - a.score);
+  const top10 = sorted.slice(0, 10);
+  const userScore = Number(localStorage.getItem('fretflow_highscore') || 0);
+  
+  // To calculate rank, we need to know where the user's best score fits in the global list
+  // We'll treat the user's highscore as their entry
+  const userRank = sorted.findIndex(item => item.score <= userScore) + 1;
 
+  return (
+    <div className="w-full mt-16 pb-12 text-left">
+      <div className="flex items-center gap-3 mb-8">
+        <Trophy size={20} className="text-primary-500" />
+        <h3 className="text-sm font-black uppercase tracking-[0.3em] text-gray-500">Hall of Fame</h3>
+      </div>
+      
+      <div className="space-y-3">
+        {top10.map((item, i) => (
+          <div 
+            key={item.id} 
+            className={`flex items-center justify-between p-5 rounded-2xl border transition-all ${
+              i === 0 ? 'bg-primary-500/10 border-primary-500/30' : 
+              i === 1 ? 'bg-white/5 border-white/10' : 
+              i === 2 ? 'bg-white/[0.03] border-white/5' : 'bg-transparent border-white/5'
+            }`}
+          >
+            <div className="flex items-center gap-4">
+              <span className={`w-6 text-xs font-black ${i < 3 ? 'text-primary-500' : 'text-gray-600'}`}>
+                {i + 1}
+              </span>
+              <span className="font-bold text-sm text-white">{item.name}</span>
+            </div>
+            <div className="flex items-center gap-6">
+              <span className="text-[10px] text-gray-600 font-bold uppercase">{item.date}</span>
+              <span className="text-sm font-black text-primary-500">{item.score}</span>
+            </div>
+          </div>
+        ))}
+      </div>
 
-const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number }> = ({ lessons, streak }) => {
+      <div className="pt-8 border-t border-white/5 mt-10">
+        <div className="flex items-center justify-between p-6 rounded-3xl bg-primary-500 text-dark-900 shadow-xl shadow-primary-500/20 transform transition-transform hover:scale-[1.02]">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-dark-900/10 flex items-center justify-center font-black text-lg">
+              #{userRank > 0 ? userRank : '??'}
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Your Standing</p>
+              <h4 className="font-bold">You (Personal Best)</h4>
+            </div>
+          </div>
+          <div className="text-right">
+            <span className="text-3xl font-black">{userScore}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number; achievements?: Array<{ id: number; name: string; description: string; icon: string; earned: boolean }> }> = ({ lessons, streak, achievements: apiAchievements }) => {
   const [showAll, setShowAll] = React.useState(false);
 
   const completedCount = lessons.filter(l => l.status === 'completed').length;
@@ -441,7 +526,20 @@ const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number }> = ({ lesson
   const lvl3Done = lessons.filter(l => l.level === 3 && l.status === 'completed').length;
   const lvl3Total = lessons.filter(l => l.level === 3).length;
 
-  const isUnlocked = (id: string): boolean => {
+  // Use API achievements if available, otherwise fallback to computed from local data
+  const displayBadges = apiAchievements && apiAchievements.length > 0
+    ? apiAchievements.map(a => ({
+        id: String(a.id),
+        name: a.name,
+        icon: a.icon,
+        desc: a.description,
+        color: 'from-primary-400 to-primary-600',
+        category: 'Achievement',
+        earned: a.earned,
+      }))
+    : BADGES.map(b => ({ ...b, earned: isUnlockedLocal(b.id) }));
+
+  const isUnlockedLocal = (id: string): boolean => {
     switch (id) {
       case 'first_note': return completedCount >= 1;
       case 'five_done': return completedCount >= 5;
@@ -470,9 +568,9 @@ const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number }> = ({ lesson
     }
   };
 
-  const unlockedBadges = BADGES.filter(b => isUnlocked(b.id));
+  const unlockedBadges = displayBadges.filter(b => b.earned);
   const unlockedCount = unlockedBadges.length;
-  const categories = ['Lessons', 'Streak', 'Mastery'];
+  const categories = ['Lessons', 'Streak', 'Mastery', 'Achievement'];
 
   return (
     <>
@@ -559,13 +657,16 @@ const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number }> = ({ lesson
                 />
               </div>
 
-              {categories.map(cat => (
-                <div key={cat} className="mb-8">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-600 mb-4">{cat}</p>
-                  <div className="grid grid-cols-1 gap-3">
-                    {BADGES.filter(b => b.category === cat).map(badge => {
-                      const unlocked = isUnlocked(badge.id);
-                      const progress = getProgress(badge.id);
+              {categories.map(cat => {
+                  const badgesInCategory = displayBadges.filter(b => b.category === cat);
+                  if (badgesInCategory.length === 0) return null;
+                  return (
+                    <div key={cat} className="mb-8">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-600 mb-4">{cat}</p>
+                      <div className="grid grid-cols-1 gap-3">
+                        {badgesInCategory.map(badge => {
+                          const unlocked = badge.earned;
+                          const progress = getProgress(badge.id);
                       return (
                         <div
                           key={badge.id}
@@ -597,10 +698,11 @@ const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number }> = ({ lesson
                           </div>
                         </div>
                       );
-                    })}
-                  </div>
-                </div>
-              ))}
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
             </motion.div>
           </div>
         )}
@@ -770,15 +872,18 @@ const LessonGrid: React.FC<LessonGridProps> = ({
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const userRole = localStorage.getItem('fretflow_user_role') || 'STUDENT';
   const location = useLocation();
+  const { user } = useAuth();
+  const userRole = user?.role || 'STUDENT';
 
   // Parse view and IDs from URL
   const pathParts = location.pathname.split('/').filter(Boolean);
   // Expected: ['dashboard'] or ['dashboard', 'lessons', '1'] or ['dashboard', 'practice', '1']
-  const currentView = pathParts[1] || 'levels';
+  const urlView = pathParts[1] || 'levels';
   const urlLevelId = pathParts[2] ? parseInt(pathParts[2]) : null;
   const urlLessonId = pathParts[2] ? parseInt(pathParts[2]) : null;
+  const currentView = urlView;
+  const [isTunerOpen] = useState(false);
 
   const [showHistoryClearModal, setShowHistoryClearModal] = useState(false);
   const [lessons, setLessons] = useState<Lesson[]>(() => {
@@ -790,21 +895,40 @@ const Dashboard: React.FC = () => {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [userXp, setUserXp] = useState(0);
+  const [userLevel, setUserLevel] = useState(1);
+
   const [currentSequenceIndex, setCurrentSequenceIndex] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [isTunerOpen, setIsTunerOpen] = useState(false);
+  const [statusFilter] = useState('all');
   const [currentFrequency, setCurrentFrequency] = useState(0);
   const [isListening, setIsListening] = useState(false);
   const [currentPitch, setCurrentPitch] = useState('--');
   const [showAdminModal, setShowAdminModal] = useState(false);
-  const [adminTab, setAdminTab] = useState<'Add New' | 'Manage'>('Add New');
+  const [, setAdminTab] = useState<'Add New' | 'Manage'>('Add New');
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [showStreakModal, setShowStreakModal] = useState(false);
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
+
+  // Game States
+  const [gamePhase, setGamePhase] = useState<'idle' | 'countdown' | 'playing' | 'result'>('idle');
+  const [gameTimeLeft, setGameTimeLeft] = useState(30);
+  const [gameScore, setGameScore] = useState(0);
+  const [gameTargetNote, setGameTargetNote] = useState('');
+  const [gameHighScore, setGameHighScore] = useState(() => Number(localStorage.getItem('fretflow_highscore') || 0));
+  const [gameCountdown, setGameCountdown] = useState(3);
+
+  const [leaderboard, setLeaderboard] = useState<LeaderboardItem[]>(() => {
+    const saved = localStorage.getItem('fretflow_leaderboard');
+    return saved ? JSON.parse(saved) : MOCK_LEADERBOARD;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('fretflow_leaderboard', JSON.stringify(leaderboard));
+  }, [leaderboard]);
 
 
   const [isVictory, setIsVictory] = useState(false);
@@ -818,13 +942,10 @@ const Dashboard: React.FC = () => {
     if (saved) return JSON.parse(saved);
 
     // Generate realistic mock data if empty to show the chart working
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const todayIdx = new Date().getDay(); // 0 is Sun, 1 is Mon...
     const mockData: Record<string, number> = {};
-
-    // Fill previous days with realistic practice times (15-45 mins)
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const todayIdx = new Date().getDay(); 
     days.forEach((day, idx) => {
-      const dayPos = (idx + 1) % 7; // Map Mon=1...Sun=0
       if (idx < (todayIdx === 0 ? 6 : todayIdx - 1)) {
         mockData[day] = Math.floor(Math.random() * 30) + 15;
       }
@@ -887,42 +1008,203 @@ const Dashboard: React.FC = () => {
     localStorage.setItem('fretflow_history', JSON.stringify(history));
   }, [history]);
 
+  // --- API Data Loading ---
+  useEffect(() => {
+    const loadApiData = async () => {
+      try {
+        const [lessonsRes, progressRes, profileRes] = await Promise.all([
+          lessonsApi.getAll(),
+          progressApi.getLessonProgress(),
+          gamificationApi.getProfile(),
+        ]);
+
+        const progressMap = new Map(
+          progressRes.data.map(p => [p.lesson_id, p])
+        );
+
+        const mapped: Lesson[] = lessonsRes.data.map((l, idx) => {
+          const progress = progressMap.get(l.id);
+          let status: Lesson['status'] = 'available';
+          if (progress?.is_completed) {
+            status = 'completed';
+          } else if (idx > 0) {
+            const prevProgress = progressMap.get(lessonsRes.data[idx - 1]?.id);
+            if (!prevProgress?.is_completed) {
+              status = 'locked';
+            }
+          }
+
+          return {
+            id: l.id,
+            title: l.title,
+            level: l.order_index,
+            difficulty: (['easy', 'medium', 'hard'] as const)[l.difficulty - 1] || 'easy',
+            status,
+            sequence: JSON.parse(l.notes || '[]'),
+            desc: l.description,
+          };
+        });
+
+        setLessons(mapped);
+
+        // Update streak data from API profile
+        setStreakData((prev: { count: number; isFrozen: boolean; lastUpdated: string; history: ('completed' | 'frozen' | 'empty')[] }) => ({
+          ...prev,
+          count: profileRes.streak.current,
+          isFrozen: false,
+          lastUpdated: profileRes.streak.last_practice || new Date().toDateString(),
+        }));
+
+        // Store XP and level for display
+        setUserXp(profileRes.xp_total);
+        setUserLevel(profileRes.level);
+
+        // Fetch achievements from API
+        const achievementsRes = await gamificationApi.getAchievements();
+        setAchievements(achievementsRes.data);
+      } catch (err) {
+        console.error('Failed to load from API, using defaults:', err);
+      }
+    };
+
+    loadApiData();
+  }, []);
+
+  const [achievements, setAchievements] = useState<Array<{ id: number; name: string; description: string; icon: string; xp_reward: number; earned: boolean; earned_at: string | null }>>([]);
+
+  // --- Fetch Stats from API ---
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const statsRes = await statsApi.getPractice('week');
+        // Transform API response to match Dashboard's expected format
+        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        const transformed: Record<string, number> = {};
+        statsRes.data?.forEach((dayStat) => {
+          const date = new Date(dayStat.date);
+          const dayName = days[date.getDay() === 0 ? 6 : date.getDay() - 1];
+          transformed[dayName] = Math.round((dayStat.total_practice_seconds || 0) / 60);
+        });
+        if (Object.keys(transformed).length > 0) {
+          setPracticeStats(transformed);
+        }
+      } catch (err) {
+        console.error('Failed to load stats from API:', err);
+      }
+    };
+
+    loadStats();
+  }, []);
+
   // --- Audio Logic Sync with Route ---
   const activeLesson = (currentView === 'practice' || currentView === 'victory') ? lessons.find(l => l.id === urlLessonId) : null;
 
+
+
+  const pickRandomNote = () => {
+    const notes = ['E2', 'F2', 'G2', 'A2', 'B2', 'C3', 'D3', 'E3', 'F3', 'G3', 'A3', 'B3', 'C4', 'D4', 'E4'];
+    let next;
+    do {
+      next = notes[Math.floor(Math.random() * notes.length)];
+    } while (next === gameTargetNote);
+    setGameTargetNote(next);
+  };
+
+  const startChallenge = () => {
+    setGamePhase('countdown');
+    setGameCountdown(3);
+    setGameScore(0);
+    setGameTimeLeft(30);
+  };
+
+  // Game Timers
   useEffect(() => {
-    // Stop listening if Admin Modal or other blocking modals are open
+    let timer: any;
+    if (gamePhase === 'countdown') {
+      timer = setInterval(() => {
+        setGameCountdown(prev => {
+          if (prev <= 1) {
+            setGamePhase('playing');
+            pickRandomNote();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else if (gamePhase === 'playing') {
+      timer = setInterval(() => {
+        setGameTimeLeft(prev => {
+            if (prev <= 1) {
+              setGamePhase('result');
+              if (gameScore > gameHighScore) {
+                setGameHighScore(gameScore);
+                localStorage.setItem('fretflow_highscore', gameScore.toString());
+              }
+              
+              // Add to leaderboard
+              if (gameScore > 0) {
+                const newItem: LeaderboardItem = {
+                  id: Date.now(),
+                  name: 'You',
+                  score: gameScore,
+                  date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                };
+                setLeaderboard(prev => {
+                  // Keep only the best score for 'You' in the leaderboard calculation
+                  // or just add all of them. Let's add all and sort.
+                  return [...prev, newItem];
+                });
+              }
+              return 0;
+            }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [gamePhase]);
+
+  // Game Note Detection
+  useEffect(() => {
+    if (gamePhase === 'playing' && currentPitch === gameTargetNote) {
+      setGameScore(prev => prev + 1);
+      pickRandomNote();
+    }
+  }, [currentPitch, gamePhase, gameTargetNote]);
+
+  useEffect(() => {
     const isUIBlocked = showAdminModal || showStreakModal || showHistoryDrawer || showHistoryClearModal;
-    const shouldListen = ((currentView === 'practice' && activeLesson) || currentView === 'tuner') && !isVictory && !isUIBlocked;
+    const shouldListen = ((currentView === 'practice' && activeLesson) || currentView === 'tuner' || gamePhase === 'playing') && !isVictory && !isUIBlocked;
 
-    if (shouldListen) {
-      if (!processorRef.current) {
-        processorRef.current = new AudioProcessor();
-      }
-
+    if (shouldListen && processorRef.current) {
       processorRef.current.onNoteDetected = (freq, note) => {
         setCurrentPitch(note);
         setCurrentFrequency(freq);
 
-        // Only trigger match logic if NOT in victory mode, NOT in tuner, and note matches
         if (!isVictory && currentView === 'practice' && activeLesson && note === activeLesson.sequence[currentSequenceIndex]) {
           handleMatch();
         }
       };
 
-      processorRef.current.start().then(() => setIsListening(true));
+      if (!isListening) {
+        processorRef.current.start().then(() => setIsListening(true));
+      }
     } else {
-      if (processorRef.current) processorRef.current.stop();
+      if (processorRef.current && isListening) {
+        processorRef.current.stop();
+      }
       setIsListening(false);
       setCurrentPitch('--');
       setCurrentFrequency(0);
     }
 
     return () => {
-      if (processorRef.current) processorRef.current.stop();
+      if (processorRef.current && isListening) {
+        processorRef.current.stop();
+      }
       updatePracticeTime();
     };
-  }, [currentView, urlLessonId, currentSequenceIndex, isVictory]);
+  }, [currentView, activeLesson, isVictory, showAdminModal, showStreakModal, showHistoryDrawer, showHistoryClearModal, gamePhase, currentSequenceIndex]);
 
 
   const startPractice = (lesson: Lesson) => {
@@ -1020,8 +1302,11 @@ const Dashboard: React.FC = () => {
 
         setIsVictory(true);
 
+        // Sync progress to backend
+        progressApi.submitProgress(activeLesson.id, 100, activeLesson.sequence).catch(console.error);
+
         // Update Streak
-        setStreakData(prev => {
+        setStreakData((prev: { count: number; isFrozen: boolean; lastUpdated: string; history: string[] }) => {
           const today = new Date().toDateString();
           if (prev.lastUpdated === today && !prev.isFrozen) return prev;
 
@@ -1047,9 +1332,7 @@ const Dashboard: React.FC = () => {
     navigate(`/dashboard/lessons/${activeLesson?.level || 1}`);
   };
 
-  const deleteHistory = (id: number) => {
-    setHistory(prev => prev.filter(item => item.id !== id));
-  };
+
 
   const filteredLessons = lessons.filter(l => {
     const matchesLevel = l.level === urlLevelId;
@@ -1130,7 +1413,7 @@ const Dashboard: React.FC = () => {
 
         <div className="flex flex-col items-center gap-6 md:gap-8 w-full">
           <div className="flex gap-2 md:gap-4 overflow-x-auto no-scrollbar w-full justify-center py-2">
-            {activeLesson?.sequence.map((note, i) => (
+            {activeLesson?.sequence.map((_, i) => (
               <div
                 key={i}
                 className={`w-3 h-3 md:w-4 md:h-4 rounded-full flex-shrink-0 transition-all duration-500 ${i < currentSequenceIndex ? 'bg-green-500' :
@@ -1189,26 +1472,32 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-dark-900 text-white font-sans overflow-x-hidden">
       {/* Header */}
-      <header className={`sticky top-0 z-40 bg-dark-900/80 backdrop-blur-xl border-b border-white/5 ${currentView === 'practice' ? 'hidden' : ''}`}>
+      <header className={`sticky top-0 z-[1000] bg-dark-900/80 backdrop-blur-xl border-b border-white/5 ${currentView === 'practice' ? 'hidden' : ''}`}>
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-12">
             <h1 className="text-2xl font-black tracking-tighter bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">FRETFLOW</h1>
             <nav className="hidden md:flex items-center gap-8">
               <button
-                onClick={() => navigate('/dashboard')}
-                className={`text-sm font-semibold transition-colors ${currentView === 'levels' || currentView === 'lessons' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
+                onClick={() => { console.log('Navigating to levels'); navigate('/dashboard'); }}
+                className={`text-sm font-semibold transition-colors ${urlView === 'levels' || urlView === 'lessons' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
               >
-                Practice
+                Curriculum
               </button>
               <button
-                onClick={() => navigate('/dashboard/activity')}
-                className={`text-sm font-semibold transition-colors ${currentView === 'activity' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
+                onClick={() => { console.log('Navigating to activity'); navigate('/dashboard/activity'); }}
+                className={`text-sm font-semibold transition-colors ${urlView === 'activity' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
               >
                 Activity
               </button>
               <button
-                onClick={() => navigate('/dashboard/tuner')}
-                className={`text-sm font-semibold transition-colors ${currentView === 'tuner' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
+                onClick={() => { console.log('Navigating to challenge'); navigate('/dashboard/challenge'); }}
+                className={`text-sm font-semibold transition-colors ${urlView === 'challenge' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
+              >
+                Challenge
+              </button>
+              <button
+                onClick={() => { console.log('Navigating to tuner'); navigate('/dashboard/tuner'); }}
+                className={`text-sm font-semibold transition-colors ${urlView === 'tuner' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
               >
                 Tuner
               </button>
@@ -1270,8 +1559,16 @@ const Dashboard: React.FC = () => {
                 />
               </div>
             </div>
-            <div className="w-10 h-10 rounded-full bg-primary-500/10 border-2 border-primary-500/30 flex items-center justify-center text-primary-500">
-              <User size={20} />
+            <div className="flex items-center gap-2 px-2 py-1 rounded-full bg-white/5 border border-white/10">
+              <span className="text-[10px] text-gray-400 font-bold uppercase">Lv.{userLevel}</span>
+              <span className="text-xs font-black text-primary-400">{userXp.toLocaleString()} XP</span>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-primary-500/10 border-2 border-primary-500/30 flex items-center justify-center text-primary-500 overflow-hidden">
+              {user?.avatar_url ? (
+                <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <User size={20} />
+              )}
             </div>
           </div>
         </div>
@@ -1301,12 +1598,12 @@ const Dashboard: React.FC = () => {
               <h2 className="text-4xl font-bold mb-3 text-white">
                 {isAllCompleted ? "Master of the Strings! 🏆" : "Welcome back, Rock Star! 🎸"}
               </h2>
-              <p className="text-gray-400">
+              <div className="text-gray-400">
                 {isAllCompleted
                   ? "You've conquered every lesson. Time to refine your skills or start a review!"
                   : <MotivationQuote />
                 }
-              </p>
+              </div>
             </div>
           )}
 
@@ -1362,7 +1659,7 @@ const Dashboard: React.FC = () => {
                   <p className="text-gray-400">Track your progress, badges, and practice history.</p>
                 </div>
                 <AnalyticsChart stats={practiceStats} />
-                <BadgesSection lessons={lessons} streak={streakData.count} />
+                <BadgesSection lessons={lessons} streak={streakData.count} achievements={achievements} />
                 <div className="pt-10 border-t border-white/10">
                   <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-3">
@@ -1424,19 +1721,137 @@ const Dashboard: React.FC = () => {
                 className="max-w-xl mx-auto"
               >
                 <div className="text-center mb-12">
-                  <h2 className="text-4xl font-black text-white mb-2 italic">PRECISION TUNER 🎯</h2>
-                  <p className="text-gray-500">Get your strings perfectly in sync before you play.</p>
+                  <h2 className="text-4xl font-black text-white mb-2 italic tracking-tighter">PRECISION TUNER 🎯</h2>
+                  <p className="text-gray-500 font-medium">Get your strings perfectly in sync before you play.</p>
                 </div>
                 <GuitarTuner currentPitch={currentPitch} frequency={currentFrequency} />
+              </motion.div>
+            )}
 
-                <div className="grid grid-cols-6 gap-3 mt-12">
-                  {['A2', 'D3', 'G3', 'B3', 'E4'].map(s => (
-                    <div key={s} className="bg-white/5 p-4 rounded-2xl border border-white/5 text-center flex flex-col items-center gap-1">
-                      <p className="text-xs font-black text-primary-500">{s.replace(/\d/, '')}</p>
-                      <p className="text-[8px] text-gray-600 font-bold uppercase">{s.match(/\d/)}th</p>
-                    </div>
-                  ))}
+            {currentView === 'challenge' && (
+              <motion.div
+                key="challenge"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="max-w-2xl mx-auto"
+              >
+                <div className="text-center mb-12">
+                  <h2 className="text-4xl font-bold mb-3 text-white">Speed Challenge</h2>
+                  <p className="text-gray-400 text-lg">Play as many notes as you can in 30 seconds!</p>
                 </div>
+
+                <div className="glass-panel p-12 rounded-[3rem] relative overflow-hidden flex flex-col items-center justify-center min-h-[450px]">
+                  {gamePhase === 'idle' && (
+                    <div className="text-center">
+                      <div className="w-24 h-24 bg-primary-500/10 text-primary-500 rounded-full flex items-center justify-center mx-auto mb-8">
+                        <Trophy size={48} />
+                      </div>
+                      <p className="text-gray-500 font-bold uppercase tracking-widest text-xs mb-2">High Score</p>
+                      <h4 className="text-6xl font-black text-white mb-10">{gameHighScore}</h4>
+                      <button 
+                        onClick={startChallenge}
+                        className="bg-primary-500 text-dark-900 px-12 py-5 rounded-2xl font-black text-xl hover:scale-105 transition-all shadow-xl shadow-primary-500/20"
+                      >
+                        START GAME
+                      </button>
+                    </div>
+                  )}
+
+                  {gamePhase === 'countdown' && (
+                    <>
+                      <motion.div 
+                        key={gameCountdown}
+                        initial={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="text-9xl font-black text-primary-500"
+                      >
+                        {gameCountdown}
+                      </motion.div>
+                      <button 
+                        onClick={() => setGamePhase('idle')}
+                        className="absolute bottom-8 text-gray-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  )}
+
+                  {gamePhase === 'playing' && (
+                    <div className="w-full flex flex-col items-center">
+                      <div className="flex justify-between w-full mb-12">
+                        <div className="text-left">
+                          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Time Left</p>
+                          <h4 className={`text-3xl font-black ${gameTimeLeft <= 10 ? 'text-rose-500 animate-pulse' : 'text-white'}`}>{gameTimeLeft}s</h4>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Score</p>
+                          <h4 className="text-3xl font-black text-primary-500">{gameScore}</h4>
+                        </div>
+                      </div>
+
+                      <div className="relative mb-12">
+                        <motion.div 
+                          key={gameTargetNote}
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          className="w-48 h-48 bg-white/5 rounded-[2.5rem] border-2 border-primary-500/20 flex items-center justify-center"
+                        >
+                          <span className="text-8xl font-black text-white">{gameTargetNote}</span>
+                        </motion.div>
+                        <div className="absolute -top-4 -right-4 w-12 h-12 bg-primary-500 text-dark-900 rounded-full flex items-center justify-center font-black text-xl shadow-lg">
+                          !
+                        </div>
+                      </div>
+
+                      <p className="text-gray-500 font-medium italic animate-bounce">Play this note now!</p>
+                      
+                      <div className="mt-8 px-6 py-2 rounded-full bg-white/5 border border-white/10 text-xs text-gray-400 font-bold">
+                        Detecting: <span className="text-primary-500">{currentPitch || '--'}</span>
+                      </div>
+
+                      <button 
+                        onClick={() => setGamePhase('idle')}
+                        className="mt-8 text-gray-500 hover:text-rose-500 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2"
+                      >
+                        <X size={14} /> Stop Challenge
+                      </button>
+                    </div>
+                  )}
+
+                  {gamePhase === 'result' && (
+                    <div className="text-center">
+                      <div className="text-primary-500 mb-6">
+                        <Trophy size={64} className="mx-auto" />
+                      </div>
+                      <h4 className="text-2xl font-bold text-white mb-2">Game Over!</h4>
+                      <p className="text-gray-400 mb-8 text-lg">You scored <span className="text-primary-500 font-black">{gameScore}</span> notes!</p>
+                      {gameScore >= gameHighScore && gameScore > 0 && (
+                        <div className="mb-8 p-3 bg-primary-500/10 rounded-xl text-primary-500 font-bold text-sm">
+                          New Personal Best! 🎉
+                        </div>
+                      )}
+                      <div className="flex gap-4">
+                        <button 
+                          onClick={() => setGamePhase('idle')}
+                          className="px-8 py-4 rounded-xl bg-white/5 text-gray-400 font-bold hover:bg-white/10 transition-all"
+                        >
+                          Menu
+                        </button>
+                        <button 
+                          onClick={startChallenge}
+                          className="px-8 py-4 rounded-xl bg-primary-500 text-dark-900 font-black hover:scale-105 transition-all"
+                        >
+                          Try Again
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {gamePhase === 'idle' && (
+                  <LeaderboardComponent data={leaderboard} />
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -1568,7 +1983,7 @@ const Dashboard: React.FC = () => {
               </div>
 
               <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                <form className="space-y-4" onSubmit={(e) => {
+                <form className="space-y-4" onSubmit={async (e) => {
                   e.preventDefault();
                   const formData = new FormData(e.currentTarget);
                   const sequenceRaw = formData.get('sequence') as string;
@@ -1583,6 +1998,27 @@ const Dashboard: React.FC = () => {
                     return;
                   }
                   setFormError(null);
+
+                  const difficultyMap: Record<string, number> = { easy: 1, medium: 2, hard: 3 };
+
+                  const apiLessonData = {
+                    title: formData.get('title') as string,
+                    description: formData.get('desc') as string,
+                    notes: JSON.stringify(sequence.map(n => ({ note: n, time: 0 }))),
+                    difficulty: difficultyMap[formData.get('difficulty') as string] || 1,
+                    xp_reward: 10,
+                    order_index: editingLesson ? editingLesson.level : (urlLevelId || 1),
+                  };
+
+                  try {
+                    if (editingLesson) {
+                      await adminApi.updateLesson(editingLesson.id, apiLessonData);
+                    } else {
+                      await adminApi.createLesson(apiLessonData);
+                    }
+                  } catch (err) {
+                    console.error('Failed to sync lesson to server:', err);
+                  }
 
                   const lessonData: Lesson = {
                     id: editingLesson ? editingLesson.id : Date.now(),
@@ -1599,7 +2035,7 @@ const Dashboard: React.FC = () => {
                   } else {
                     setLessons(prev => [...prev, lessonData]);
                   }
-                  
+
                   setShowAdminModal(false);
                   setEditingLesson(null);
                 }}>
@@ -1696,7 +2132,12 @@ const Dashboard: React.FC = () => {
                   Cancel
                 </button>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
+                    try {
+                      await adminApi.deleteLesson(editingLesson.id);
+                    } catch (err) {
+                      console.error('Failed to delete lesson from server:', err);
+                    }
                     setLessons(prev => prev.filter(l => l.id !== editingLesson.id));
                     setShowDeleteConfirm(false);
                     setShowAdminModal(false);
@@ -1814,7 +2255,7 @@ const Dashboard: React.FC = () => {
                 </section>
 
                 <section>
-                  <BadgesSection lessons={lessons} streak={streakData.count} />
+                  <BadgesSection lessons={lessons} streak={streakData.count} achievements={achievements} />
                 </section>
 
                 <section className="pt-10 border-t border-white/10">
