@@ -17,6 +17,7 @@ export async function refresh(req: Request, res: Response): Promise<void> {
 
     res.json(tokens);
   } catch (error) {
-    res.status(401).json({ error: 'Invalid refresh token', code: 'INVALID_TOKEN' });
+    console.error('Refresh error:', error);
+    res.status(401).json({ error: error instanceof Error ? error.message : 'Invalid refresh token', code: 'INVALID_TOKEN' });
   }
 }
