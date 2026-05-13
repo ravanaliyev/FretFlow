@@ -6,7 +6,6 @@ async function handler(req: Request, res: Response): Promise<void> {
   // Handle POST - Create new song (check for title in body instead of method)
   if (req.body && req.body.title) {
     try {
-      const userId = (req as any).userId;
       const { title, artist, difficulty, xp_reward, notes } = req.body;
 
       if (!title || !artist) {
@@ -26,8 +25,8 @@ async function handler(req: Request, res: Response): Promise<void> {
         id: insertId,
         message: 'Song created successfully',
       });
-    } catch (error: any) {
-      console.error('Create song error:', error);
+    } catch (_error: any) {
+      console.error(_error);
       res.status(500).json({ error: 'Failed to create song', code: 'SERVER_ERROR' });
     }
     return;
@@ -74,7 +73,7 @@ async function handler(req: Request, res: Response): Promise<void> {
         hasMore: offset + result.rows.length < total,
       },
     });
-  } catch (error) {
+  } catch (_error) {
     res.status(500).json({ error: 'Failed to fetch songs', code: 'SERVER_ERROR' });
   }
 }
