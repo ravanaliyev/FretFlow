@@ -886,10 +886,15 @@ const Dashboard: React.FC = () => {
   const [isTunerOpen] = useState(false);
 
   const [showHistoryClearModal, setShowHistoryClearModal] = useState(false);
-  const [lessons, setLessons] = useState<Lesson[]>(() => {
-    const saved = localStorage.getItem('fretflow_lessons_v5');
-    return saved ? JSON.parse(saved) : DEFAULT_LESSONS;
-  });
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+
+  useEffect(() => {
+    lessonsApi.getAll().then(res => {
+      setLessons(res.data);
+    }).catch(err => {
+      console.error('Failed to fetch lessons:', err);
+    });
+  }, []);
   const [history, setHistory] = useState<HistoryItem[]>(() => {
     const saved = localStorage.getItem('fretflow_history');
     return saved ? JSON.parse(saved) : [];
@@ -921,14 +926,21 @@ const Dashboard: React.FC = () => {
   const [gameHighScore, setGameHighScore] = useState(() => Number(localStorage.getItem('fretflow_highscore') || 0));
   const [gameCountdown, setGameCountdown] = useState(3);
 
-  const [leaderboard, setLeaderboard] = useState<LeaderboardItem[]>(() => {
-    const saved = localStorage.getItem('fretflow_leaderboard');
-    return saved ? JSON.parse(saved) : MOCK_LEADERBOARD;
-  });
+  const [leaderboard, setLeaderboard] = useState<LeaderboardItem[]>([]);
 
   useEffect(() => {
-    localStorage.setItem('fretflow_leaderboard', JSON.stringify(leaderboard));
-  }, [leaderboard]);
+    scoresApi.getLeaderboard().then(res => {
+      const mapped = res.data.map((item: any) => ({
+        id: item.id,
+        name: item.username,
+        score: item.best_score ?? item.xp_total,
+        date: ''
+      }));
+      setLeaderboard(mapped);
+    }).catch(err => {
+      console.error('Failed to fetch leaderboard:', err);
+    });
+  }, []);
 
 
   const [isVictory, setIsVictory] = useState(false);
