@@ -14,6 +14,7 @@ import {
   Trash2,
   X
 } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { AudioProcessor } from '../../utils/PitchProcessor';
 
 // --- Types ---
@@ -46,7 +47,16 @@ const STRINGS = ['E4', 'B3', 'G3', 'D3', 'A2', 'E2'];
 const FRET_COUNT = 12;
 
 const Dashboard: React.FC = () => {
-  // --- State ---
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Parse view and IDs from URL
+  const pathParts = location.pathname.split('/').filter(Boolean);
+  // Expected: ['dashboard'] or ['dashboard', 'lessons', '1'] or ['dashboard', 'practice', '1']
+  const currentView = pathParts[1] || 'levels';
+  const urlLevelId = pathParts[2] ? parseInt(pathParts[2]) : null;
+  const urlLessonId = pathParts[2] ? parseInt(pathParts[2]) : null;
+
   const [lessons, setLessons] = useState<Lesson[]>(() => {
     const saved = localStorage.getItem('fretflow_lessons');
     return saved ? JSON.parse(saved) : DEFAULT_LESSONS;
@@ -55,9 +65,7 @@ const Dashboard: React.FC = () => {
     const saved = localStorage.getItem('fretflow_history');
     return saved ? JSON.parse(saved) : [];
   });
-  const [view, setView] = useState<'levels' | 'lessons' | 'practice'>('levels');
-  const [activeLevel, setActiveLevel] = useState<number | null>(null);
-  const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
+  
   const [currentSequenceIndex, setCurrentSequenceIndex] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState('all');
@@ -102,31 +110,49 @@ const Dashboard: React.FC = () => {
     localStorage.setItem('fretflow_history', JSON.stringify(history));
   }, [history]);
 
-  // --- Audio Cleanup ---
+  // --- Audio Logic Sync with Route ---
+  const activeLesson = currentView === 'practice' ? lessons.find(l => l.id === urlLessonId) : null;
+
   useEffect(() => {
+    if (currentView === 'practice' && activeLesson) {
+      setCurrentSequenceIndex(0);
+      
+      if (!processorRef.current) {
+        processorRef.current = new AudioProcessor();
+      }
+      
+      processorRef.current.onNoteDetected = (freq, note) => {
+        setCurrentPitch(note);
+        // We use a ref-like check or functional state to handle the current sequence index properly in the callback
+      };
+      
+      processorRef.current.start().then(() => setIsListening(true));
+    } else {
+      if (processorRef.current) processorRef.current.stop();
+      setIsListening(false);
+      setCurrentPitch('--');
+    }
+
     return () => {
       if (processorRef.current) processorRef.current.stop();
     };
-  }, []);
+  }, [currentView, urlLessonId]);
+
+  // Update note detection callback when sequence index changes
+  useEffect(() => {
+    if (processorRef.current && activeLesson) {
+      processorRef.current.onNoteDetected = (freq, note) => {
+        setCurrentPitch(note);
+        if (note === activeLesson.sequence[currentSequenceIndex]) {
+          handleMatch();
+        }
+      };
+    }
+  }, [currentSequenceIndex, activeLesson]);
 
   // --- Logic ---
   const startPractice = (lesson: Lesson) => {
-    setActiveLesson(lesson);
-    setCurrentSequenceIndex(0);
-    setView('practice');
-    
-    if (!processorRef.current) {
-      processorRef.current = new AudioProcessor();
-    }
-    
-    processorRef.current.onNoteDetected = (freq, note) => {
-      setCurrentPitch(note);
-      if (note === lesson.sequence[currentSequenceIndex]) {
-        handleMatch();
-      }
-    };
-    
-    processorRef.current.start().then(() => setIsListening(true));
+    navigate(`/dashboard/practice/${lesson.id}`);
   };
 
   const handleMatch = () => {
@@ -165,11 +191,7 @@ const Dashboard: React.FC = () => {
   };
 
   const closePractice = () => {
-    if (processorRef.current) processorRef.current.stop();
-    setIsListening(false);
-    setView('lessons');
-    setActiveLesson(null);
-    setCurrentPitch('--');
+    navigate(`/dashboard/lessons/${activeLesson?.level || 1}`);
   };
 
   const deleteHistory = (id: number) => {
@@ -177,7 +199,7 @@ const Dashboard: React.FC = () => {
   };
 
   const filteredLessons = lessons.filter(l => {
-    const matchesLevel = l.level === activeLevel;
+    const matchesLevel = l.level === urlLevelId;
     const matchesSearch = l.title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDiff = difficultyFilter === 'all' || l.difficulty === difficultyFilter;
     const matchesStatus = statusFilter === 'all' || l.status === statusFilter;
@@ -198,7 +220,7 @@ const Dashboard: React.FC = () => {
           key={level.id}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          onClick={() => { setActiveLevel(level.id); setView('lessons'); }}
+          onClick={() => navigate(`/dashboard/lessons/${level.id}`)}
           className="glass-panel p-8 rounded-3xl cursor-pointer hover:border-primary-500/50 transition-colors group flex flex-col items-center text-center"
         >
           <span className="text-xs font-bold text-primary-500 bg-primary-500/10 px-3 py-1 rounded-full mb-4 uppercase tracking-wider">Level {level.id}</span>
@@ -213,7 +235,7 @@ const Dashboard: React.FC = () => {
     <div className="p-6 space-y-6">
       <div className="flex flex-col md:flex-row gap-4 mb-8">
         <button 
-          onClick={() => setView('levels')}
+          onClick={() => navigate('/dashboard')}
           className="glass-panel flex items-center gap-2 px-6 py-3 rounded-2xl text-gray-400 hover:text-white transition-colors"
         >
           <ArrowLeft size={18} /> Back
@@ -396,7 +418,7 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-dark-900 text-white font-sans overflow-x-hidden">
       {/* Header */}
-      <header className={`sticky top-0 z-40 bg-dark-900/80 backdrop-blur-xl border-b border-white/5 ${view === 'practice' ? 'hidden' : ''}`}>
+      <header className={`sticky top-0 z-40 bg-dark-900/80 backdrop-blur-xl border-b border-white/5 ${currentView === 'practice' ? 'hidden' : ''}`}>
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-12">
             <h1 className="text-2xl font-black tracking-tighter bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">FRETFLOW</h1>
@@ -471,7 +493,7 @@ const Dashboard: React.FC = () => {
         </div>
       </header>
 
-      <div className={`container mx-auto flex flex-col lg:flex-row gap-8 py-12 px-6 ${view === 'practice' ? 'hidden' : ''}`}>
+      <div className={`container mx-auto flex flex-col lg:flex-row gap-8 py-12 px-6 ${currentView === 'practice' ? 'hidden' : ''}`}>
         {/* Main Content */}
         <main className="flex-1 min-w-0">
           <div className="mb-8 md:mb-12">
@@ -480,7 +502,7 @@ const Dashboard: React.FC = () => {
           </div>
 
           <AnimatePresence mode="wait">
-            {view === 'levels' && (
+            {currentView === 'levels' && (
               <motion.div 
                 key="levels"
                 initial={{ opacity: 0, y: 20 }}
@@ -490,7 +512,7 @@ const Dashboard: React.FC = () => {
                 <LevelMenu />
               </motion.div>
             )}
-            {view === 'lessons' && (
+            {currentView === 'lessons' && (
               <motion.div 
                 key="lessons"
                 initial={{ opacity: 0, y: 20 }}
@@ -541,7 +563,7 @@ const Dashboard: React.FC = () => {
 
       {/* Practice View Overlay */}
       <AnimatePresence>
-        {view === 'practice' && (
+        {currentView === 'practice' && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -591,7 +613,7 @@ const Dashboard: React.FC = () => {
                 const newLesson: Lesson = {
                   id: Date.now(),
                   title: formData.get('title') as string,
-                  level: activeLevel || 1,
+                  level: urlLevelId || 1,
                   difficulty: formData.get('difficulty') as any,
                   status: 'available',
                   sequence: (formData.get('sequence') as string).split(',').map(s => s.trim()),
