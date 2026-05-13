@@ -634,13 +634,13 @@ const Dashboard: React.FC = () => {
                 onClick={() => navigate('/dashboard')}
                 className={`text-sm font-semibold transition-colors ${currentView === 'levels' || currentView === 'lessons' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
               >
-                Dashboard
+                Practice
               </button>
               <button 
-                onClick={() => setShowHistoryDrawer(true)}
-                className="text-sm font-semibold text-gray-400 hover:text-white transition-colors flex items-center gap-2"
+                onClick={() => navigate('/dashboard/activity')}
+                className={`text-sm font-semibold transition-colors ${currentView === 'activity' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
               >
-                <History size={16} /> Activity
+                Activity
               </button>
             </nav>
           </div>
@@ -748,6 +748,64 @@ const Dashboard: React.FC = () => {
                   filteredLessons={filteredLessons}
                   startPractice={startPractice}
                 />
+              </motion.div>
+            )}
+            {currentView === 'activity' && (
+              <motion.div
+                key="activity"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-12 pb-20"
+              >
+                <div>
+                  <h2 className="text-3xl md:text-4xl font-bold mb-2">Your Activity</h2>
+                  <p className="text-gray-400">Track your progress, badges, and practice history.</p>
+                </div>
+                <AnalyticsChart stats={practiceStats} />
+                <BadgesSection lessons={lessons} streak={streakData.count} />
+                <div className="pt-10 border-t border-white/10">
+                  <div className="flex items-center justify-between mb-8">
+                    <h4 className="text-sm font-black uppercase tracking-[0.2em] text-gray-500">Practice History</h4>
+                    <span className="text-[10px] font-bold text-gray-700 bg-white/5 px-2 py-1 rounded">{history.length} Lessons</span>
+                  </div>
+                  {history.length === 0 ? (
+                    <div className="text-center py-20 bg-white/[0.02] rounded-[2rem] border border-dashed border-white/5">
+                      <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <PlayCircle className="text-gray-600" size={32} />
+                      </div>
+                      <p className="text-gray-400 font-bold">No history yet.</p>
+                      <p className="text-xs text-gray-600 mt-2">Finish a lesson to see it here!</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {history.map(item => (
+                        <motion.div
+                          key={item.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="glass-panel p-5 rounded-[1.5rem] flex items-center justify-between group hover:border-primary-500/30 transition-all bg-white/[0.02]"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center group-hover:bg-primary-500/10 transition-colors">
+                              <CheckCircle className="text-gray-600 group-hover:text-primary-500" size={18} />
+                            </div>
+                            <div>
+                              <p className="font-bold text-white group-hover:text-primary-500 transition-colors">{item.title}</p>
+                              <span className="text-[10px] font-bold text-gray-600 uppercase tracking-tighter">{item.date}</span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => deleteHistory(item.id)}
+                            className="w-10 h-10 flex items-center justify-center text-gray-700 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
