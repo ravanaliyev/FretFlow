@@ -1,5 +1,6 @@
 
 import { Flame } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Footer: React.FC = () => {
   return (
@@ -13,9 +14,7 @@ const Footer: React.FC = () => {
         </div>
         
         <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-400 font-medium">
-          <a href="#" className="hover:text-primary-500 transition-colors">About</a>
-          <a href="#" className="hover:text-primary-500 transition-colors">Methodology</a>
-          <a href="#" className="hover:text-primary-500 transition-colors">Careers</a>
+          <Link to="/about" className="hover:text-primary-500 transition-colors">About</Link>
           <a href="#" className="hover:text-primary-500 transition-colors">Terms</a>
           <a href="#" className="hover:text-primary-500 transition-colors">Privacy</a>
         </div>

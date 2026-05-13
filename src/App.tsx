@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 const LandingPage = lazy(() => import('./screens/landing/LandingPage'));
 const LoginPage = lazy(() => import('./screens/login/LoginPage'));
 const Dashboard = lazy(() => import('./screens/dashboard/Dashboard'));
+const AboutPage = lazy(() => import('./screens/landing/AboutPage'));
 
 const LoadingSpinner = () => (
   <div className="min-h-screen bg-dark-900 flex items-center justify-center">
@@ -17,6 +18,7 @@ function App() {
       <Suspense fallback={<LoadingSpinner />}>
         <Routes>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/about" element={<AboutPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/dashboard/*" element={<Dashboard />} />
           <Route path="*" element={<Navigate to="/" replace />} />
