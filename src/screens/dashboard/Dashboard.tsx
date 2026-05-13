@@ -233,33 +233,49 @@ const Dashboard: React.FC = () => {
 
   const LessonGrid = () => (
     <div className="p-6 space-y-6">
-      <div className="flex flex-col md:flex-row gap-4 mb-8">
+      <div className="flex items-center gap-2 mb-8">
         <button 
           onClick={() => navigate('/dashboard')}
-          className="glass-panel flex items-center gap-2 px-6 py-3 rounded-2xl text-gray-400 hover:text-white transition-colors"
+          className="glass-panel flex items-center justify-center w-12 h-12 md:w-auto md:px-6 rounded-2xl text-gray-400 hover:text-white transition-colors shrink-0"
+          title="Back to Levels"
         >
-          <ArrowLeft size={18} /> Back
+          <ArrowLeft size={18} /> <span className="hidden md:inline ml-2">Back</span>
         </button>
-        <div className="flex-1 relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+        
+        <div className="flex-1 relative min-w-0">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
           <input 
             type="text" 
-            placeholder="Search lessons..."
+            placeholder="Search..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="glass-input w-full pl-12 pr-4 py-3 rounded-2xl text-sm"
+            className="glass-input w-full pl-11 pr-4 h-12 rounded-2xl text-xs md:text-sm"
           />
         </div>
-        <select 
-          value={difficultyFilter}
-          onChange={(e) => setDifficultyFilter(e.target.value)}
-          className="glass-panel px-4 py-3 rounded-2xl text-sm text-white"
-        >
-          <option value="all">All Difficulties</option>
-          <option value="easy">Easy</option>
-          <option value="medium">Medium</option>
-          <option value="hard">Hard</option>
-        </select>
+
+        <div className="shrink-0 flex gap-2">
+          {/* Real Level Switcher */}
+          <select 
+            value={urlLevelId || 1}
+            onChange={(e) => navigate(`/dashboard/lessons/${e.target.value}`)}
+            className="glass-panel h-12 px-3 md:px-4 rounded-2xl text-[10px] md:text-sm text-primary-500 font-bold outline-none cursor-pointer border-primary-500/20 bg-primary-500/5"
+          >
+            <option value="1">Level 1</option>
+            <option value="2">Level 2</option>
+            <option value="3">Level 3</option>
+          </select>
+
+          <select 
+            value={difficultyFilter}
+            onChange={(e) => setDifficultyFilter(e.target.value)}
+            className="glass-panel h-12 px-3 md:px-4 rounded-2xl text-[10px] md:text-sm text-white outline-none cursor-pointer border-white/5 bg-dark-800/50"
+          >
+            <option value="all">Difficulty</option>
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
       </div>
 
       <motion.div 
