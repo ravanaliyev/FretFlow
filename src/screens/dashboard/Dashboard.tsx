@@ -15,7 +15,8 @@ import {
   X,
   Activity,
   User,
-  Edit2
+  Edit2,
+  Trophy
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AudioProcessor } from '../../utils/PitchProcessor';
@@ -776,9 +777,11 @@ const Dashboard: React.FC = () => {
   // Parse view and IDs from URL
   const pathParts = location.pathname.split('/').filter(Boolean);
   // Expected: ['dashboard'] or ['dashboard', 'lessons', '1'] or ['dashboard', 'practice', '1']
-  const currentView = pathParts[1] || 'levels';
+  const urlView = pathParts[1] || 'levels';
   const urlLevelId = pathParts[2] ? parseInt(pathParts[2]) : null;
   const urlLessonId = pathParts[2] ? parseInt(pathParts[2]) : null;
+  const currentView = urlView;
+  const [isTunerOpen, setIsTunerOpen] = useState(false);
 
   const [showHistoryClearModal, setShowHistoryClearModal] = useState(false);
   const [lessons, setLessons] = useState<Lesson[]>(() => {
@@ -794,7 +797,6 @@ const Dashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [isTunerOpen, setIsTunerOpen] = useState(false);
   const [currentFrequency, setCurrentFrequency] = useState(0);
   const [isListening, setIsListening] = useState(false);
   const [currentPitch, setCurrentPitch] = useState('--');
@@ -805,6 +807,14 @@ const Dashboard: React.FC = () => {
   const [formError, setFormError] = useState<string | null>(null);
   const [showStreakModal, setShowStreakModal] = useState(false);
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
+
+  // Game States
+  const [gamePhase, setGamePhase] = useState<'idle' | 'countdown' | 'playing' | 'result'>('idle');
+  const [gameTimeLeft, setGameTimeLeft] = useState(30);
+  const [gameScore, setGameScore] = useState(0);
+  const [gameTargetNote, setGameTargetNote] = useState('');
+  const [gameHighScore, setGameHighScore] = useState(() => Number(localStorage.getItem('fretflow_highscore') || 0));
+  const [gameCountdown, setGameCountdown] = useState(3);
 
 
   const [isVictory, setIsVictory] = useState(false);
@@ -903,26 +913,111 @@ const Dashboard: React.FC = () => {
       processorRef.current.onNoteDetected = (freq, note) => {
         setCurrentPitch(note);
         setCurrentFrequency(freq);
+      };
 
-        // Only trigger match logic if NOT in victory mode, NOT in tuner, and note matches
+      if (!isListening) {
+        processorRef.current.start().then(() => setIsListening(true));
+      }
+    } else {
+      if (processorRef.current && isListening) {
+        processorRef.current.stop();
+        setIsListening(false);
+      }
+    }
+
+    return () => {
+      if (processorRef.current && isListening) {
+        processorRef.current.stop();
+        setIsListening(false);
+      }
+    };
+  }, [currentView, activeLesson, isVictory, showAdminModal, showStreakModal, showHistoryDrawer, showHistoryClearModal]);
+
+  const pickRandomNote = () => {
+    const notes = ['E2', 'F2', 'G2', 'A2', 'B2', 'C3', 'D3', 'E3', 'F3', 'G3', 'A3', 'B3', 'C4', 'D4', 'E4'];
+    let next;
+    do {
+      next = notes[Math.floor(Math.random() * notes.length)];
+    } while (next === gameTargetNote);
+    setGameTargetNote(next);
+  };
+
+  const startChallenge = () => {
+    setGamePhase('countdown');
+    setGameCountdown(3);
+    setGameScore(0);
+    setGameTimeLeft(30);
+  };
+
+  // Game Timers
+  useEffect(() => {
+    let timer: any;
+    if (gamePhase === 'countdown') {
+      timer = setInterval(() => {
+        setGameCountdown(prev => {
+          if (prev <= 1) {
+            setGamePhase('playing');
+            pickRandomNote();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else if (gamePhase === 'playing') {
+      timer = setInterval(() => {
+        setGameTimeLeft(prev => {
+          if (prev <= 1) {
+            setGamePhase('result');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [gamePhase]);
+
+  // Game Note Detection
+  useEffect(() => {
+    if (gamePhase === 'playing' && currentPitch === gameTargetNote) {
+      setGameScore(prev => prev + 1);
+      pickRandomNote();
+    }
+  }, [currentPitch, gamePhase, gameTargetNote]);
+
+  useEffect(() => {
+    const isUIBlocked = showAdminModal || showStreakModal || showHistoryDrawer || showHistoryClearModal;
+    const shouldListen = ((currentView === 'practice' && activeLesson) || currentView === 'tuner' || gamePhase === 'playing') && !isVictory && !isUIBlocked;
+
+    if (shouldListen && processorRef.current) {
+      processorRef.current.onNoteDetected = (freq, note) => {
+        setCurrentPitch(note);
+        setCurrentFrequency(freq);
+
         if (!isVictory && currentView === 'practice' && activeLesson && note === activeLesson.sequence[currentSequenceIndex]) {
           handleMatch();
         }
       };
 
-      processorRef.current.start().then(() => setIsListening(true));
+      if (!isListening) {
+        processorRef.current.start().then(() => setIsListening(true));
+      }
     } else {
-      if (processorRef.current) processorRef.current.stop();
+      if (processorRef.current && isListening) {
+        processorRef.current.stop();
+      }
       setIsListening(false);
       setCurrentPitch('--');
       setCurrentFrequency(0);
     }
 
     return () => {
-      if (processorRef.current) processorRef.current.stop();
+      if (processorRef.current && isListening) {
+        processorRef.current.stop();
+      }
       updatePracticeTime();
     };
-  }, [currentView, urlLessonId, currentSequenceIndex, isVictory]);
+  }, [currentView, activeLesson, isVictory, showAdminModal, showStreakModal, showHistoryDrawer, showHistoryClearModal, gamePhase, currentSequenceIndex]);
 
 
   const startPractice = (lesson: Lesson) => {
@@ -1189,26 +1284,32 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-dark-900 text-white font-sans overflow-x-hidden">
       {/* Header */}
-      <header className={`sticky top-0 z-40 bg-dark-900/80 backdrop-blur-xl border-b border-white/5 ${currentView === 'practice' ? 'hidden' : ''}`}>
+      <header className={`sticky top-0 z-[1000] bg-dark-900/80 backdrop-blur-xl border-b border-white/5 ${currentView === 'practice' ? 'hidden' : ''}`}>
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-12">
             <h1 className="text-2xl font-black tracking-tighter bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">FRETFLOW</h1>
             <nav className="hidden md:flex items-center gap-8">
               <button
-                onClick={() => navigate('/dashboard')}
-                className={`text-sm font-semibold transition-colors ${currentView === 'levels' || currentView === 'lessons' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
+                onClick={() => { console.log('Navigating to levels'); navigate('/dashboard'); }}
+                className={`text-sm font-semibold transition-colors ${urlView === 'levels' || urlView === 'lessons' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
               >
-                Practice
+                Curriculum
               </button>
               <button
-                onClick={() => navigate('/dashboard/activity')}
-                className={`text-sm font-semibold transition-colors ${currentView === 'activity' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
+                onClick={() => { console.log('Navigating to activity'); navigate('/dashboard/activity'); }}
+                className={`text-sm font-semibold transition-colors ${urlView === 'activity' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
               >
                 Activity
               </button>
               <button
-                onClick={() => navigate('/dashboard/tuner')}
-                className={`text-sm font-semibold transition-colors ${currentView === 'tuner' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
+                onClick={() => { console.log('Navigating to challenge'); navigate('/dashboard/challenge'); }}
+                className={`text-sm font-semibold transition-colors ${urlView === 'challenge' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
+              >
+                Challenge
+              </button>
+              <button
+                onClick={() => { console.log('Navigating to tuner'); navigate('/dashboard/tuner'); }}
+                className={`text-sm font-semibold transition-colors ${urlView === 'tuner' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
               >
                 Tuner
               </button>
@@ -1424,18 +1525,132 @@ const Dashboard: React.FC = () => {
                 className="max-w-xl mx-auto"
               >
                 <div className="text-center mb-12">
-                  <h2 className="text-4xl font-black text-white mb-2 italic">PRECISION TUNER 🎯</h2>
-                  <p className="text-gray-500">Get your strings perfectly in sync before you play.</p>
+                  <h2 className="text-4xl font-black text-white mb-2 italic tracking-tighter">PRECISION TUNER 🎯</h2>
+                  <p className="text-gray-500 font-medium">Get your strings perfectly in sync before you play.</p>
                 </div>
                 <GuitarTuner currentPitch={currentPitch} frequency={currentFrequency} />
+              </motion.div>
+            )}
 
-                <div className="grid grid-cols-6 gap-3 mt-12">
-                  {['A2', 'D3', 'G3', 'B3', 'E4'].map(s => (
-                    <div key={s} className="bg-white/5 p-4 rounded-2xl border border-white/5 text-center flex flex-col items-center gap-1">
-                      <p className="text-xs font-black text-primary-500">{s.replace(/\d/, '')}</p>
-                      <p className="text-[8px] text-gray-600 font-bold uppercase">{s.match(/\d/)}th</p>
+            {currentView === 'challenge' && (
+              <motion.div
+                key="challenge"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="max-w-2xl mx-auto"
+              >
+                <div className="text-center mb-12">
+                  <h2 className="text-4xl font-bold mb-3 text-white">Speed Challenge</h2>
+                  <p className="text-gray-400 text-lg">Play as many notes as you can in 30 seconds!</p>
+                </div>
+
+                <div className="glass-panel p-12 rounded-[3rem] relative overflow-hidden flex flex-col items-center justify-center min-h-[450px]">
+                  {gamePhase === 'idle' && (
+                    <div className="text-center">
+                      <div className="w-24 h-24 bg-primary-500/10 text-primary-500 rounded-full flex items-center justify-center mx-auto mb-8">
+                        <Trophy size={48} />
+                      </div>
+                      <p className="text-gray-500 font-bold uppercase tracking-widest text-xs mb-2">High Score</p>
+                      <h4 className="text-6xl font-black text-white mb-10">{gameHighScore}</h4>
+                      <button 
+                        onClick={startChallenge}
+                        className="bg-primary-500 text-dark-900 px-12 py-5 rounded-2xl font-black text-xl hover:scale-105 transition-all shadow-xl shadow-primary-500/20"
+                      >
+                        START GAME
+                      </button>
                     </div>
-                  ))}
+                  )}
+
+                  {gamePhase === 'countdown' && (
+                    <>
+                      <motion.div 
+                        key={gameCountdown}
+                        initial={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="text-9xl font-black text-primary-500"
+                      >
+                        {gameCountdown}
+                      </motion.div>
+                      <button 
+                        onClick={() => setGamePhase('idle')}
+                        className="absolute bottom-8 text-gray-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  )}
+
+                  {gamePhase === 'playing' && (
+                    <div className="w-full flex flex-col items-center">
+                      <div className="flex justify-between w-full mb-12">
+                        <div className="text-left">
+                          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Time Left</p>
+                          <h4 className={`text-3xl font-black ${gameTimeLeft <= 10 ? 'text-rose-500 animate-pulse' : 'text-white'}`}>{gameTimeLeft}s</h4>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Score</p>
+                          <h4 className="text-3xl font-black text-primary-500">{gameScore}</h4>
+                        </div>
+                      </div>
+
+                      <div className="relative mb-12">
+                        <motion.div 
+                          key={gameTargetNote}
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          className="w-48 h-48 bg-white/5 rounded-[2.5rem] border-2 border-primary-500/20 flex items-center justify-center"
+                        >
+                          <span className="text-8xl font-black text-white">{gameTargetNote}</span>
+                        </motion.div>
+                        <div className="absolute -top-4 -right-4 w-12 h-12 bg-primary-500 text-dark-900 rounded-full flex items-center justify-center font-black text-xl shadow-lg">
+                          !
+                        </div>
+                      </div>
+
+                      <p className="text-gray-500 font-medium italic animate-bounce">Play this note now!</p>
+                      
+                      <div className="mt-8 px-6 py-2 rounded-full bg-white/5 border border-white/10 text-xs text-gray-400 font-bold">
+                        Detecting: <span className="text-primary-500">{currentPitch || '--'}</span>
+                      </div>
+
+                      <button 
+                        onClick={() => setGamePhase('idle')}
+                        className="mt-8 text-gray-500 hover:text-rose-500 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2"
+                      >
+                        <X size={14} /> Stop Challenge
+                      </button>
+                    </div>
+                  )}
+
+                  {gamePhase === 'result' && (
+                    <div className="text-center">
+                      <div className="text-primary-500 mb-6">
+                        <Trophy size={64} className="mx-auto" />
+                      </div>
+                      <h4 className="text-2xl font-bold text-white mb-2">Game Over!</h4>
+                      <p className="text-gray-400 mb-8 text-lg">You scored <span className="text-primary-500 font-black">{gameScore}</span> notes!</p>
+                      {gameScore >= gameHighScore && gameScore > 0 && (
+                        <div className="mb-8 p-3 bg-primary-500/10 rounded-xl text-primary-500 font-bold text-sm">
+                          New Personal Best! 🎉
+                        </div>
+                      )}
+                      <div className="flex gap-4">
+                        <button 
+                          onClick={() => setGamePhase('idle')}
+                          className="px-8 py-4 rounded-xl bg-white/5 text-gray-400 font-bold hover:bg-white/10 transition-all"
+                        >
+                          Menu
+                        </button>
+                        <button 
+                          onClick={startChallenge}
+                          className="px-8 py-4 rounded-xl bg-primary-500 text-dark-900 font-black hover:scale-105 transition-all"
+                        >
+                          Try Again
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}
