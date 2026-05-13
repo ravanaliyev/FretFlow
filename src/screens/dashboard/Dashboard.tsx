@@ -908,7 +908,7 @@ const Dashboard: React.FC = () => {
           ...prev
         ]);
 
-        setCurrentView('victory');
+        navigate('/dashboard/victory');
         return prev;
       }
       return next;
@@ -1282,6 +1282,16 @@ const Dashboard: React.FC = () => {
           >
             <PracticeView />
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Victory View Overlay */}
+      <AnimatePresence>
+        {currentView === 'victory' && activeLesson && (
+          <VictoryModal 
+            lesson={activeLesson} 
+            onHome={() => navigate('/dashboard')} 
+          />
         )}
       </AnimatePresence>
 
