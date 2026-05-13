@@ -15,8 +15,8 @@ const Footer: React.FC = () => {
         
         <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-400 font-medium">
           <Link to="/about" className="hover:text-primary-500 transition-colors">About</Link>
-          <a href="#" className="hover:text-primary-500 transition-colors">Terms</a>
-          <a href="#" className="hover:text-primary-500 transition-colors">Privacy</a>
+          <Link to="/terms" className="hover:text-primary-500 transition-colors">Terms</Link>
+          <Link to="/privacy" className="hover:text-primary-500 transition-colors">Privacy</Link>
         </div>
         
         <p className="text-sm text-gray-500">
