@@ -2,6 +2,8 @@ import type { Request, Response } from 'express';
 import db from '../../src/config/database.js';
 import { calculateLessonXP, calculateLevel } from '../../src/utils/xpCalculator.js';
 
+import { authenticate } from '../../src/middleware/auth.js';
+
 async function getProgress(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as any).userId;
@@ -160,7 +162,7 @@ async function updateStreak(userId: number): Promise<void> {
   });
 }
 
-export default async function lessonsProgress(req: Request, res: Response): Promise<void> {
+async function handler(req: Request, res: Response): Promise<void> {
   if (req.method === 'GET') {
     return getProgress(req, res);
   } else if (req.method === 'POST') {
@@ -168,4 +170,8 @@ export default async function lessonsProgress(req: Request, res: Response): Prom
   }
 
   res.status(405).json({ error: 'Method not allowed', code: 'METHOD_NOT_ALLOWED' });
+}
+
+export default function lessonsProgress(req: Request, res: Response): void {
+  authenticate(req, res, () => handler(req, res));
 }

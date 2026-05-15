@@ -557,13 +557,13 @@ const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number; achievements?
   const getProgress = (id: string): { current: number; max: number } | null => {
     switch (id) {
       case 'five_done': return { current: Math.min(completedCount, 5), max: 5 };
-      case 'all_done': return { current: completedCount, max: lessons.length };
+      case 'all_done': return { current: completedCount, max: Math.max(lessons.length, 1) };
       case 'streak_3': return { current: Math.min(streak, 3), max: 3 };
       case 'streak_7': return { current: Math.min(streak, 7), max: 7 };
       case 'streak_30': return { current: Math.min(streak, 30), max: 30 };
-      case 'lvl1_master': return { current: lvl1Done, max: lvl1Total };
-      case 'lvl2_master': return { current: lvl2Done, max: lvl2Total };
-      case 'lvl3_master': return { current: lvl3Done, max: lvl3Total };
+      case 'lvl1_master': return { current: lvl1Done, max: Math.max(lvl1Total, 1) };
+      case 'lvl2_master': return { current: lvl2Done, max: Math.max(lvl2Total, 1) };
+      case 'lvl3_master': return { current: lvl3Done, max: Math.max(lvl3Total, 1) };
       default: return null;
     }
   };
@@ -888,13 +888,6 @@ const Dashboard: React.FC = () => {
   const [showHistoryClearModal, setShowHistoryClearModal] = useState(false);
   const [lessons, setLessons] = useState<Lesson[]>([]);
 
-  useEffect(() => {
-    lessonsApi.getAll().then(res => {
-      setLessons(res.data);
-    }).catch(err => {
-      console.error('Failed to fetch lessons:', err);
-    });
-  }, []);
   const [history, setHistory] = useState<HistoryItem[]>(() => {
     const saved = localStorage.getItem('fretflow_history');
     return saved ? JSON.parse(saved) : [];
