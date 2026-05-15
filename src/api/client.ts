@@ -91,9 +91,11 @@ class ApiClient {
       ...(fetchOptions.headers as Record<string, string>),
     };
 
-    const accessToken = await getAccessToken();
-    if (accessToken) {
-      headers['Authorization'] = `Bearer ${accessToken}`;
+    if (endpoint !== REFRESH_ENDPOINT) {
+      const accessToken = await getAccessToken();
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`;
+      }
     }
 
     const response = await fetch(url, {

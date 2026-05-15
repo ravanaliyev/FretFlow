@@ -42,15 +42,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const refreshToken = localStorage.getItem('fretflow_refresh_token');
     if (refreshToken) {
-      apiClient.post<AuthResponse>('/api/auth/refresh', { refreshToken })
-        .then(data => {
-          setRefreshToken(data.refreshToken);
-          setAccessToken(data.accessToken);
-          setUser(data.user);
+      // Use /api/auth/me instead of /api/auth/refresh manually.
+      // apiClient will automatically handle the refresh if needed.
+      apiClient.get<User>('/api/auth/me')
+        .then(userData => {
+          setUser(userData);
+          // Access token is handled internally by apiClient's closure/localStorage
         })
-        .catch((err) => {
-          setAuthError(err instanceof Error ? err.message : 'Authentication failed');
+        .catch(() => {
+          // If even the refresh fails, logout
           clearTokens();
+          setUser(null);
         })
         .finally(() => {
           setIsLoading(false);

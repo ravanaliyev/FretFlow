@@ -189,12 +189,12 @@ export async function initializeDatabase() {
   if (achievements.rows[0].count === 0) {
     await db.execute(`
       INSERT INTO achievements (name, description, icon, xp_reward) VALUES
-        ('First Note', 'Complete your first lesson', 'music-note', 20),
-        ('Perfect Pitch', '100% accuracy on a lesson', 'star', 25),
-        ('Streak Starter', '3 day practice streak', 'fire', 30),
-        ('Week Warrior', '7 day practice streak', 'flame', 50),
-        ('Song Master', 'Complete 10 songs', 'trophy', 75),
-        ('Lesson Legend', 'Complete 25 lessons', 'medal', 100)
+        ('First Note', 'Complete your first lesson', '🎵', 20),
+        ('Perfect Pitch', '100% accuracy on a lesson', '⭐', 25),
+        ('Streak Starter', '3 day practice streak', '🔥', 30),
+        ('Week Warrior', '7 day practice streak', '⚡', 50),
+        ('Song Master', 'Complete 10 songs', '🏆', 75),
+        ('Lesson Legend', 'Complete 25 lessons', '🏅', 100)
     `);
   }
 
