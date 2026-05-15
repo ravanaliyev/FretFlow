@@ -14,6 +14,7 @@ interface AuthContextValue extends AuthState {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, username: string) => Promise<void>;
   logout: () => void;
+  updateUser: (newUser: User) => void;
   clearAuthError: () => void;
 }
 
@@ -27,6 +28,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const clearAuthError = useCallback(() => {
     setAuthError(null);
+  }, []);
+
+  const updateUser = useCallback((newUser: User) => {
+    setUser(newUser);
   }, []);
 
   const logout = useCallback(() => {
@@ -87,6 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         logout,
+        updateUser,
         clearAuthError,
       }}
     >

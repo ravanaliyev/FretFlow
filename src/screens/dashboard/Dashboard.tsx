@@ -15,7 +15,8 @@ import {
   Activity,
   User,
   Edit2,
-  Trophy
+  Trophy,
+  LogOut
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AudioProcessor } from '../../utils/PitchProcessor';
@@ -25,6 +26,7 @@ import { gamificationApi } from '../../api/gamification';
 import { statsApi } from '../../api/stats';
 import { scoresApi } from '../../api/scores';
 import { adminApi } from '../../api/admin';
+import { usersApi } from '../../api/users';
 import { useAuth } from '../../hooks/useAuth';
 import confetti from 'canvas-confetti';
 
@@ -52,37 +54,8 @@ interface LeaderboardItem {
   date: string;
 }
 
-const MOCK_LEADERBOARD: LeaderboardItem[] = [
-  { id: 1, name: 'Alex Shredder', score: 42, date: 'May 10' },
-  { id: 2, name: 'Luna Rocker', score: 38, date: 'May 12' },
-  { id: 3, name: 'FingerMaster', score: 35, date: 'May 11' },
-  { id: 4, name: 'Jimi Jr.', score: 31, date: 'May 13' },
-  { id: 5, name: 'GuitarHero99', score: 28, date: 'May 09' },
-  { id: 6, name: 'ScaleKing', score: 25, date: 'May 10' },
-  { id: 7, name: 'MetalHead', score: 22, date: 'May 11' },
-  { id: 8, name: 'JazzCat', score: 19, date: 'May 12' },
-  { id: 9, name: 'AcousticBoi', score: 15, date: 'May 13' },
-  { id: 10, name: 'NoviceNate', score: 12, date: 'May 08' },
-];
 
-const DEFAULT_LESSONS: Lesson[] = [
-  // Level 1 — Open String Mastery
-  { id: 1, title: 'The A String', level: 1, difficulty: 'easy', status: 'available', sequence: ['A2'], desc: 'The 5th string. A fundamental note for many power chords and your first lesson!' },
-  { id: 2, title: 'The D String', level: 1, difficulty: 'easy', status: 'locked', sequence: ['D3'], desc: 'The 4th string. Move your pick down to the next string.' },
-  { id: 3, title: 'The G String', level: 1, difficulty: 'easy', status: 'locked', sequence: ['G3'], desc: 'The 3rd string. Getting into the higher, melodic territory.' },
-  { id: 4, title: 'The B String', level: 1, difficulty: 'easy', status: 'locked', sequence: ['B3'], desc: 'The 2nd string. Very common in lead melodies and solos.' },
-  { id: 5, title: 'The High E String', level: 1, difficulty: 'easy', status: 'locked', sequence: ['E4'], desc: 'The thinnest string. Sharp, bright, and easy to snap!' },
 
-  // Level 2 — String Combinations
-  { id: 6, title: 'Middle Duo', level: 2, difficulty: 'easy', status: 'locked', sequence: ['A2', 'D3'], desc: 'Switch between the La and Re strings.' },
-  { id: 7, title: 'Upper Trio', level: 2, difficulty: 'medium', status: 'locked', sequence: ['G3', 'B3', 'E4'], desc: 'A quick tour of the melody strings.' },
-  { id: 8, title: 'Across the Fretboard', level: 2, difficulty: 'hard', status: 'locked', sequence: ['A2', 'D3', 'G3', 'B3', 'E4'], desc: 'The ultimate open string coordination test.' },
-
-  // Level 3 — First Riffs
-  { id: 9, title: 'Simple Rhythm', level: 3, difficulty: 'medium', status: 'locked', sequence: ['A2', 'A2', 'A2'], desc: 'A basic rhythm using the La string.' },
-  { id: 10, title: 'Rock Foundation', level: 3, difficulty: 'medium', status: 'locked', sequence: ['A2', 'G3', 'A2'], desc: 'Standard rock progression using open strings.' },
-  { id: 11, title: 'The Blues Walk', level: 3, difficulty: 'hard', status: 'locked', sequence: ['A2', 'C3', 'D3', 'E3'], desc: 'A simple blues walking line starting from A.' },
-];
 
 const STRINGS = ['E4', 'B3', 'G3', 'D3', 'A2', 'E2'];
 const FRET_COUNT = 12;
@@ -711,6 +684,89 @@ const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number; achievements?
   );
 };
 
+const ProfileModal: React.FC<{ 
+  user: any; 
+  onClose: () => void; 
+  onLogout: () => void;
+  onUpdate: (data: { username?: string; avatar_url?: string }) => Promise<void>;
+}> = ({ user, onClose, onLogout, onUpdate }) => {
+  const [username, setUsername] = useState(user?.username || '');
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || '');
+  const [isSaving, setIsSaving] = useState(false);
+
+  return (
+    <div className="fixed inset-0 z-[500] flex items-center justify-center p-6 bg-dark-950/80 backdrop-blur-md">
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="glass-panel p-8 rounded-[2.5rem] max-w-md w-full relative border-white/10 shadow-2xl"
+      >
+        <button 
+          onClick={onClose}
+          className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors"
+        >
+          <X size={24} />
+        </button>
+
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-24 h-24 rounded-full bg-primary-500/10 border-4 border-primary-500/30 flex items-center justify-center text-primary-500 overflow-hidden mb-4">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <User size={48} />
+            )}
+          </div>
+          <h2 className="text-2xl font-bold text-white">Profile Settings</h2>
+          <p className="text-gray-500 text-sm">Manage your account and preferences</p>
+        </div>
+
+        <div className="space-y-6">
+          <div>
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 block ml-1">Username</label>
+            <input 
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="glass-input w-full px-5 py-4 rounded-2xl text-white font-medium focus:border-primary-500/50 transition-all outline-none"
+              placeholder="Your username"
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 block ml-1">Avatar URL</label>
+            <input 
+              value={avatarUrl}
+              onChange={(e) => setAvatarUrl(e.target.value)}
+              className="glass-input w-full px-5 py-4 rounded-2xl text-white font-medium focus:border-primary-500/50 transition-all outline-none"
+              placeholder="https://..."
+            />
+          </div>
+
+          <div className="pt-4 flex flex-col gap-3">
+            <button
+              onClick={async () => {
+                setIsSaving(true);
+                await onUpdate({ username, avatar_url: avatarUrl });
+                setIsSaving(false);
+                onClose();
+              }}
+              disabled={isSaving}
+              className="w-full py-4 bg-primary-500 text-dark-900 font-black rounded-2xl hover:scale-[1.02] transition-all active:scale-95 shadow-lg shadow-primary-500/20 disabled:opacity-50"
+            >
+              {isSaving ? 'Saving...' : 'Save Changes'}
+            </button>
+            <button
+              onClick={onLogout}
+              className="w-full py-4 bg-white/5 text-rose-500 font-bold rounded-2xl hover:bg-rose-500/10 transition-all flex items-center justify-center gap-2"
+            >
+              <LogOut size={18} /> Sign Out
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
 const LevelMenu: React.FC<{ navigate: any }> = ({ navigate }) => (
   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
     {[
@@ -873,7 +929,7 @@ const LessonGrid: React.FC<LessonGridProps> = ({
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const userRole = user?.role || 'STUDENT';
 
   // Parse view and IDs from URL
@@ -904,6 +960,7 @@ const Dashboard: React.FC = () => {
   const [isListening, setIsListening] = useState(false);
   const [currentPitch, setCurrentPitch] = useState('--');
   const [showAdminModal, setShowAdminModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [, setAdminTab] = useState<'Add New' | 'Manage'>('Add New');
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -1573,13 +1630,16 @@ const Dashboard: React.FC = () => {
               <span className="text-[10px] text-gray-400 font-bold uppercase">Lv.{userLevel}</span>
               <span className="text-xs font-black text-primary-400">{userXp.toLocaleString()} XP</span>
             </div>
-            <div className="w-10 h-10 rounded-full bg-primary-500/10 border-2 border-primary-500/30 flex items-center justify-center text-primary-500 overflow-hidden">
+            <button
+              onClick={() => setShowProfileModal(true)}
+              className="w-10 h-10 rounded-full bg-primary-500/10 border-2 border-primary-500/30 flex items-center justify-center text-primary-500 overflow-hidden hover:border-primary-500/60 transition-all active:scale-95"
+            >
               {user?.avatar_url ? (
                 <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
               ) : (
                 <User size={20} />
               )}
-            </div>
+            </button>
           </div>
         </div>
       </header>
@@ -1963,6 +2023,25 @@ const Dashboard: React.FC = () => {
           );
         })}
       </nav>
+
+      {/* Profile Modal */}
+      <AnimatePresence>
+        {showProfileModal && (
+          <ProfileModal 
+            user={user}
+            onClose={() => setShowProfileModal(false)}
+            onLogout={logout}
+            onUpdate={async (data) => {
+              try {
+                const updatedUser = await usersApi.updateMe(data);
+                updateUser(updatedUser);
+              } catch (err) {
+                console.error('Failed to update profile:', err);
+              }
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Admin Modal */}
       <AnimatePresence>

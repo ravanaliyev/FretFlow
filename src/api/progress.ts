@@ -1,8 +1,8 @@
 import { apiClient } from './client';
-import type { LessonProgress } from '../types/api';
+import type { Progress } from '../types/api';
 
 interface ProgressResponse {
-  data: Array<LessonProgress & {
+  data: Array<Progress & {
     title: string;
     description: string;
     difficulty: number;

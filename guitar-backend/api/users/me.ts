@@ -5,16 +5,21 @@ import * as authService from '../../src/services/auth.service.js';
 async function handler(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as any).userId;
-    const user = await authService.getUserById(userId);
 
-    if (!user) {
-      res.status(404).json({ error: 'User not found', code: 'NOT_FOUND' });
-      return;
+    if (req.method === 'GET') {
+      const user = await authService.getUserById(userId);
+      if (!user) {
+        res.status(404).json({ error: 'User not found', code: 'NOT_FOUND' });
+        return;
+      }
+      res.json(user);
+    } else if (req.method === 'PUT') {
+      const { username, avatar_url } = req.body;
+      const updatedUser = await authService.updateUser(userId, { username, avatar_url });
+      res.json(updatedUser);
     }
-
-    res.json(user);
   } catch (_error) {
-    res.status(500).json({ error: 'Failed to get user', code: 'SERVER_ERROR' });
+    res.status(500).json({ error: 'Failed to process request', code: 'SERVER_ERROR' });
   }
 }
 
