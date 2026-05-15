@@ -489,6 +489,22 @@ const LeaderboardComponent: React.FC<{ data: LeaderboardItem[], currentUser?: st
   );
 };
 
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error: any }> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+  render() {
+    if (this.state.hasError) {
+      return <div className="text-red-500 font-mono text-xs whitespace-pre-wrap">{this.state.error?.stack}</div>;
+    }
+    return this.props.children;
+  }
+}
+
 const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number; achievements?: Array<{ id: number; name: string; description: string; icon: string; earned: boolean }> }> = ({ lessons, streak, achievements: apiAchievements }) => {
   const [showAll, setShowAll] = React.useState(false);
 
@@ -499,19 +515,6 @@ const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number; achievements?
   const lvl2Total = lessons.filter(l => l.level === 2).length;
   const lvl3Done = lessons.filter(l => l.level === 3 && l.status === 'completed').length;
   const lvl3Total = lessons.filter(l => l.level === 3).length;
-
-  // Use API achievements if available, otherwise fallback to computed from local data
-  const displayBadges = apiAchievements && apiAchievements.length > 0
-    ? apiAchievements.map(a => ({
-      id: String(a.id),
-      name: a.name,
-      icon: a.icon,
-      desc: a.description,
-      color: 'from-primary-400 to-primary-600',
-      category: 'Achievement',
-      earned: a.earned,
-    }))
-    : BADGES.map(b => ({ ...b, earned: isUnlockedLocal(b.id) }));
 
   const isUnlockedLocal = (id: string): boolean => {
     switch (id) {
@@ -527,6 +530,19 @@ const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number; achievements?
       default: return false;
     }
   };
+
+  // Use API achievements if available, otherwise fallback to computed from local data
+  const displayBadges = apiAchievements && apiAchievements.length > 0
+    ? apiAchievements.map(a => ({
+      id: String(a.id),
+      name: a.name,
+      icon: a.icon,
+      desc: a.description,
+      color: 'from-primary-400 to-primary-600',
+      category: 'Achievement',
+      earned: a.earned,
+    }))
+    : BADGES.map(b => ({ ...b, earned: isUnlockedLocal(b.id) }));
 
   const getProgress = (id: string): { current: number; max: number } | null => {
     switch (id) {
@@ -1812,8 +1828,10 @@ const Dashboard: React.FC = () => {
                   <h2 className="text-3xl md:text-4xl font-bold mb-2">Your Activity</h2>
                   <p className="text-gray-400">Track your progress, badges, and practice history.</p>
                 </div>
-                <AnalyticsChart stats={practiceStats} />
-                <BadgesSection lessons={lessons} streak={streakData.count} achievements={achievements} />
+                <ErrorBoundary>
+                  <AnalyticsChart stats={practiceStats} />
+                  <BadgesSection lessons={lessons} streak={streakData.count} achievements={achievements} />
+                </ErrorBoundary>
                 <div className="pt-10 border-t border-white/10">
                   <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-3">
