@@ -433,7 +433,7 @@ const LeaderboardComponent: React.FC<{ data: LeaderboardItem[] }> = ({ data }) =
   const sorted = [...data].sort((a, b) => b.score - a.score);
   const top10 = sorted.slice(0, 10);
   const userScore = Number(localStorage.getItem('fretflow_highscore') || 0);
-  
+
   // To calculate rank, we need to know where the user's best score fits in the global list
   // We'll treat the user's highscore as their entry
   const userRank = sorted.findIndex(item => item.score <= userScore) + 1;
@@ -444,16 +444,15 @@ const LeaderboardComponent: React.FC<{ data: LeaderboardItem[] }> = ({ data }) =
         <Trophy size={20} className="text-primary-500" />
         <h3 className="text-sm font-black uppercase tracking-[0.3em] text-gray-500">Hall of Fame</h3>
       </div>
-      
+
       <div className="space-y-3">
         {top10.map((item, i) => (
-          <div 
-            key={item.id} 
-            className={`flex items-center justify-between p-5 rounded-2xl border transition-all ${
-              i === 0 ? 'bg-primary-500/10 border-primary-500/30' : 
-              i === 1 ? 'bg-white/5 border-white/10' : 
-              i === 2 ? 'bg-white/[0.03] border-white/5' : 'bg-transparent border-white/5'
-            }`}
+          <div
+            key={item.id}
+            className={`flex items-center justify-between p-5 rounded-2xl border transition-all ${i === 0 ? 'bg-primary-500/10 border-primary-500/30' :
+                i === 1 ? 'bg-white/5 border-white/10' :
+                  i === 2 ? 'bg-white/[0.03] border-white/5' : 'bg-transparent border-white/5'
+              }`}
           >
             <div className="flex items-center gap-4">
               <span className={`w-6 text-xs font-black ${i < 3 ? 'text-primary-500' : 'text-gray-600'}`}>
@@ -503,14 +502,14 @@ const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number; achievements?
   // Use API achievements if available, otherwise fallback to computed from local data
   const displayBadges = apiAchievements && apiAchievements.length > 0
     ? apiAchievements.map(a => ({
-        id: String(a.id),
-        name: a.name,
-        icon: a.icon,
-        desc: a.description,
-        color: 'from-primary-400 to-primary-600',
-        category: 'Achievement',
-        earned: a.earned,
-      }))
+      id: String(a.id),
+      name: a.name,
+      icon: a.icon,
+      desc: a.description,
+      color: 'from-primary-400 to-primary-600',
+      category: 'Achievement',
+      earned: a.earned,
+    }))
     : BADGES.map(b => ({ ...b, earned: isUnlockedLocal(b.id) }));
 
   const isUnlockedLocal = (id: string): boolean => {
@@ -632,51 +631,51 @@ const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number; achievements?
               </div>
 
               {categories.map(cat => {
-                  const badgesInCategory = displayBadges.filter(b => b.category === cat);
-                  if (badgesInCategory.length === 0) return null;
-                  return (
-                    <div key={cat} className="mb-8">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-600 mb-4">{cat}</p>
-                      <div className="grid grid-cols-1 gap-3">
-                        {badgesInCategory.map(badge => {
-                          const unlocked = badge.earned;
-                          const progress = getProgress(badge.id);
-                      return (
-                        <div
-                          key={badge.id}
-                          className={`flex items-center gap-4 p-4 rounded-2xl border border-white/5 relative overflow-hidden ${unlocked ? 'bg-white/[0.04]' : 'opacity-50'
-                            }`}
-                        >
-                          {unlocked && <div className={`absolute inset-0 bg-gradient-to-r ${badge.color} opacity-5`} />}
-                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0 ${unlocked ? `bg-gradient-to-br ${badge.color}` : 'bg-white/5 grayscale'
-                            }`}>
-                            {badge.icon}
-                          </div>
-                          <div className="flex-1 min-w-0 relative z-10">
-                            <div className="flex items-center gap-2">
-                              <h4 className={`font-bold text-sm ${unlocked ? 'text-white' : 'text-gray-500'}`}>{badge.name}</h4>
-                              {unlocked && <span className="text-[9px] font-black text-primary-500 uppercase bg-primary-500/10 px-2 py-0.5 rounded-full">✓ Unlocked</span>}
+                const badgesInCategory = displayBadges.filter(b => b.category === cat);
+                if (badgesInCategory.length === 0) return null;
+                return (
+                  <div key={cat} className="mb-8">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-600 mb-4">{cat}</p>
+                    <div className="grid grid-cols-1 gap-3">
+                      {badgesInCategory.map(badge => {
+                        const unlocked = badge.earned;
+                        const progress = getProgress(badge.id);
+                        return (
+                          <div
+                            key={badge.id}
+                            className={`flex items-center gap-4 p-4 rounded-2xl border border-white/5 relative overflow-hidden ${unlocked ? 'bg-white/[0.04]' : 'opacity-50'
+                              }`}
+                          >
+                            {unlocked && <div className={`absolute inset-0 bg-gradient-to-r ${badge.color} opacity-5`} />}
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0 ${unlocked ? `bg-gradient-to-br ${badge.color}` : 'bg-white/5 grayscale'
+                              }`}>
+                              {badge.icon}
                             </div>
-                            <p className="text-[11px] text-gray-600 mt-0.5">{badge.desc}</p>
-                            {!unlocked && progress && (
-                              <div className="mt-2 flex items-center gap-2">
-                                <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
-                                  <div
-                                    className="h-full bg-primary-500/40 transition-all duration-500"
-                                    style={{ width: `${(progress.current / progress.max) * 100}%` }}
-                                  />
-                                </div>
-                                <span className="text-[9px] text-gray-700 font-bold shrink-0">{progress.current}/{progress.max}</span>
+                            <div className="flex-1 min-w-0 relative z-10">
+                              <div className="flex items-center gap-2">
+                                <h4 className={`font-bold text-sm ${unlocked ? 'text-white' : 'text-gray-500'}`}>{badge.name}</h4>
+                                {unlocked && <span className="text-[9px] font-black text-primary-500 uppercase bg-primary-500/10 px-2 py-0.5 rounded-full">✓ Unlocked</span>}
                               </div>
-                            )}
+                              <p className="text-[11px] text-gray-600 mt-0.5">{badge.desc}</p>
+                              {!unlocked && progress && (
+                                <div className="mt-2 flex items-center gap-2">
+                                  <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
+                                    <div
+                                      className="h-full bg-primary-500/40 transition-all duration-500"
+                                      style={{ width: `${(progress.current / progress.max) * 100}%` }}
+                                    />
+                                  </div>
+                                  <span className="text-[9px] text-gray-700 font-bold shrink-0">{progress.current}/{progress.max}</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      );
-                        })}
-                      </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  </div>
+                );
+              })}
             </motion.div>
           </div>
         )}
@@ -685,9 +684,9 @@ const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number; achievements?
   );
 };
 
-const ProfileDropdown: React.FC<{ 
-  user: any; 
-  onClose: () => void; 
+const ProfileDropdown: React.FC<{
+  user: any;
+  onClose: () => void;
   onLogout: () => void;
   onOpenHelp: () => void;
   onUpdate: (data: { username?: string; avatar_url?: string; password?: string }) => Promise<void>;
@@ -773,7 +772,7 @@ const ProfileDropdown: React.FC<{
 
               <div>
                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 block ml-1">Username</label>
-                <input 
+                <input
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="glass-input w-full px-4 py-3 rounded-xl text-sm text-white font-medium focus:border-primary-500/50 transition-all outline-none"
@@ -783,7 +782,7 @@ const ProfileDropdown: React.FC<{
 
               <div>
                 <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 block ml-1">New Password</label>
-                <input 
+                <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -928,7 +927,7 @@ const LessonGrid: React.FC<LessonGridProps> = ({
             </span>
             <div className="flex items-center gap-2">
               {userRole === 'ADMIN' && (
-                <button 
+                <button
                   onClick={(e) => { e.stopPropagation(); onEdit(lesson); }}
                   className="w-8 h-8 rounded-lg bg-white/5 text-gray-400 hover:text-primary-500 hover:bg-primary-500/10 transition-all flex items-center justify-center"
                 >
@@ -1053,7 +1052,7 @@ const Dashboard: React.FC = () => {
     // Generate realistic mock data if empty to show the chart working
     const mockData: Record<string, number> = {};
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const todayIdx = new Date().getDay(); 
+    const todayIdx = new Date().getDay();
     days.forEach((day, idx) => {
       if (idx < (todayIdx === 0 ? 6 : todayIdx - 1)) {
         mockData[day] = Math.floor(Math.random() * 30) + 15;
@@ -1106,6 +1105,9 @@ const Dashboard: React.FC = () => {
   const DAYS = rollingDays;
 
   const processorRef = useRef<AudioProcessor | null>(null);
+  if (!processorRef.current) {
+    processorRef.current = new AudioProcessor();
+  }
   const lastMatchTimeRef = useRef<number>(0);
 
   // --- Persistence ---
@@ -1144,14 +1146,14 @@ const Dashboard: React.FC = () => {
           }
 
           const parsedNotes = JSON.parse(l.notes || '[]');
-          const sequence = Array.isArray(parsedNotes) 
+          const sequence = Array.isArray(parsedNotes)
             ? parsedNotes.map((n: any) => typeof n === 'string' ? n : (n.note || ''))
             : [];
 
           return {
             id: l.id,
             title: l.title,
-            level: l.order_index,
+            level: l.level || 1,
             difficulty: (['easy', 'medium', 'hard'] as const)[l.difficulty - 1] || 'easy',
             status,
             sequence,
@@ -1248,29 +1250,29 @@ const Dashboard: React.FC = () => {
     } else if (gamePhase === 'playing') {
       timer = setInterval(() => {
         setGameTimeLeft(prev => {
-            if (prev <= 1) {
-              setGamePhase('result');
-              if (gameScore > gameHighScore) {
-                setGameHighScore(gameScore);
-                localStorage.setItem('fretflow_highscore', gameScore.toString());
-              }
-              
-              // Add to leaderboard
-              if (gameScore > 0) {
-                const newItem: LeaderboardItem = {
-                  id: Date.now(),
-                  name: 'You',
-                  score: gameScore,
-                  date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                };
-                setLeaderboard(prev => {
-                  // Keep only the best score for 'You' in the leaderboard calculation
-                  // or just add all of them. Let's add all and sort.
-                  return [...prev, newItem];
-                });
-              }
-              return 0;
+          if (prev <= 1) {
+            setGamePhase('result');
+            if (gameScore > gameHighScore) {
+              setGameHighScore(gameScore);
+              localStorage.setItem('fretflow_highscore', gameScore.toString());
             }
+
+            // Add to leaderboard
+            if (gameScore > 0) {
+              const newItem: LeaderboardItem = {
+                id: Date.now(),
+                name: 'You',
+                score: gameScore,
+                date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+              };
+              setLeaderboard(prev => {
+                // Keep only the best score for 'You' in the leaderboard calculation
+                // or just add all of them. Let's add all and sort.
+                return [...prev, newItem];
+              });
+            }
+            return 0;
+          }
           return prev - 1;
         });
       }, 1000);
@@ -1449,7 +1451,7 @@ const Dashboard: React.FC = () => {
 
 
   const filteredLessons = lessons.filter(l => {
-    const matchesLevel = l.level === urlLevelId;
+    const matchesLevel = Number(l.level) === Number(urlLevelId);
     const matchesSearch = l.title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDiff = difficultyFilter === 'all' || l.difficulty === difficultyFilter;
     const matchesStatus = statusFilter === 'all' || l.status === statusFilter;
@@ -1545,13 +1547,23 @@ const Dashboard: React.FC = () => {
           </div>
 
           <div className="flex flex-col items-center gap-3 md:gap-4">
-            <div className="glass-panel px-4 md:px-6 py-2 md:py-3 rounded-2xl flex items-center gap-2 md:gap-3 text-[10px] md:text-sm">
+            <button 
+              onClick={() => {
+                if (!isListening && processorRef.current) {
+                  processorRef.current.start().then(() => setIsListening(true)).catch(err => {
+                    console.error('Manual mic start failed:', err);
+                    alert('Could not access microphone. Please ensure you have given permission in browser settings.');
+                  });
+                }
+              }}
+              className="glass-panel px-4 md:px-6 py-2 md:py-3 rounded-2xl flex items-center gap-2 md:gap-3 text-[10px] md:text-sm hover:bg-white/10 transition-all active:scale-95 group"
+            >
               {isListening ? (
                 <><Mic className="text-green-500 animate-pulse" size={16} /> <span className="text-green-500/80 font-medium tracking-wide">Listening...</span></>
               ) : (
-                <><MicOff className="text-red-500" size={16} /> <span className="text-red-500/80">Microphone Off</span></>
+                <><MicOff className="text-red-500 group-hover:text-primary-500 transition-colors" size={16} /> <span className="text-red-500/80 group-hover:text-primary-500 transition-colors">Microphone Off (Click to enable)</span></>
               )}
-            </div>
+            </button>
             <div className="text-2xl md:text-4xl font-mono font-bold text-white/50">{currentPitch}</div>
           </div>
         </div>
@@ -1756,10 +1768,10 @@ const Dashboard: React.FC = () => {
                   startPractice={startPractice}
                   userRole={userRole}
                   onAdd={() => { setEditingLesson(null); setAdminTab('Add New'); setShowAdminModal(true); }}
-                  onEdit={(lesson) => { 
+                  onEdit={(lesson) => {
                     setEditingLesson(lesson);
-                    setAdminTab('Add New'); 
-                    setShowAdminModal(true); 
+                    setAdminTab('Add New');
+                    setShowAdminModal(true);
                   }}
                 />
               </motion.div>
@@ -1867,7 +1879,7 @@ const Dashboard: React.FC = () => {
                       </div>
                       <p className="text-gray-500 font-bold uppercase tracking-widest text-xs mb-2">High Score</p>
                       <h4 className="text-6xl font-black text-white mb-10">{gameHighScore}</h4>
-                      <button 
+                      <button
                         onClick={startChallenge}
                         className="bg-primary-500 text-dark-900 px-12 py-5 rounded-2xl font-black text-xl hover:scale-105 transition-all shadow-xl shadow-primary-500/20"
                       >
@@ -1878,7 +1890,7 @@ const Dashboard: React.FC = () => {
 
                   {gamePhase === 'countdown' && (
                     <>
-                      <motion.div 
+                      <motion.div
                         key={gameCountdown}
                         initial={{ scale: 0.5, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
@@ -1886,7 +1898,7 @@ const Dashboard: React.FC = () => {
                       >
                         {gameCountdown}
                       </motion.div>
-                      <button 
+                      <button
                         onClick={() => setGamePhase('idle')}
                         className="absolute bottom-8 text-gray-500 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest"
                       >
@@ -1909,7 +1921,7 @@ const Dashboard: React.FC = () => {
                       </div>
 
                       <div className="relative mb-12">
-                        <motion.div 
+                        <motion.div
                           key={gameTargetNote}
                           initial={{ scale: 0.8, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}
@@ -1923,12 +1935,12 @@ const Dashboard: React.FC = () => {
                       </div>
 
                       <p className="text-gray-500 font-medium italic animate-bounce">Play this note now!</p>
-                      
+
                       <div className="mt-8 px-6 py-2 rounded-full bg-white/5 border border-white/10 text-xs text-gray-400 font-bold">
                         Detecting: <span className="text-primary-500">{currentPitch || '--'}</span>
                       </div>
 
-                      <button 
+                      <button
                         onClick={() => setGamePhase('idle')}
                         className="mt-8 text-gray-500 hover:text-rose-500 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2"
                       >
@@ -1950,13 +1962,13 @@ const Dashboard: React.FC = () => {
                         </div>
                       )}
                       <div className="flex gap-4">
-                        <button 
+                        <button
                           onClick={() => setGamePhase('idle')}
                           className="px-8 py-4 rounded-xl bg-white/5 text-gray-400 font-bold hover:bg-white/10 transition-all"
                         >
                           Menu
                         </button>
-                        <button 
+                        <button
                           onClick={startChallenge}
                           className="px-8 py-4 rounded-xl bg-primary-500 text-dark-900 font-black hover:scale-105 transition-all"
                         >
@@ -2078,7 +2090,7 @@ const Dashboard: React.FC = () => {
       {/* Profile Dropdown (Fixed at root to avoid stacking issues) */}
       <AnimatePresence>
         {showProfileModal && (
-          <ProfileDropdown 
+          <ProfileDropdown
             user={user}
             onClose={() => setShowProfileModal(false)}
             onLogout={() => {
@@ -2118,8 +2130,8 @@ const Dashboard: React.FC = () => {
             >
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold">{editingLesson ? 'Edit Lesson' : 'Add New Lesson'}</h2>
-                <button 
-                  onClick={() => { setShowAdminModal(false); setEditingLesson(null); }} 
+                <button
+                  onClick={() => { setShowAdminModal(false); setEditingLesson(null); }}
                   className="text-gray-500 hover:text-white transition-colors"
                 >
                   <X size={24} />
@@ -2151,7 +2163,8 @@ const Dashboard: React.FC = () => {
                     notes: JSON.stringify(sequence.map(n => ({ note: n, time: 0 }))),
                     difficulty: difficultyMap[formData.get('difficulty') as string] || 1,
                     xp_reward: 10,
-                    order_index: editingLesson ? editingLesson.level : (urlLevelId || 1),
+                    level: parseInt(formData.get('level') as string) || 1,
+                    order_index: editingLesson ? editingLesson.id : Date.now(),
                   };
 
                   try {
@@ -2167,7 +2180,7 @@ const Dashboard: React.FC = () => {
                   const lessonData: Lesson = {
                     id: editingLesson ? editingLesson.id : Date.now(),
                     title: formData.get('title') as string,
-                    level: editingLesson ? editingLesson.level : (urlLevelId || 1),
+                    level: parseInt(formData.get('level') as string) || 1,
                     difficulty: formData.get('difficulty') as any,
                     status: editingLesson ? editingLesson.status : 'available',
                     sequence: sequence,
@@ -2188,6 +2201,10 @@ const Dashboard: React.FC = () => {
                     <input name="title" required defaultValue={editingLesson?.title} className="glass-input w-full px-4 py-3 rounded-xl text-sm" placeholder="e.g. Blues Riff" />
                   </div>
                   <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 block">Level</label>
+                    <input type="number" name="level" required defaultValue={editingLesson?.level || urlLevelId || 1} className="glass-input w-full px-4 py-3 rounded-xl text-sm" placeholder="e.g. 1" />
+                  </div>
+                  <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 block">Difficulty</label>
                     <select name="difficulty" defaultValue={editingLesson?.difficulty} className="glass-input w-full px-4 py-3 rounded-xl text-sm appearance-none">
                       <option value="easy">Easy</option>
@@ -2197,13 +2214,13 @@ const Dashboard: React.FC = () => {
                   </div>
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 block">Sequence (comma separated)</label>
-                    <input 
-                      name="sequence" 
-                      required 
-                      defaultValue={editingLesson?.sequence.join(', ')} 
+                    <input
+                      name="sequence"
+                      required
+                      defaultValue={editingLesson?.sequence.join(', ')}
                       onChange={() => setFormError(null)}
-                      className="glass-input w-full px-4 py-3 rounded-xl text-sm mb-1" 
-                      placeholder="e.g. E2, G3, A3" 
+                      className="glass-input w-full px-4 py-3 rounded-xl text-sm mb-1"
+                      placeholder="e.g. E2, G3, A3"
                     />
                     <p className="text-[10px] text-gray-600 font-medium">Supported: E2, A2, D3, G3, B3, E4 (and sharps like C#3, G#3)</p>
                   </div>
@@ -2212,7 +2229,7 @@ const Dashboard: React.FC = () => {
                     <textarea name="desc" defaultValue={editingLesson?.desc} className="glass-input w-full px-4 py-3 rounded-xl text-sm" rows={3} placeholder="What will they learn?" />
                   </div>
                   {formError && (
-                    <motion.div 
+                    <motion.div
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-bold flex items-center gap-2 mb-2"
@@ -2478,7 +2495,7 @@ const Dashboard: React.FC = () => {
               exit={{ scale: 0.9, opacity: 0 }}
               className="glass-panel p-8 rounded-[2.5rem] max-w-2xl w-full relative border-white/10 shadow-2xl overflow-y-auto max-h-[90vh]"
             >
-              <button 
+              <button
                 onClick={() => setShowHelpModal(false)}
                 className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors"
               >
@@ -2526,7 +2543,7 @@ const Dashboard: React.FC = () => {
                 </section>
 
                 <div className="pt-4">
-                  <button 
+                  <button
                     onClick={() => setShowHelpModal(false)}
                     className="w-full py-4 bg-white/5 hover:bg-white/10 text-white font-bold rounded-2xl transition-all"
                   >

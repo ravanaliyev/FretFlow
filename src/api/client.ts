@@ -24,7 +24,6 @@ async function doRefresh(refreshToken: string): Promise<{ accessToken: string; r
 
   if (!res.ok) {
     localStorage.removeItem(REFRESH_TOKEN_KEY);
-    window.location.href = '/login';
     throw new Error('Refresh failed');
   }
 
@@ -68,9 +67,14 @@ interface RequestOptions extends RequestInit {
 
 class ApiClient {
   private baseUrl: string;
+  private accessToken: string | null = null;
 
   constructor(baseUrl: string = '') {
     this.baseUrl = baseUrl;
+  }
+
+  setToken(token: string) {
+    this.accessToken = token;
   }
 
   private async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
@@ -92,9 +96,11 @@ class ApiClient {
     };
 
     if (endpoint !== REFRESH_ENDPOINT) {
-      const accessToken = await getAccessToken();
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
+      if (!this.accessToken) {
+        this.accessToken = await getAccessToken();
+      }
+      if (this.accessToken) {
+        headers['Authorization'] = `Bearer ${this.accessToken}`;
       }
     }
 
@@ -108,9 +114,10 @@ class ApiClient {
       if (refreshToken && !isRefreshing && !refreshSubscribers.length) {
         try {
           const tokens = await doRefresh(refreshToken);
+          this.accessToken = tokens.accessToken;
           const retryResponse = await fetch(url, {
             ...fetchOptions,
-            headers: { ...headers, 'Authorization': `Bearer ${tokens.accessToken}` },
+            headers: { ...headers, 'Authorization': `Bearer ${this.accessToken}` },
           });
           if (retryResponse.ok) {
             return retryResponse.json();
@@ -120,7 +127,6 @@ class ApiClient {
         }
       }
       localStorage.removeItem(REFRESH_TOKEN_KEY);
-      window.location.href = '/login';
       throw new Error('Unauthorized');
     }
 

@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccessToken(null);
     clearTokens();
     if (refreshToken) {
-      apiClient.post('/api/auth/logout', { refreshToken }).catch(() => {});
+      apiClient.post('/api/auth/logout', { refreshToken }).catch(() => { });
     }
   }, []);
 
@@ -70,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     const data = await apiClient.post<AuthResponse>('/api/auth/login', { email, password });
     setRefreshToken(data.refreshToken);
+    apiClient.setToken(data.accessToken);
     setAccessToken(data.accessToken);
     setUser(data.user);
   };
@@ -77,6 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (email: string, password: string, username: string) => {
     const data = await apiClient.post<AuthResponse>('/api/auth/register', { email, password, username });
     setRefreshToken(data.refreshToken);
+    apiClient.setToken(data.accessToken);
     setAccessToken(data.accessToken);
     setUser(data.user);
   };

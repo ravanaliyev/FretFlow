@@ -42,6 +42,7 @@ export async function initializeDatabase() {
         notes TEXT NOT NULL DEFAULT '[]',
         difficulty INTEGER DEFAULT 1,
         xp_reward INTEGER DEFAULT 10,
+        level INTEGER DEFAULT 1,
         order_index INTEGER DEFAULT 0
     );
 
@@ -202,13 +203,26 @@ export async function initializeDatabase() {
   const lessons = await db.execute('SELECT COUNT(*) as count FROM lessons');
   if (lessons.rows[0].count === 0) {
     await db.execute(`
-      INSERT INTO lessons (title, description, notes, difficulty, xp_reward, order_index) VALUES
-        ('Play Open E', 'Play the low E string (6th string) open', '[{"note":"E2","time":0}]', 1, 10, 1),
-        ('Play Open A', 'Play the A string (5th string) open', '[{"note":"A2","time":0}]', 1, 10, 2),
-        ('Play Open D', 'Play the D string (4th string) open', '[{"note":"D3","time":0}]', 1, 10, 3),
-        ('Play Open G', 'Play the G string (3rd string) open', '[{"note":"G3","time":0}]', 1, 10, 4),
-        ('Play Open B', 'Play the B string (2nd string) open', '[{"note":"B3","time":0}]', 1, 10, 5),
-        ('Play High E', 'Play the high E string (1st string) open', '[{"note":"E4","time":0}]', 1, 10, 6)
+      INSERT INTO lessons (title, description, notes, difficulty, xp_reward, level, order_index) VALUES
+        -- Level 1: The Foundations (5 Lessons)
+        ('Open A String', 'The 5th string. Let it ring clearly.', '[{"note":"A2","time":0}]', 1, 10, 1, 2),
+        ('Open D String', 'The 4th string. Getting to the middle.', '[{"note":"D3","time":0}]', 1, 10, 1, 3),
+        ('Open G String', 'The 3rd string. A bright, open sound.', '[{"note":"G3","time":0}]', 1, 10, 1, 4),
+        ('Open B String', 'The 2nd string. Almost at the top!', '[{"note":"B3","time":0}]', 1, 10, 1, 5),
+        ('Open High E', 'The thinnest string (1st string). High and clear.', '[{"note":"E4","time":0}]', 1, 10, 1, 6),
+        
+        -- Level 2: Fret Mastery (4 Lessons)
+        ('First Fret Challenge', 'Play F on the Low E (1st fret, 6th string)', '[{"note":"F2","time":0}]', 2, 15, 2, 7),
+        ('Third Fret Power', 'Play G on the Low E (3rd fret, 6th string)', '[{"note":"G2","time":0}]', 2, 15, 2, 8),
+        ('The C Major Step', 'Play C on the A string (3rd fret, 5th string)', '[{"note":"C3","time":0}]', 2, 15, 2, 9),
+        ('Fretboard Explorer', 'Navigate between 1st and 3rd frets: F2 then G2.', '[{"note":"F2","time":0},{"note":"G2","time":1000}]', 2, 20, 2, 10),
+
+        -- Level 3: Melodies (5 Lessons)
+        ('Simple Blues Start', 'The classic E, G, A sequence.', '[{"note":"E2","time":0},{"note":"G2","time":500},{"note":"A2","time":1000}]', 3, 25, 3, 11),
+        ('The "Smoke" Intro', 'Famous three-note riff fragment: E, G, A.', '[{"note":"E2","time":0},{"note":"G2","time":500},{"note":"A2","time":1000}]', 3, 30, 3, 12),
+        ('Morning Call', 'Bright melodic sequence: G3, A3, B3.', '[{"note":"G3","time":0},{"note":"A3","time":500},{"note":"B3","time":1000}]', 3, 25, 3, 13),
+        ('Low String Groove', 'A heavy bass-line riff: E2, F#2, G2.', '[{"note":"E2","time":0},{"note":"F#2","time":500},{"note":"G2","time":1000}]', 3, 30, 3, 14),
+        ('Final Mastery', 'Combine everything: E2, A2, D3, G3, B3, E4.', '[{"note":"E2","time":0},{"note":"A2","time":500},{"note":"D3","time":1000},{"note":"G3","time":1500},{"note":"B3","time":2000},{"note":"E4","time":2500}]', 3, 50, 3, 15)
     `);
   }
 

@@ -64,6 +64,9 @@ export class AudioProcessor {
     async start() {
         try {
             this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            if (this.audioContext.state === 'suspended') {
+                await this.audioContext.resume();
+            }
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             this.microphone = this.audioContext.createMediaStreamSource(stream);
 
