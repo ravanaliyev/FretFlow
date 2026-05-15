@@ -1226,10 +1226,10 @@ const Dashboard: React.FC = () => {
       setNotifications(prev => [
         {
           id: Date.now(),
-          title: 'Hoş geldin!',
-          message: 'FretFlow’a giriş yaptıktan sonra seni buradan yeni bildirimlerle bilgilendireceğiz.',
+          title: 'Welcome!',
+          message: 'After logging into FretFlow, we\'ll keep you updated with new notifications here.',
           type: 'welcome',
-          timestamp: new Date().toLocaleDateString('tr-TR', { month: 'short', day: 'numeric' }),
+          timestamp: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
           read: false,
         },
         ...prev,
@@ -1434,10 +1434,10 @@ const Dashboard: React.FC = () => {
       setNotifications(prev => [
         ...newlyEarned.map(a => ({
           id: Date.now() + a.id,
-          title: 'Yeni başarı kazandın!',
+          title: 'You earned a new achievement!',
           message: `${a.name}: ${a.description}`,
           type: 'achievement' as const,
-          timestamp: new Date().toLocaleDateString('tr-TR', { month: 'short', day: 'numeric' }),
+          timestamp: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
           read: false,
         })),
         ...prev,
@@ -2004,27 +2004,33 @@ const Dashboard: React.FC = () => {
                     className="absolute right-0 top-full mt-3 w-80 max-w-xs rounded-3xl border border-white/10 bg-dark-950/95 shadow-2xl shadow-black/50 overflow-hidden z-[2000]"
                   >
                     <div className="px-4 py-4 border-b border-white/10 flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-bold text-white">Bildirimler</p>
-                        <p className="text-xs text-gray-500">Son gelişmeler burada görünür.</p>
-                      </div>
+                      <p className="text-sm font-bold text-white">Notifications</p>
                       <button
                         onClick={() => setNotifications((prev) => prev.map((item) => ({ ...item, read: true })))}
-                        className="text-xs uppercase tracking-[0.2em] text-gray-400 hover:text-white transition-colors"
+                        className="text-[10px] uppercase tracking-[0.15em] text-gray-500 hover:text-gray-300 transition-colors"
                       >
                         Mark all read
                       </button>
                     </div>
                     <div className="max-h-72 overflow-y-auto">
                       {notifications.length === 0 ? (
-                        <div className="p-4 text-sm text-gray-400">Yeni bildirim yok.</div>
+                        <div className="p-4 text-sm text-gray-400">No new notifications.</div>
                       ) : (
                         notifications.map((note) => (
-                          <div key={note.id} className={`px-4 py-3 border-b border-white/10 ${note.read ? 'bg-white/5' : 'bg-white/5/80'}`}>
-                            <p className="text-xs uppercase tracking-[0.2em] text-gray-500 mb-1">{note.type === 'achievement' ? 'Başarı' : note.type === 'welcome' ? 'Hoş geldin' : 'Bilgi'}</p>
-                            <p className="text-sm font-bold text-white">{note.title}</p>
-                            <p className="text-sm text-gray-400 mt-1">{note.message}</p>
-                            <p className="text-[10px] text-gray-500 mt-2">{note.timestamp}</p>
+                          <div key={note.id} className={`px-4 py-3 border-b border-white/10 flex items-start justify-between gap-3 ${note.read ? 'bg-white/5' : 'bg-white/5/80'}`}>
+                            <div className="flex-1">
+                              <p className="text-xs uppercase tracking-[0.2em] text-gray-500 mb-1">{note.type === 'achievement' ? 'Achievement' : note.type === 'welcome' ? 'Welcome' : 'Info'}</p>
+                              <p className="text-sm font-bold text-white">{note.title}</p>
+                              <p className="text-sm text-gray-400 mt-1">{note.message}</p>
+                              <p className="text-[10px] text-gray-500 mt-2">{note.timestamp}</p>
+                            </div>
+                            <button
+                              onClick={() => setNotifications((prev) => prev.filter((n) => n.id !== note.id))}
+                              className="text-gray-500 hover:text-rose-500 transition-colors pt-1 flex-shrink-0"
+                              title="Delete notification"
+                            >
+                              <X size={14} />
+                            </button>
                           </div>
                         ))
                       )}
