@@ -318,6 +318,89 @@ function calculateLevel(totalXP: number): number {
   return 1;
 }
 
+async function checkAndGrantAchievements(userId: number) {
+  try {
+    // Fetch all achievements
+    const allAchievements = await db.execute('SELECT * FROM achievements');
+    
+    // Fetch already-earned achievements for this user
+    const earnedResult = await db.execute({
+      sql: 'SELECT achievement_id FROM user_achievements WHERE user_id = ?',
+      args: [userId],
+    });
+    const earnedIds = new Set(earnedResult.rows.map((r: any) => r.achievement_id));
+
+    // Fetch stats needed to check conditions
+    const lessonsResult = await db.execute({
+      sql: 'SELECT COUNT(*) as count FROM lesson_progress WHERE user_id = ? AND is_completed = 1',
+      args: [userId],
+    });
+    const lessonsCompleted = Number((lessonsResult.rows[0] as any).count);
+
+    const accuracyResult = await db.execute({
+      sql: 'SELECT COUNT(*) as count FROM lesson_progress WHERE user_id = ? AND best_accuracy = 100',
+      args: [userId],
+    });
+    const perfectCount = Number((accuracyResult.rows[0] as any).count);
+
+    const streakResult = await db.execute({
+      sql: 'SELECT current_streak FROM streaks WHERE user_id = ?',
+      args: [userId],
+    });
+    const currentStreak = Number((streakResult.rows[0] as any)?.current_streak || 0);
+
+    const songsResult = await db.execute({
+      sql: 'SELECT COUNT(DISTINCT song_id) as count FROM song_scores WHERE user_id = ?',
+      args: [userId],
+    });
+    const songsCompleted = Number((songsResult.rows[0] as any).count);
+
+    // Map achievement names to conditions
+    const conditions: Record<string, boolean> = {
+      'First Note':     lessonsCompleted >= 1,
+      'Perfect Pitch':  perfectCount >= 1,
+      'Streak Starter': currentStreak >= 3,
+      'Week Warrior':   currentStreak >= 7,
+      'Song Master':    songsCompleted >= 10,
+      'Lesson Legend':  lessonsCompleted >= 25,
+    };
+
+    const now = new Date().toISOString();
+    let bonusXP = 0;
+
+    for (const row of allAchievements.rows) {
+      const achievement = row as any;
+      if (earnedIds.has(achievement.id)) continue; // already earned
+      if (!conditions[achievement.name]) continue;  // condition not met
+
+      // Grant the achievement
+      await db.execute({
+        sql: 'INSERT OR IGNORE INTO user_achievements (user_id, achievement_id, earned_at) VALUES (?, ?, ?)',
+        args: [userId, achievement.id, now],
+      });
+      bonusXP += achievement.xp_reward || 0;
+    }
+
+    // Award bonus XP for newly earned achievements
+    if (bonusXP > 0) {
+      const userResult = await db.execute({
+        sql: 'SELECT xp_total FROM users WHERE id = ?',
+        args: [userId],
+      });
+      const currentXP = Number((userResult.rows[0] as any).xp_total || 0);
+      const newXP = currentXP + bonusXP;
+      const newLevel = calculateLevel(newXP);
+      await db.execute({
+        sql: 'UPDATE users SET xp_total = ?, level = ? WHERE id = ?',
+        args: [newXP, newLevel, userId],
+      });
+    }
+  } catch (e) {
+    // Achievement check should never block the main flow
+    console.error('Achievement check error:', e);
+  }
+}
+
 function getLevelName(level: number): string {
   const names = ['Beginner', 'Novice', 'Apprentice', 'Intermediate', 'Advanced', 'Expert', 'Master', 'Grand Master', 'Legendary', 'Guitar Hero'];
   return names[Math.min(level - 1, names.length - 1)] || 'Beginner';
@@ -702,6 +785,9 @@ async function handleProgress(req: VercelRequest, res: VercelResponse) {
             });
           }
         }
+
+        // Check and grant achievements (non-blocking)
+        checkAndGrantAchievements(userId);
       }
     }
 
