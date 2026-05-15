@@ -45,6 +45,20 @@ async function handler(req: Request, res: Response): Promise<void> {
     return;
   }
 
+  if (req.method === 'DELETE') {
+    try {
+      await db.execute({
+        sql: `DELETE FROM practice_history WHERE user_id = ?`,
+        args: [userId],
+      });
+
+      res.json({ success: true, message: 'History cleared' });
+    } catch (_error) {
+      res.status(500).json({ error: 'Failed to clear history', code: 'SERVER_ERROR' });
+    }
+    return;
+  }
+
   res.status(405).json({ error: 'Method not allowed', code: 'METHOD_NOT_ALLOWED' });
 }
 

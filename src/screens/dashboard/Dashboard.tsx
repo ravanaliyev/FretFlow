@@ -28,6 +28,7 @@ import { statsApi } from '../../api/stats';
 import { scoresApi } from '../../api/scores';
 import { adminApi } from '../../api/admin';
 import { usersApi } from '../../api/users';
+import { historyApi } from '../../api/history';
 import { useAuth } from '../../hooks/useAuth';
 import confetti from 'canvas-confetti';
 
@@ -995,10 +996,7 @@ const Dashboard: React.FC = () => {
   const [showHistoryClearModal, setShowHistoryClearModal] = useState(false);
   const [lessons, setLessons] = useState<Lesson[]>([]);
 
-  const [history, setHistory] = useState<HistoryItem[]>(() => {
-    const saved = localStorage.getItem('fretflow_history');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [history, setHistory] = useState<HistoryItem[]>([]);
 
   const [userXp, setUserXp] = useState(0);
   const [userLevel, setUserLevel] = useState(1);
@@ -1121,18 +1119,15 @@ const Dashboard: React.FC = () => {
     localStorage.setItem('fretflow_lessons_v5', JSON.stringify(lessons));
   }, [lessons]);
 
-  useEffect(() => {
-    localStorage.setItem('fretflow_history', JSON.stringify(history));
-  }, [history]);
-
   // --- API Data Loading ---
   useEffect(() => {
     const loadApiData = async () => {
       try {
-        const [lessonsRes, progressRes, profileRes] = await Promise.all([
+        const [lessonsRes, progressRes, profileRes, historyRes] = await Promise.all([
           lessonsApi.getAll(),
           progressApi.getLessonProgress(),
           gamificationApi.getProfile(),
+          historyApi.getAll(),
         ]);
 
         const progressMap = new Map(
@@ -1180,6 +1175,12 @@ const Dashboard: React.FC = () => {
         // Store XP and level for display
         setUserXp(profileRes.xp_total);
         setUserLevel(profileRes.level);
+
+        setHistory(historyRes.data.map((h: any) => ({
+          id: h.id,
+          title: h.lesson_title,
+          date: h.date
+        })));
 
         // Fetch achievements from API
         const achievementsRes = await gamificationApi.getAchievements();
@@ -1435,6 +1436,9 @@ const Dashboard: React.FC = () => {
             ...prev
           ];
         });
+
+        // Sync to backend history
+        historyApi.add(activeLesson.id, activeLesson.title, 0).catch(console.error);
 
         setIsVictory(true);
 
@@ -2059,9 +2063,13 @@ const Dashboard: React.FC = () => {
 
               <div className="flex flex-col gap-3">
                 <button
-                  onClick={() => {
+                  onClick={async () => {
+                    try {
+                      await historyApi.clearAll();
+                    } catch (err) {
+                      console.error('Failed to clear history from API:', err);
+                    }
                     setHistory([]);
-                    localStorage.removeItem('fretflow_history');
                     setShowHistoryClearModal(false);
                   }}
                   className="w-full py-4 bg-rose-500 text-white font-bold rounded-2xl hover:bg-rose-600 transition-all active:scale-95 shadow-lg shadow-rose-500/20"
