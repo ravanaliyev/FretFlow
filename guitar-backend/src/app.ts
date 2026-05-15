@@ -43,6 +43,7 @@ import statsActivity from '../api/stats/activity';
 import statsSummary from '../api/stats/summary';
 import history from '../api/history';
 import practiceSessions from '../api/practice-sessions';
+import adminReorder from '../api/admin/reorder';
 
 app.use('/api/auth/register', validateBody(registerSchema), register);
 app.use('/api/auth/login', validateBody(loginSchema), login);
@@ -70,6 +71,7 @@ app.use('/api/stats/activity', statsActivity);
 app.use('/api/stats/summary', statsSummary);
 app.use('/api/history', history);
 app.use('/api/practice-sessions', practiceSessions);
+app.use('/api/admin/lessons/reorder', adminReorder);
 
 // Error handling
 app.use(notFoundHandler);

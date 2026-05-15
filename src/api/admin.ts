@@ -28,4 +28,7 @@ export const adminApi = {
 
   deleteLesson: (id: number) =>
     apiClient.delete<{ success: boolean }>(`/api/lessons/${id}`),
+
+  reorderLessons: (lessonId1: number, lessonId2: number) =>
+    apiClient.post<{ success: boolean }>('/api/admin/lessons/reorder', { lessonId1, lessonId2 }),
 };

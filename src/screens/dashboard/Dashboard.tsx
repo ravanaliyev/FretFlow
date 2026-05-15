@@ -18,7 +18,15 @@ import {
   Trophy,
   Star,
   LogOut,
-  HelpCircle
+  HelpCircle,
+  Settings2,
+  Flag,
+  Bell,
+  Sun,
+  Moon,
+  Mail,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AudioProcessor } from '../../utils/PitchProcessor';
@@ -42,12 +50,22 @@ interface Lesson {
   status: 'available' | 'locked' | 'completed';
   sequence: string[];
   desc: string;
+  order_index?: number;
 }
 
 interface HistoryItem {
   id: number;
   title: string;
   date: string;
+}
+
+interface NotificationItem {
+  id: number;
+  title: string;
+  message: string;
+  type: 'welcome' | 'achievement' | 'info';
+  timestamp: string;
+  read: boolean;
 }
 
 interface LeaderboardItem {
@@ -815,8 +833,10 @@ const ProfileDropdown: React.FC<{
   onClose: () => void;
   onLogout: () => void;
   onOpenHelp: () => void;
+  onOpenSettings: () => void;
+  onOpenSupport: () => void;
   onUpdate: (data: { username?: string; avatar_url?: string; password?: string }) => Promise<void>;
-}> = ({ user, onClose, onLogout, onOpenHelp, onUpdate }) => {
+}> = ({ user, onClose, onLogout, onOpenHelp, onOpenSettings, onOpenSupport, onUpdate }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<'main' | 'edit'>('main');
   const [username, setUsername] = useState(user?.username || '');
@@ -866,6 +886,18 @@ const ProfileDropdown: React.FC<{
                   className="w-full py-3 bg-primary-500 text-dark-900 text-xs font-black rounded-xl hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
                 >
                   <Edit2 size={14} /> Edit Profile
+                </button>
+                <button
+                  onClick={() => { onClose(); onOpenSettings(); }}
+                  className="w-full py-3 bg-white/5 text-gray-300 text-xs font-bold rounded-xl hover:bg-white/10 transition-all flex items-center justify-center gap-2"
+                >
+                  <Settings2 size={14} /> Settings
+                </button>
+                <button
+                  onClick={() => { onClose(); onOpenSupport(); }}
+                  className="w-full py-3 bg-white/5 text-gray-300 text-xs font-bold rounded-xl hover:bg-white/10 transition-all flex items-center justify-center gap-2"
+                >
+                  <Flag size={14} /> Support / Report Bug
                 </button>
                 <button
                   onClick={() => { onClose(); onOpenHelp(); }}
@@ -971,6 +1003,8 @@ interface LessonGridProps {
   userRole: string;
   onAdd: () => void;
   onEdit: (lesson: Lesson) => void;
+  onReorder: (lessonId: number, direction: 'up' | 'down') => void;
+  lessons: Lesson[];
 }
 
 const LessonGrid: React.FC<LessonGridProps> = ({
@@ -983,7 +1017,9 @@ const LessonGrid: React.FC<LessonGridProps> = ({
   startPractice,
   userRole,
   onAdd,
-  onEdit
+  onEdit,
+  onReorder,
+  lessons
 }) => (
   <div className="p-6 space-y-6">
     <div className="flex items-center gap-2 mb-8 relative z-20">
@@ -1053,12 +1089,28 @@ const LessonGrid: React.FC<LessonGridProps> = ({
             </span>
             <div className="flex items-center gap-2">
               {userRole === 'ADMIN' && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onEdit(lesson); }}
-                  className="w-8 h-8 rounded-lg bg-white/5 text-gray-400 hover:text-primary-500 hover:bg-primary-500/10 transition-all flex items-center justify-center"
-                >
-                  <Edit2 size={14} />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onReorder(lesson.id, 'up'); }}
+                    disabled={lessons.findIndex(l => l.id === lesson.id) === 0}
+                    className="w-8 h-8 rounded-lg bg-white/5 text-gray-400 hover:text-primary-500 hover:bg-primary-500/10 transition-all flex items-center justify-center disabled:opacity-20 disabled:cursor-not-allowed"
+                  >
+                    <ChevronUp size={14} />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onReorder(lesson.id, 'down'); }}
+                    disabled={lessons.findIndex(l => l.id === lesson.id) === lessons.length - 1}
+                    className="w-8 h-8 rounded-lg bg-white/5 text-gray-400 hover:text-primary-500 hover:bg-primary-500/10 transition-all flex items-center justify-center disabled:opacity-20 disabled:cursor-not-allowed"
+                  >
+                    <ChevronDown size={14} />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onEdit(lesson); }}
+                    className="w-8 h-8 rounded-lg bg-white/5 text-gray-400 hover:text-primary-500 hover:bg-primary-500/10 transition-all flex items-center justify-center"
+                  >
+                    <Edit2 size={14} />
+                  </button>
+                </div>
               )}
               <div className="text-primary-500">
                 {lesson.status === 'completed' ? <CheckCircle size={20} className="drop-shadow-[0_0_8px_rgba(57,255,20,0.4)]" /> :
@@ -1136,6 +1188,16 @@ const Dashboard: React.FC = () => {
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showSupportModal, setShowSupportModal] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('fretflow_theme') === 'light' ? 'light' : 'dark'));
+  const [supportMessage, setSupportMessage] = useState('');
+  const [supportSubmitted, setSupportSubmitted] = useState(false);
+  const notificationsRef = useRef<HTMLDivElement | null>(null);
+  const achievementsInitializedRef = useRef(false);
+  const previousEarnedAchievementsRef = useRef<number[]>([]);
   const [, setAdminTab] = useState<'Add New' | 'Manage'>('Add New');
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -1152,6 +1214,44 @@ const Dashboard: React.FC = () => {
   const [gameCountdown, setGameCountdown] = useState(3);
 
   const [leaderboard, setLeaderboard] = useState<LeaderboardItem[]>([]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    localStorage.setItem('fretflow_theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
+    const welcomeSeen = localStorage.getItem('fretflow_welcome_seen') === 'true';
+    if (!welcomeSeen) {
+      setNotifications(prev => [
+        {
+          id: Date.now(),
+          title: 'Hoş geldin!',
+          message: 'FretFlow’a giriş yaptıktan sonra seni buradan yeni bildirimlerle bilgilendireceğiz.',
+          type: 'welcome',
+          timestamp: new Date().toLocaleDateString('tr-TR', { month: 'short', day: 'numeric' }),
+          read: false,
+        },
+        ...prev,
+      ]);
+      localStorage.setItem('fretflow_welcome_seen', 'true');
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (
+        notificationsRef.current &&
+        !notificationsRef.current.contains(target) &&
+        !(target instanceof Element && target.closest('[data-notification-button]'))
+      ) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     scoresApi.getLeaderboard().then(res => {
@@ -1239,92 +1339,112 @@ const Dashboard: React.FC = () => {
   }
   const lastMatchTimeRef = useRef<number>(0);
 
-  // --- Persistence ---
-  useEffect(() => {
-    localStorage.setItem('fretflow_lessons_v5', JSON.stringify(lessons));
-  }, [lessons]);
+  const refreshData = async () => {
+    try {
+      const [lessonsRes, progressRes, profileRes, historyRes, achievementsRes] = await Promise.all([
+        lessonsApi.getAll(),
+        progressApi.getLessonProgress(),
+        gamificationApi.getProfile(),
+        historyApi.getAll(),
+        gamificationApi.getAchievements(),
+      ]);
+
+      const progressMap = new Map(
+        progressRes.data.map(p => [p.lesson_id, p])
+      );
+
+      const mapped: Lesson[] = lessonsRes.data.map((l, idx) => {
+        const progress = progressMap.get(l.id);
+        let status: Lesson['status'] = 'available';
+        if (progress?.is_completed) {
+          status = 'completed';
+        } else if (idx > 0) {
+          const prevProgress = progressMap.get(lessonsRes.data[idx - 1]?.id);
+          if (!prevProgress?.is_completed) {
+            status = 'locked';
+          }
+        }
+
+        const parsedNotes = JSON.parse(l.notes || '[]');
+        const sequence = Array.isArray(parsedNotes)
+          ? parsedNotes.map((n: any) => typeof n === 'string' ? n : (n.note || ''))
+          : [];
+
+        return {
+          id: l.id,
+          title: l.title,
+          level: l.level || 1,
+          difficulty: (['easy', 'medium', 'hard'] as const)[l.difficulty - 1] || 'easy',
+          status,
+          sequence,
+          desc: l.description,
+          order_index: l.order_index,
+        };
+      });
+
+      setLessons(mapped);
+      setAchievements(achievementsRes.data);
+
+      // Update streak data from API profile
+      setStreakData((prev: any) => ({
+        ...prev,
+        count: profileRes.streak.current,
+        isFrozen: false,
+        lastUpdated: profileRes.streak.last_practice || new Date().toDateString(),
+      }));
+
+      // Store XP and level for display
+      setUserXp(profileRes.xp_total);
+      setUserLevel(profileRes.level);
+      
+      // Sync High Score
+      if (profileRes.best_score !== undefined) {
+        setGameHighScore(profileRes.best_score);
+      }
+      
+      // Update history
+      const mappedHistory: HistoryItem[] = historyRes.map((h: any) => ({
+        id: h.id,
+        title: h.lesson_title || h.title,
+        date: new Date(h.completed_at).toLocaleDateString()
+      }));
+      setHistory(mappedHistory);
+
+    } catch (err) {
+      console.error('Failed to load API data:', err);
+    }
+  };
 
   // --- API Data Loading ---
   useEffect(() => {
-    const loadApiData = async () => {
-      try {
-        const [lessonsRes, progressRes, profileRes, historyRes] = await Promise.all([
-          lessonsApi.getAll(),
-          progressApi.getLessonProgress(),
-          gamificationApi.getProfile(),
-          historyApi.getAll(),
-        ]);
-
-        const progressMap = new Map(
-          progressRes.data.map(p => [p.lesson_id, p])
-        );
-
-        const mapped: Lesson[] = lessonsRes.data.map((l, idx) => {
-          const progress = progressMap.get(l.id);
-          let status: Lesson['status'] = 'available';
-          if (progress?.is_completed) {
-            status = 'completed';
-          } else if (idx > 0) {
-            const prevProgress = progressMap.get(lessonsRes.data[idx - 1]?.id);
-            if (!prevProgress?.is_completed) {
-              status = 'locked';
-            }
-          }
-
-          const parsedNotes = JSON.parse(l.notes || '[]');
-          const sequence = Array.isArray(parsedNotes)
-            ? parsedNotes.map((n: any) => typeof n === 'string' ? n : (n.note || ''))
-            : [];
-
-          return {
-            id: l.id,
-            title: l.title,
-            level: l.level || 1,
-            difficulty: (['easy', 'medium', 'hard'] as const)[l.difficulty - 1] || 'easy',
-            status,
-            sequence,
-            desc: l.description,
-          };
-        });
-
-        setLessons(mapped);
-
-        // Update streak data from API profile
-        setStreakData((prev: { count: number; isFrozen: boolean; lastUpdated: string; history: ('completed' | 'frozen' | 'empty')[] }) => ({
-          ...prev,
-          count: profileRes.streak.current,
-          isFrozen: false,
-          lastUpdated: profileRes.streak.last_practice || new Date().toDateString(),
-        }));
-
-        // Store XP and level for display
-        setUserXp(profileRes.xp_total);
-        setUserLevel(profileRes.level);
-
-        setHistory(historyRes.data.map((h: any) => ({
-          id: h.id,
-          title: h.lesson_title,
-          date: h.date
-        })));
-
-        // Fetch achievements from API
-        const achievementsRes = await gamificationApi.getAchievements();
-        setAchievements(achievementsRes.data);
-        
-        // Sync High Score from profile
-        if (profileRes.best_score !== undefined) {
-          setGameHighScore(profileRes.best_score);
-          localStorage.setItem('fretflow_highscore', profileRes.best_score.toString());
-        }
-      } catch (err) {
-        console.error('Failed to load from API, using defaults:', err);
-      }
-    };
-
-    loadApiData();
+    refreshData();
   }, []);
 
   const [achievements, setAchievements] = useState<Array<{ id: number; name: string; description: string; icon: string; xp_reward: number; earned: boolean; earned_at: string | null }>>([]);
+
+  useEffect(() => {
+    if (!achievementsInitializedRef.current) {
+      achievementsInitializedRef.current = true;
+      previousEarnedAchievementsRef.current = achievements.filter(a => a.earned).map(a => a.id);
+      return;
+    }
+
+    const newlyEarned = achievements.filter(a => a.earned && !previousEarnedAchievementsRef.current.includes(a.id));
+    if (newlyEarned.length > 0) {
+      setNotifications(prev => [
+        ...newlyEarned.map(a => ({
+          id: Date.now() + a.id,
+          title: 'Yeni başarı kazandın!',
+          message: `${a.name}: ${a.description}`,
+          type: 'achievement' as const,
+          timestamp: new Date().toLocaleDateString('tr-TR', { month: 'short', day: 'numeric' }),
+          read: false,
+        })),
+        ...prev,
+      ]);
+      previousEarnedAchievementsRef.current = achievements.filter(a => a.earned).map(a => a.id);
+    }
+  }, [achievements]);
 
   // --- Fetch Stats from API ---
   useEffect(() => {
@@ -1608,6 +1728,24 @@ const Dashboard: React.FC = () => {
   });
 
   const progressPercentage = Math.round((lessons.filter(l => l.status === 'completed').length / lessons.length) * 100);
+  
+  const handleReorder = async (lessonId: number, direction: 'up' | 'down') => {
+    const currentIndex = lessons.findIndex(l => l.id === lessonId);
+    if (currentIndex === -1) return;
+    
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (targetIndex < 0 || targetIndex >= lessons.length) return;
+    
+    const lesson1 = lessons[currentIndex];
+    const lesson2 = lessons[targetIndex];
+    
+    try {
+      await adminApi.reorderLessons(lesson1.id, lesson2.id);
+      await refreshData();
+    } catch (err) {
+      console.error('Failed to reorder lessons:', err);
+    }
+  };
 
 
 
@@ -1844,6 +1982,59 @@ const Dashboard: React.FC = () => {
             </button>
             <div className="relative">
               <button
+                onClick={() => setShowNotifications((value) => !value)}
+                data-notification-button
+                className="relative w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-300 hover:bg-white/10 transition-all active:scale-95"
+                aria-label="Notifications"
+              >
+                <Bell size={20} />
+                {notifications.some((n) => !n.read) && (
+                  <span className="absolute -top-1 -right-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-black text-white px-[6px]">
+                    {notifications.filter((n) => !n.read).length}
+                  </span>
+                )}
+              </button>
+              <AnimatePresence>
+                {showNotifications && (
+                  <motion.div
+                    ref={notificationsRef}
+                    initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                    className="absolute right-0 top-full mt-3 w-80 max-w-xs rounded-3xl border border-white/10 bg-dark-950/95 shadow-2xl shadow-black/50 overflow-hidden z-[2000]"
+                  >
+                    <div className="px-4 py-4 border-b border-white/10 flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-bold text-white">Bildirimler</p>
+                        <p className="text-xs text-gray-500">Son gelişmeler burada görünür.</p>
+                      </div>
+                      <button
+                        onClick={() => setNotifications((prev) => prev.map((item) => ({ ...item, read: true })))}
+                        className="text-xs uppercase tracking-[0.2em] text-gray-400 hover:text-white transition-colors"
+                      >
+                        Mark all read
+                      </button>
+                    </div>
+                    <div className="max-h-72 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <div className="p-4 text-sm text-gray-400">Yeni bildirim yok.</div>
+                      ) : (
+                        notifications.map((note) => (
+                          <div key={note.id} className={`px-4 py-3 border-b border-white/10 ${note.read ? 'bg-white/5' : 'bg-white/5/80'}`}>
+                            <p className="text-xs uppercase tracking-[0.2em] text-gray-500 mb-1">{note.type === 'achievement' ? 'Başarı' : note.type === 'welcome' ? 'Hoş geldin' : 'Bilgi'}</p>
+                            <p className="text-sm font-bold text-white">{note.title}</p>
+                            <p className="text-sm text-gray-400 mt-1">{note.message}</p>
+                            <p className="text-[10px] text-gray-500 mt-2">{note.timestamp}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            <div className="relative">
+              <button
                 onClick={() => setShowProfileModal(!showProfileModal)}
                 className="w-10 h-10 rounded-full bg-primary-500/10 border-2 border-primary-500/30 flex items-center justify-center text-primary-500 overflow-hidden hover:border-primary-500/60 transition-all active:scale-95"
               >
@@ -1926,6 +2117,8 @@ const Dashboard: React.FC = () => {
                     setAdminTab('Add New');
                     setShowAdminModal(true);
                   }}
+                  onReorder={handleReorder}
+                  lessons={lessons}
                 />
               </motion.div>
             )}
@@ -2258,6 +2451,8 @@ const Dashboard: React.FC = () => {
               navigate('/login');
             }}
             onOpenHelp={() => setShowHelpModal(true)}
+            onOpenSettings={() => setShowSettingsModal(true)}
+            onOpenSupport={() => setShowSupportModal(true)}
             onUpdate={async (data) => {
               try {
                 const updatedUser = await usersApi.updateMe(data);
@@ -2317,14 +2512,30 @@ const Dashboard: React.FC = () => {
 
                   const difficultyMap: Record<string, number> = { easy: 1, medium: 2, hard: 3 };
 
+                  const levelValue = parseInt(formData.get('level') as string) || 1;
+                  const orderIndexRaw = (formData.get('order_index') as string)?.trim();
+                  const hasOrderIndexInput = orderIndexRaw !== undefined && orderIndexRaw !== '';
+                  const orderIndexValue = hasOrderIndexInput ? parseInt(orderIndexRaw, 10) : undefined;
+                  const defaultOrderIndex = Math.max(
+                    -1,
+                    ...lessons.filter((lesson) => lesson.level === levelValue).map((lesson) => lesson.order_index ?? -1)
+                  ) + 1;
+                  const computedOrderIndex = editingLesson
+                    ? hasOrderIndexInput
+                      ? parseInt(orderIndexRaw, 10)
+                      : editingLesson.order_index ?? defaultOrderIndex
+                    : orderIndexValue !== undefined
+                      ? orderIndexValue
+                      : defaultOrderIndex;
+
                   const apiLessonData = {
                     title: formData.get('title') as string,
                     description: formData.get('desc') as string,
                     notes: JSON.stringify(sequence.map(n => ({ note: n, time: 0 }))),
                     difficulty: difficultyMap[formData.get('difficulty') as string] || 1,
                     xp_reward: 10,
-                    level: parseInt(formData.get('level') as string) || 1,
-                    order_index: editingLesson ? editingLesson.id : Date.now(),
+                    level: levelValue,
+                    order_index: computedOrderIndex,
                   };
 
                   try {
@@ -2333,28 +2544,14 @@ const Dashboard: React.FC = () => {
                     } else {
                       await adminApi.createLesson(apiLessonData);
                     }
-                  } catch (err) {
+                    // REFRESH DATA FROM SERVER
+                    await refreshData();
+                    setShowAdminModal(false);
+                    setEditingLesson(null);
+                  } catch (err: any) {
                     console.error('Failed to sync lesson to server:', err);
+                    alert('Hata: ' + (err.response?.data?.error || err.message || 'Bilinmeyen hata'));
                   }
-
-                  const lessonData: Lesson = {
-                    id: editingLesson ? editingLesson.id : Date.now(),
-                    title: formData.get('title') as string,
-                    level: parseInt(formData.get('level') as string) || 1,
-                    difficulty: formData.get('difficulty') as any,
-                    status: editingLesson ? editingLesson.status : 'available',
-                    sequence: sequence,
-                    desc: formData.get('desc') as string,
-                  };
-
-                  if (editingLesson) {
-                    setLessons(prev => prev.map(l => l.id === editingLesson.id ? lessonData : l));
-                  } else {
-                    setLessons(prev => [...prev, lessonData]);
-                  }
-
-                  setShowAdminModal(false);
-                  setEditingLesson(null);
                 }}>
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 block">Title</label>
@@ -2387,6 +2584,11 @@ const Dashboard: React.FC = () => {
                   <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 block">Description</label>
                     <textarea name="desc" defaultValue={editingLesson?.desc} className="glass-input w-full px-4 py-3 rounded-xl text-sm" rows={3} placeholder="What will they learn?" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 block">Order Index (Optional)</label>
+                    <input type="number" name="order_index" defaultValue={editingLesson?.order_index} className="glass-input w-full px-4 py-3 rounded-xl text-sm" placeholder="Leave empty for auto-last" />
+                    <p className="text-[10px] text-gray-600 mt-1 italic">Controls the sequence of lessons. Higher numbers appear later.</p>
                   </div>
                   {formError && (
                     <motion.div
@@ -2456,10 +2658,10 @@ const Dashboard: React.FC = () => {
                   onClick={async () => {
                     try {
                       await adminApi.deleteLesson(editingLesson.id);
+                      await refreshData();
                     } catch (err) {
                       console.error('Failed to delete lesson from server:', err);
                     }
-                    setLessons(prev => prev.filter(l => l.id !== editingLesson.id));
                     setShowDeleteConfirm(false);
                     setShowAdminModal(false);
                     setEditingLesson(null);
@@ -2710,6 +2912,126 @@ const Dashboard: React.FC = () => {
                     Got it, thanks!
                   </button>
                 </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showSettingsModal && (
+          <div className="fixed inset-0 z-[3000] flex items-center justify-center p-6 bg-dark-950/90 backdrop-blur-md">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="glass-panel p-8 rounded-[2.5rem] max-w-2xl w-full relative border-white/10 shadow-2xl overflow-y-auto max-h-[90vh]"
+            >
+              <button
+                onClick={() => setShowSettingsModal(false)}
+                className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors"
+              >
+                <X size={24} />
+              </button>
+
+              <div className="mb-8">
+                <h2 className="text-3xl font-black text-white mb-2">Settings & Preferences</h2>
+                <p className="text-gray-400">Control theme and your experience.</p>
+              </div>
+
+              <div className="space-y-6">
+                <section className="bg-white/5 p-6 rounded-3xl border border-white/10">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Settings2 size={18} className="text-primary-500" />
+                    <h3 className="text-white font-bold">Theme</h3>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setTheme('dark')}
+                      className={`flex-1 py-3 rounded-2xl text-sm font-bold transition-all ${theme === 'dark' ? 'bg-primary-500 text-dark-900' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}
+                    >
+                      <Moon size={16} className="inline-block mr-2" /> Dark
+                    </button>
+                    <button
+                      onClick={() => setTheme('light')}
+                      className={`flex-1 py-3 rounded-2xl text-sm font-bold transition-all ${theme === 'light' ? 'bg-primary-500 text-dark-900' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}
+                    >
+                      <Sun size={16} className="inline-block mr-2" /> Light
+                    </button>
+                  </div>
+                </section>
+
+                <div className="pt-4">
+                  <button
+                    onClick={() => setShowSettingsModal(false)}
+                    className="w-full py-4 bg-primary-500 text-dark-900 font-black rounded-2xl shadow-xl shadow-primary-500/20 hover:bg-primary-400 transition-all"
+                  >
+                    Save Preferences
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showSupportModal && (
+          <div className="fixed inset-0 z-[3000] flex items-center justify-center p-6 bg-dark-950/90 backdrop-blur-md">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="glass-panel p-8 rounded-[2.5rem] max-w-2xl w-full relative border-white/10 shadow-2xl overflow-y-auto max-h-[90vh]"
+            >
+              <button
+                onClick={() => setShowSupportModal(false)}
+                className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors"
+              >
+                <X size={24} />
+              </button>
+
+              <div className="mb-8">
+                <h2 className="text-3xl font-black text-white mb-2">Support / Report Bug</h2>
+                <p className="text-gray-400">Send feedback or report a problem directly from the app.</p>
+              </div>
+
+              <div className="space-y-6">
+                <section className="bg-white/5 p-6 rounded-3xl border border-white/10">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Mail size={18} className="text-primary-500" />
+                    <h3 className="text-white font-bold">Need help?</h3>
+                  </div>
+                  <p className="text-sm text-gray-400">Use this form for quick bug reports, feature requests, or support questions.</p>
+                </section>
+
+                {supportSubmitted ? (
+                  <div className="bg-primary-500/10 p-6 rounded-3xl border border-primary-500/20 text-white">
+                    <p className="font-bold text-white mb-2">Thanks for reporting!</p>
+                    <p className="text-sm text-gray-300">Your message has been received. We’ll review it and improve the app.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <textarea
+                      value={supportMessage}
+                      onChange={(e) => setSupportMessage(e.target.value)}
+                      rows={5}
+                      placeholder="Describe the issue or request..."
+                      className="w-full bg-dark-900 border border-white/10 rounded-3xl p-4 text-sm text-white outline-none placeholder:text-gray-500"
+                    />
+                    <button
+                      onClick={() => {
+                        if (!supportMessage.trim()) return;
+                        setSupportSubmitted(true);
+                        setSupportMessage('');
+                      }}
+                      disabled={!supportMessage.trim()}
+                      className="w-full py-4 bg-primary-500 text-dark-900 font-black rounded-2xl shadow-xl shadow-primary-500/20 hover:bg-primary-400 transition-all disabled:opacity-40"
+                    >
+                      Send Report
+                    </button>
+                  </div>
+                )}
               </div>
             </motion.div>
           </div>

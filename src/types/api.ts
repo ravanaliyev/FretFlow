@@ -44,6 +44,7 @@ export interface Lesson {
   difficulty: number;
   xp_reward: number;
   order_index: number;
+  level?: number;
 }
 
 export interface DashboardLesson {

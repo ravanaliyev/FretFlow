@@ -45,20 +45,42 @@ async function handler(req: Request, res: Response): Promise<void> {
         return;
       }
 
-      const { title, description, notes, difficulty, xp_reward, order_index } = req.body;
+      const { title, description, notes, difficulty, xp_reward, order_index, level } = req.body;
+      let finalOrderIndex = order_index;
 
-      if (!title || !description || !notes) {
-        res.status(400).json({
-          error: 'Missing required fields: title, description, notes',
-          code: 'VALIDATION_ERROR',
+      // Handle empty string, null, undefined or NaN
+      if (!finalOrderIndex && finalOrderIndex !== 0) {
+        const maxResult = await db.execute('SELECT MAX(order_index) as max_idx FROM lessons');
+        const maxIdx = (maxResult.rows[0] as any).max_idx;
+        finalOrderIndex = (maxIdx !== null && maxIdx !== undefined) ? (Number(maxIdx) + 1) : 1;
+      } else {
+        // Explicit order index provided, shift others
+        await db.execute({
+          sql: 'UPDATE lessons SET order_index = order_index + 1 WHERE order_index >= ?',
+          args: [Number(finalOrderIndex)]
         });
-        return;
+      }
+
+      // Ensure notes is a string
+      let notesStr = '';
+      if (typeof notes === 'string') {
+        notesStr = notes;
+      } else {
+        notesStr = JSON.stringify(notes || []);
       }
 
       const result = await db.execute({
-        sql: `INSERT INTO lessons (title, description, notes, difficulty, xp_reward, order_index)
-              VALUES (?, ?, ?, ?, ?, ?)`,
-        args: [title, description, notes, difficulty || 1, xp_reward || 10, order_index || 0],
+        sql: `INSERT INTO lessons (title, description, notes, difficulty, xp_reward, order_index, level)
+              VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        args: [
+          String(title || 'Untitled'),
+          String(description || ''),
+          notesStr,
+          Number(difficulty || 1),
+          Number(xp_reward || 10),
+          Number(finalOrderIndex),
+          Number(level || 1)
+        ],
       });
 
       const lessonId = Number(result.lastInsertRowid);
