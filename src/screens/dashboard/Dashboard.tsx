@@ -1039,13 +1039,18 @@ const Dashboard: React.FC = () => {
             }
           }
 
+          const parsedNotes = JSON.parse(l.notes || '[]');
+          const sequence = Array.isArray(parsedNotes) 
+            ? parsedNotes.map((n: any) => typeof n === 'string' ? n : (n.note || ''))
+            : [];
+
           return {
             id: l.id,
             title: l.title,
             level: l.order_index,
             difficulty: (['easy', 'medium', 'hard'] as const)[l.difficulty - 1] || 'easy',
             status,
-            sequence: JSON.parse(l.notes || '[]'),
+            sequence,
             desc: l.description,
           };
         });
