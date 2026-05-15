@@ -16,7 +16,8 @@ import {
   User,
   Edit2,
   Trophy,
-  LogOut
+  LogOut,
+  HelpCircle
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AudioProcessor } from '../../utils/PitchProcessor';
@@ -684,86 +685,131 @@ const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number; achievements?
   );
 };
 
-const ProfileModal: React.FC<{ 
+const ProfileDropdown: React.FC<{ 
   user: any; 
   onClose: () => void; 
   onLogout: () => void;
-  onUpdate: (data: { username?: string; avatar_url?: string }) => Promise<void>;
-}> = ({ user, onClose, onLogout, onUpdate }) => {
+  onOpenHelp: () => void;
+  onUpdate: (data: { username?: string; avatar_url?: string; password?: string }) => Promise<void>;
+}> = ({ user, onClose, onLogout, onOpenHelp, onUpdate }) => {
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [view, setView] = useState<'main' | 'edit'>('main');
   const [username, setUsername] = useState(user?.username || '');
-  const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || '');
+  const [password, setPassword] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-[500] flex items-center justify-center p-6 bg-dark-950/80 backdrop-blur-md">
+    <>
       <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="glass-panel p-8 rounded-[2.5rem] max-w-md w-full relative border-white/10 shadow-2xl"
+        ref={dropdownRef}
+        initial={{ scale: 0.95, opacity: 0, y: 10 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        className="fixed top-20 right-6 z-[2001] glass-panel p-6 rounded-3xl w-72 border-white/10 shadow-2xl shadow-black/50"
       >
-        <button 
-          onClick={onClose}
-          className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors"
-        >
-          <X size={24} />
-        </button>
-
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-24 h-24 rounded-full bg-primary-500/10 border-4 border-primary-500/30 flex items-center justify-center text-primary-500 overflow-hidden mb-4">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <User size={48} />
-            )}
-          </div>
-          <h2 className="text-2xl font-bold text-white">Profile Settings</h2>
-          <p className="text-gray-500 text-sm">Manage your account and preferences</p>
-        </div>
-
-        <div className="space-y-6">
-          <div>
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 block ml-1">Username</label>
-            <input 
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="glass-input w-full px-5 py-4 rounded-2xl text-white font-medium focus:border-primary-500/50 transition-all outline-none"
-              placeholder="Your username"
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 block ml-1">Avatar URL</label>
-            <input 
-              value={avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
-              className="glass-input w-full px-5 py-4 rounded-2xl text-white font-medium focus:border-primary-500/50 transition-all outline-none"
-              placeholder="https://..."
-            />
-          </div>
-
-          <div className="pt-4 flex flex-col gap-3">
-            <button
-              onClick={async () => {
-                setIsSaving(true);
-                await onUpdate({ username, avatar_url: avatarUrl });
-                setIsSaving(false);
-                onClose();
-              }}
-              disabled={isSaving}
-              className="w-full py-4 bg-primary-500 text-dark-900 font-black rounded-2xl hover:scale-[1.02] transition-all active:scale-95 shadow-lg shadow-primary-500/20 disabled:opacity-50"
+        <AnimatePresence mode="wait">
+          {view === 'main' ? (
+            <motion.div
+              key="main"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              className="space-y-4"
             >
-              {isSaving ? 'Saving...' : 'Save Changes'}
-            </button>
-            <button
-              onClick={onLogout}
-              className="w-full py-4 bg-white/5 text-rose-500 font-bold rounded-2xl hover:bg-rose-500/10 transition-all flex items-center justify-center gap-2"
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-12 h-12 rounded-full bg-primary-500/10 border-2 border-primary-500/30 flex items-center justify-center text-primary-500 overflow-hidden">
+                  <User size={24} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-white leading-none mb-1">{user?.username}</h2>
+                  <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest">Lv.{user?.level} Student</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => setView('edit')}
+                  className="w-full py-3 bg-primary-500 text-dark-900 text-xs font-black rounded-xl hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
+                >
+                  <Edit2 size={14} /> Edit Profile
+                </button>
+                <button
+                  onClick={() => { onClose(); onOpenHelp(); }}
+                  className="w-full py-3 bg-white/5 text-gray-300 text-xs font-bold rounded-xl hover:bg-white/10 transition-all flex items-center justify-center gap-2"
+                >
+                  <HelpCircle size={14} /> Help Center
+                </button>
+                <button
+                  onClick={onLogout}
+                  className="w-full py-3 text-rose-500 text-xs font-bold rounded-xl hover:bg-rose-500/10 transition-all flex items-center justify-center gap-2 mt-2"
+                >
+                  <LogOut size={14} /> Sign Out
+                </button>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="edit"
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              className="space-y-4"
             >
-              <LogOut size={18} /> Sign Out
-            </button>
-          </div>
-        </div>
+              <div className="flex items-center gap-2 mb-4">
+                <button onClick={() => setView('main')} className="text-gray-500 hover:text-white transition-colors">
+                  <ArrowLeft size={16} />
+                </button>
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Edit Profile</h3>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 block ml-1">Username</label>
+                <input 
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="glass-input w-full px-4 py-3 rounded-xl text-sm text-white font-medium focus:border-primary-500/50 transition-all outline-none"
+                  placeholder="Your username"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 block ml-1">New Password</label>
+                <input 
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="glass-input w-full px-4 py-3 rounded-xl text-sm text-white font-medium focus:border-primary-500/50 transition-all outline-none"
+                  placeholder="Leave blank to keep current"
+                />
+              </div>
+
+              <button
+                onClick={async () => {
+                  setIsSaving(true);
+                  await onUpdate({ username, ...(password ? { password } : {}) });
+                  setIsSaving(false);
+                  setPassword('');
+                  setView('main');
+                }}
+                disabled={isSaving}
+                className="w-full py-3 bg-primary-500 text-dark-900 text-sm font-black rounded-xl hover:scale-[1.02] transition-all active:scale-95 disabled:opacity-50 mt-2"
+              >
+                {isSaving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
-    </div>
+    </>
   );
 };
 
@@ -961,6 +1007,7 @@ const Dashboard: React.FC = () => {
   const [currentPitch, setCurrentPitch] = useState('--');
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
   const [, setAdminTab] = useState<'Add New' | 'Manage'>('Add New');
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -1630,16 +1677,17 @@ const Dashboard: React.FC = () => {
               <span className="text-[10px] text-gray-400 font-bold uppercase">Lv.{userLevel}</span>
               <span className="text-xs font-black text-primary-400">{userXp.toLocaleString()} XP</span>
             </div>
-            <button
-              onClick={() => setShowProfileModal(true)}
-              className="w-10 h-10 rounded-full bg-primary-500/10 border-2 border-primary-500/30 flex items-center justify-center text-primary-500 overflow-hidden hover:border-primary-500/60 transition-all active:scale-95"
-            >
-              {user?.avatar_url ? (
-                <img src={user.avatar_url} alt="" className="w-full h-full object-cover" />
-              ) : (
+            <div className="relative">
+              <button
+                onClick={() => setShowProfileModal(!showProfileModal)}
+                className="w-10 h-10 rounded-full bg-primary-500/10 border-2 border-primary-500/30 flex items-center justify-center text-primary-500 overflow-hidden hover:border-primary-500/60 transition-all active:scale-95"
+              >
                 <User size={20} />
-              )}
-            </button>
+              </button>
+
+
+
+            </div>
           </div>
         </div>
       </header>
@@ -2024,13 +2072,20 @@ const Dashboard: React.FC = () => {
         })}
       </nav>
 
-      {/* Profile Modal */}
+
+
+
+      {/* Profile Dropdown (Fixed at root to avoid stacking issues) */}
       <AnimatePresence>
         {showProfileModal && (
-          <ProfileModal 
+          <ProfileDropdown 
             user={user}
             onClose={() => setShowProfileModal(false)}
-            onLogout={logout}
+            onLogout={() => {
+              logout();
+              navigate('/login');
+            }}
+            onOpenHelp={() => setShowHelpModal(true)}
             onUpdate={async (data) => {
               try {
                 const updatedUser = await usersApi.updateMe(data);
@@ -2407,6 +2462,76 @@ const Dashboard: React.FC = () => {
                   <p className="text-xs text-gray-400 leading-relaxed">
                     Consistency is key. Even 5 minutes a day builds muscle memory faster than a single 2-hour session!
                   </p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      {/* Help Modal */}
+      <AnimatePresence>
+        {showHelpModal && (
+          <div className="fixed inset-0 z-[3000] flex items-center justify-center p-6 bg-dark-950/90 backdrop-blur-md">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="glass-panel p-8 rounded-[2.5rem] max-w-2xl w-full relative border-white/10 shadow-2xl overflow-y-auto max-h-[90vh]"
+            >
+              <button 
+                onClick={() => setShowHelpModal(false)}
+                className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors"
+              >
+                <X size={24} />
+              </button>
+
+              <div className="mb-8">
+                <h2 className="text-3xl font-black text-white mb-2">Help Center</h2>
+                <p className="text-gray-400">Everything you need to know about FretFlow</p>
+              </div>
+
+              <div className="space-y-8">
+                <section>
+                  <h3 className="text-primary-500 font-bold uppercase tracking-widest text-xs mb-4">Microphone & Pitch Detection</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-white/5 p-5 rounded-2xl border border-white/5">
+                      <h4 className="text-white font-bold mb-2 flex items-center gap-2">
+                        <Mic size={16} className="text-primary-500" /> Quiet Environment
+                      </h4>
+                      <p className="text-sm text-gray-400">Background noise can interfere with detection. Try practicing in a quiet room.</p>
+                    </div>
+                    <div className="bg-white/5 p-5 rounded-2xl border border-white/5">
+                      <h4 className="text-white font-bold mb-2 flex items-center gap-2">
+                        <CheckCircle size={16} className="text-primary-500" /> Clear Notes
+                      </h4>
+                      <p className="text-sm text-gray-400">Pluck the strings clearly and let them ring out. Avoid muting strings with your palm.</p>
+                    </div>
+                  </div>
+                </section>
+
+                <section>
+                  <h3 className="text-primary-500 font-bold uppercase tracking-widest text-xs mb-4">Common Questions</h3>
+                  <div className="space-y-4">
+                    {[
+                      { q: "How do I earn XP?", a: "Complete lessons, practice daily, and maintain your streak to earn XP and level up." },
+                      { q: "How does the streak work?", a: "Practice for at least 5 minutes every day to keep your streak alive. If you miss a day, it resets!" },
+                      { q: "Can I use an electric guitar?", a: "Yes! FretFlow works with acoustic, electric (unplugged or through speakers), and even bass guitars." }
+                    ].map((item, i) => (
+                      <div key={i} className="border-b border-white/5 pb-4 last:border-0">
+                        <h4 className="text-white font-bold mb-1">{item.q}</h4>
+                        <p className="text-sm text-gray-400">{item.a}</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                <div className="pt-4">
+                  <button 
+                    onClick={() => setShowHelpModal(false)}
+                    className="w-full py-4 bg-white/5 hover:bg-white/10 text-white font-bold rounded-2xl transition-all"
+                  >
+                    Got it, thanks!
+                  </button>
                 </div>
               </div>
             </motion.div>

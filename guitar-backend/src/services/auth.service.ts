@@ -207,7 +207,7 @@ export async function getUserById(userId: number): Promise<Omit<User, 'password_
 
 export async function updateUser(
   userId: number,
-  updates: { username?: string; avatar_url?: string }
+  updates: { username?: string; avatar_url?: string; password?: string }
 ): Promise<Omit<User, 'password_hash'> | null> {
   const fields: string[] = [];
   const args: (string | number)[] = [];
@@ -219,6 +219,11 @@ export async function updateUser(
   if (updates.avatar_url !== undefined) {
     fields.push('avatar_url = ?');
     args.push(updates.avatar_url);
+  }
+  if (updates.password) {
+    const passwordHash = await hashPassword(updates.password);
+    fields.push('password_hash = ?');
+    args.push(passwordHash);
   }
 
   if (fields.length === 0) return getUserById(userId);
