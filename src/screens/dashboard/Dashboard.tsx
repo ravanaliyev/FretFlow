@@ -1725,10 +1725,14 @@ const Dashboard: React.FC = () => {
                 />
               </div>
             </div>
-            <div className="flex items-center gap-2 px-2 py-1 rounded-full bg-white/5 border border-white/10">
-              <span className="text-[10px] text-gray-400 font-bold uppercase">Lv.{userLevel}</span>
-              <span className="text-xs font-black text-primary-400">{userXp.toLocaleString()} XP</span>
-            </div>
+            <button 
+              onClick={() => navigate('/dashboard/activity')}
+              title="View Achievements & History"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 hover:bg-primary-500/10 hover:border-primary-500/30 transition-all active:scale-95 group"
+            >
+              <span className="text-[10px] text-gray-400 font-bold uppercase group-hover:text-primary-300 transition-colors">Lv.{userLevel}</span>
+              <span className="text-xs font-black text-primary-400 group-hover:text-primary-300 transition-colors">{userXp.toLocaleString()} XP</span>
+            </button>
             <div className="relative">
               <button
                 onClick={() => setShowProfileModal(!showProfileModal)}
