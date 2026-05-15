@@ -1881,35 +1881,38 @@ const Dashboard: React.FC = () => {
       </AnimatePresence>
     </div>
   );
-
+  
   return (
-    <div className="min-h-screen bg-dark-900 text-white font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-dark-900 text-white font-sans overflow-x-hidden pb-20 md:pb-0">
       {/* Header */}
       <header className={`sticky top-0 z-[1000] bg-dark-900/80 backdrop-blur-xl border-b border-white/5 ${currentView === 'practice' ? 'hidden' : ''}`}>
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-12">
-            <h1 className="text-2xl font-black tracking-tighter bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent">FRETFLOW</h1>
+          <div className="flex items-center gap-4 md:gap-12">
+            <h1 className="text-xl md:text-2xl font-black tracking-tighter bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent shrink-0">
+              <span className="md:hidden">FF</span>
+              <span className="hidden md:inline">FRETFLOW</span>
+            </h1>
             <nav className="hidden md:flex items-center gap-8">
               <button
-                onClick={() => { console.log('Navigating to levels'); navigate('/dashboard'); }}
+                onClick={() => navigate('/dashboard')}
                 className={`text-sm font-semibold transition-colors ${urlView === 'levels' || urlView === 'lessons' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
               >
                 Curriculum
               </button>
               <button
-                onClick={() => { console.log('Navigating to activity'); navigate('/dashboard/activity'); }}
+                onClick={() => navigate('/dashboard/activity')}
                 className={`text-sm font-semibold transition-colors ${urlView === 'activity' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
               >
                 Activity
               </button>
               <button
-                onClick={() => { console.log('Navigating to challenge'); navigate('/dashboard/challenge'); }}
+                onClick={() => navigate('/dashboard/challenge')}
                 className={`text-sm font-semibold transition-colors ${urlView === 'challenge' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
               >
                 Challenge
               </button>
               <button
-                onClick={() => { console.log('Navigating to tuner'); navigate('/dashboard/tuner'); }}
+                onClick={() => navigate('/dashboard/tuner')}
                 className={`text-sm font-semibold transition-colors ${urlView === 'tuner' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
               >
                 Tuner
@@ -2341,6 +2344,38 @@ const Dashboard: React.FC = () => {
             )}
           </AnimatePresence>
         </main>
+      </div>
+
+      {/* Bottom Navigation for Mobile */}
+      <div className={`md:hidden fixed bottom-0 left-0 right-0 z-[1000] bg-dark-950/80 backdrop-blur-xl border-t border-white/5 px-6 py-3 flex items-center justify-between pb-8 ${currentView === 'practice' ? 'hidden' : ''}`}>
+        <button
+          onClick={() => navigate('/dashboard')}
+          className={`flex flex-col items-center gap-1 ${urlView === 'levels' || urlView === 'lessons' ? 'text-primary-500' : 'text-gray-500'}`}
+        >
+          <Activity size={20} />
+          <span className="text-[10px] font-bold uppercase">Learn</span>
+        </button>
+        <button
+          onClick={() => navigate('/dashboard/activity')}
+          className={`flex flex-col items-center gap-1 ${urlView === 'activity' ? 'text-primary-500' : 'text-gray-500'}`}
+        >
+          <Trophy size={20} />
+          <span className="text-[10px] font-bold uppercase">Stats</span>
+        </button>
+        <button
+          onClick={() => navigate('/dashboard/challenge')}
+          className={`flex flex-col items-center gap-1 ${urlView === 'challenge' ? 'text-primary-500' : 'text-gray-500'}`}
+        >
+          <Star size={20} />
+          <span className="text-[10px] font-bold uppercase">Play</span>
+        </button>
+        <button
+          onClick={() => navigate('/dashboard/tuner')}
+          className={`flex flex-col items-center gap-1 ${urlView === 'tuner' ? 'text-primary-500' : 'text-gray-500'}`}
+        >
+          <Settings2 size={20} />
+          <span className="text-[10px] font-bold uppercase">Tuner</span>
+        </button>
       </div>
 
       {/* Practice View Overlay */}
