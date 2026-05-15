@@ -124,9 +124,19 @@ class ApiClient {
           }
         } catch {
           // Refresh failed, redirect to login
+          localStorage.removeItem(REFRESH_TOKEN_KEY);
+          if (typeof window !== 'undefined' && window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+            window.location.href = '/login';
+          }
         }
       }
       localStorage.removeItem(REFRESH_TOKEN_KEY);
+      
+      // Also catch edge case where refresh token is missing entirely and we got 401
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+        window.location.href = '/login';
+      }
+      
       throw new Error('Unauthorized');
     }
 

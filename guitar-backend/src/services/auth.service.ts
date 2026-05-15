@@ -11,6 +11,7 @@ interface User {
   avatar_url: string | null;
   xp_total: number;
   level: number;
+  best_score: number;
   role: 'ADMIN' | 'STUDENT';
 }
 
@@ -98,7 +99,7 @@ export async function register(
 
   // Get user
   const userResult = await db.execute({
-    sql: 'SELECT id, email, username, avatar_url, xp_total, level FROM users WHERE id = ?',
+    sql: 'SELECT id, email, username, avatar_url, xp_total, level, best_score FROM users WHERE id = ?',
     args: [userId],
   });
 
@@ -122,7 +123,7 @@ export async function login(
   password: string
 ): Promise<AuthResult> {
   const result = await db.execute({
-    sql: 'SELECT id, email, username, avatar_url, xp_total, level, password_hash FROM users WHERE email = ?',
+    sql: 'SELECT id, email, username, avatar_url, xp_total, level, best_score, password_hash FROM users WHERE email = ?',
     args: [email],
   });
 
@@ -193,7 +194,7 @@ export async function refreshTokens(refreshToken: string): Promise<{ accessToken
 
 export async function getUserById(userId: number): Promise<Omit<User, 'password_hash'> | null> {
   const result = await db.execute({
-    sql: 'SELECT id, email, username, avatar_url, xp_total, level FROM users WHERE id = ?',
+    sql: 'SELECT id, email, username, avatar_url, xp_total, level, best_score FROM users WHERE id = ?',
     args: [userId],
   });
 

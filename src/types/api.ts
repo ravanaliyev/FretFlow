@@ -5,6 +5,7 @@ export interface User {
   avatar_url: string | null;
   xp_total: number;
   level: number;
+  best_score: number;
   role?: 'ADMIN' | 'STUDENT';
 }
 
@@ -81,6 +82,7 @@ export interface GamificationProfile {
   };
   lessons_completed: number;
   songs_completed: number;
+  best_score: number;
 }
 
 export interface Quest {

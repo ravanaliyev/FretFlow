@@ -10,12 +10,12 @@ async function handler(req: Request, res: Response): Promise<void> {
 
     const result = await db.execute({
       sql: `SELECT u.id, u.username, u.xp_total, u.level, u.avatar_url,
-                   MAX(ss.score) as best_score,
+                   u.best_score,
                    COUNT(ss.id) as songs_completed
             FROM users u
             LEFT JOIN song_scores ss ON u.id = ss.user_id
             GROUP BY u.id
-            ORDER BY u.xp_total DESC
+            ORDER BY u.best_score DESC, u.xp_total DESC
             LIMIT ? OFFSET ?`,
       args: [String(limit), String(offset)],
     });

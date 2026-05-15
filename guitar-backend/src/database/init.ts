@@ -11,6 +11,7 @@ export async function initializeDatabase() {
         avatar_url TEXT,
         xp_total INTEGER DEFAULT 0,
         level INTEGER DEFAULT 1,
+        best_score INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 

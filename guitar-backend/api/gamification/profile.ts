@@ -9,7 +9,7 @@ async function handler(req: Request, res: Response): Promise<void> {
 
     // Get user info
     const userResult = await db.execute({
-      sql: 'SELECT id, username, email, avatar_url, xp_total, level FROM users WHERE id = ?',
+      sql: 'SELECT id, username, email, avatar_url, xp_total, level, best_score FROM users WHERE id = ?',
       args: [userId],
     });
 
@@ -48,6 +48,7 @@ async function handler(req: Request, res: Response): Promise<void> {
       xp_total: user.xp_total,
       level: user.level,
       level_name: getLevelName(user.level),
+      best_score: user.best_score || 0,
       streak: {
         current: streak.current_streak,
         longest: streak.longest_streak,

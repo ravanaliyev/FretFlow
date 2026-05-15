@@ -32,4 +32,10 @@ export const scoresApi = {
       '/api/scores',
       { song_id: songId, score, accuracy_percent: accuracyPercent }
     ),
+
+  submitChallengeScore: (score: number) =>
+    apiClient.post<{ success: boolean; best_score: number; new_record: boolean }>(
+      '/api/scores/challenge',
+      { score }
+    ),
 };

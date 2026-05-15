@@ -429,10 +429,9 @@ const AnalyticsChart: React.FC<{ stats: Record<string, number> }> = ({ stats }) 
   );
 };
 
-const LeaderboardComponent: React.FC<{ data: LeaderboardItem[] }> = ({ data }) => {
+const LeaderboardComponent: React.FC<{ data: LeaderboardItem[], currentUser?: string, userScore?: number }> = ({ data, currentUser, userScore = 0 }) => {
   const sorted = [...data].sort((a, b) => b.score - a.score);
   const top10 = sorted.slice(0, 10);
-  const userScore = Number(localStorage.getItem('fretflow_highscore') || 0);
 
   // To calculate rank, we need to know where the user's best score fits in the global list
   // We'll treat the user's highscore as their entry
@@ -449,9 +448,10 @@ const LeaderboardComponent: React.FC<{ data: LeaderboardItem[] }> = ({ data }) =
         {top10.map((item, i) => (
           <div
             key={item.id}
-            className={`flex items-center justify-between p-5 rounded-2xl border transition-all ${i === 0 ? 'bg-primary-500/10 border-primary-500/30' :
-                i === 1 ? 'bg-white/5 border-white/10' :
-                  i === 2 ? 'bg-white/[0.03] border-white/5' : 'bg-transparent border-white/5'
+            className={`flex items-center justify-between p-5 rounded-2xl border transition-all ${item.name === currentUser ? 'bg-primary-500/20 border-primary-500 shadow-[0_0_15px_rgba(57,255,20,0.2)]' :
+              i === 0 ? 'bg-primary-500/10 border-primary-500/30' :
+              i === 1 ? 'bg-white/5 border-white/10' :
+              i === 2 ? 'bg-white/[0.03] border-white/5' : 'bg-transparent border-white/5'
               }`}
           >
             <div className="flex items-center gap-4">
@@ -974,8 +974,14 @@ const LessonGrid: React.FC<LessonGridProps> = ({
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout, updateUser } = useAuth();
+  const { user, isAuthenticated, isLoading, logout, updateUser } = useAuth();
   const userRole = user?.role || 'STUDENT';
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isLoading, isAuthenticated, navigate]);
 
   // Parse view and IDs from URL
   const pathParts = location.pathname.split('/').filter(Boolean);
@@ -1178,6 +1184,12 @@ const Dashboard: React.FC = () => {
         // Fetch achievements from API
         const achievementsRes = await gamificationApi.getAchievements();
         setAchievements(achievementsRes.data);
+        
+        // Sync High Score from profile
+        if (profileRes.best_score !== undefined) {
+          setGameHighScore(profileRes.best_score);
+          localStorage.setItem('fretflow_highscore', profileRes.best_score.toString());
+        }
       } catch (err) {
         console.error('Failed to load from API, using defaults:', err);
       }
@@ -1249,41 +1261,49 @@ const Dashboard: React.FC = () => {
       }, 1000);
     } else if (gamePhase === 'playing') {
       timer = setInterval(() => {
-        setGameTimeLeft(prev => {
-          if (prev <= 1) {
-            setGamePhase('result');
-            if (gameScore > gameHighScore) {
-              setGameHighScore(gameScore);
-              localStorage.setItem('fretflow_highscore', gameScore.toString());
-            }
-
-            // Add to leaderboard
-            if (gameScore > 0) {
-              const newItem: LeaderboardItem = {
-                id: Date.now(),
-                name: 'You',
-                score: gameScore,
-                date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-              };
-              setLeaderboard(prev => {
-                // Keep only the best score for 'You' in the leaderboard calculation
-                // or just add all of them. Let's add all and sort.
-                return [...prev, newItem];
-              });
-            }
-            return 0;
-          }
-          return prev - 1;
-        });
+        setGameTimeLeft(prev => prev <= 1 ? 0 : prev - 1);
       }, 1000);
     }
     return () => clearInterval(timer);
   }, [gamePhase]);
 
+  // Handle Game End Logic Safely (Avoid Stale Closures)
+  useEffect(() => {
+    if (gamePhase === 'playing' && gameTimeLeft === 0) {
+      setGamePhase('result');
+      
+      if (gameScore > gameHighScore) {
+        setGameHighScore(gameScore);
+        localStorage.setItem('fretflow_highscore', gameScore.toString());
+        
+        // Sync to backend
+        scoresApi.submitChallengeScore(gameScore).catch(err => {
+          console.error('Failed to sync high score:', err);
+        });
+      }
+
+      // Add to leaderboard visually
+      if (gameScore > 0) {
+        const currentUserIdentifier = user?.username || 'You';
+        const newItem: LeaderboardItem = {
+          id: Date.now(),
+          name: currentUserIdentifier,
+          score: gameScore,
+          date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        };
+        setLeaderboard(prev => {
+          // Remove any existing entry for the current user to prevent duplicates
+          const filtered = prev.filter(item => item.name !== currentUserIdentifier && item.name !== 'You');
+          return [...filtered, newItem].sort((a, b) => b.score - a.score).slice(0, 50);
+        });
+      }
+    }
+  }, [gameTimeLeft, gamePhase, gameScore, gameHighScore, user?.username]);
+
   // Game Note Detection
   useEffect(() => {
     if (gamePhase === 'playing' && currentPitch === gameTargetNote) {
-      setGameScore(prev => prev + 1);
+      setGameScore(prev => prev + 30);
       pickRandomNote();
     }
   }, [currentPitch, gamePhase, gameTargetNote]);
@@ -1547,7 +1567,7 @@ const Dashboard: React.FC = () => {
           </div>
 
           <div className="flex flex-col items-center gap-3 md:gap-4">
-            <button 
+            <button
               onClick={() => {
                 if (!isListening && processorRef.current) {
                   processorRef.current.start().then(() => setIsListening(true)).catch(err => {
@@ -1980,7 +2000,7 @@ const Dashboard: React.FC = () => {
                 </div>
 
                 {gamePhase === 'idle' && (
-                  <LeaderboardComponent data={leaderboard} />
+                  <LeaderboardComponent data={leaderboard} currentUser={user?.username} userScore={gameHighScore} />
                 )}
               </motion.div>
             )}
