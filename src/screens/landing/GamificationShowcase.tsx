@@ -57,9 +57,7 @@ const GamificationShowcase: React.FC = () => {
           <p className="text-2xl text-gray-400 mb-10 font-bold max-w-lg">
             Make progress quickly with our gamified approach. Earn XP, complete daily quests, and compete with friends on the leaderboard.
           </p>
-          <button className="btn-duo btn-duo-accent py-4 px-10 text-xl">
-            EXPLORE FEATURES
-          </button>
+
         </div>
 
       </div>

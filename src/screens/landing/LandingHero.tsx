@@ -21,7 +21,7 @@ const LandingHero: React.FC = () => {
           Learn chords, master songs, and build a daily habit with bite-sized lessons.
         </p>
 
-        <div className="flex flex-col w-full sm:w-auto gap-4">
+        <div className="hidden lg:flex flex-col w-full sm:w-auto gap-4">
           <Link to="/login?mode=signup" className="btn-duo btn-duo-primary w-full lg:w-80 h-16 text-xl flex items-center justify-center text-center">
             GET STARTED
           </Link>

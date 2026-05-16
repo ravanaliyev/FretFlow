@@ -9,11 +9,11 @@ const AuthCard: React.FC = () => {
   const initialMode = searchParams.get('mode');
   const [isLogin, setIsLogin] = useState(initialMode !== 'signup');
 
-  // Sync state if URL changes while component is mounted
+  // Sync state if URL changes
   useEffect(() => {
     const mode = searchParams.get('mode');
     if (mode === 'signup') setIsLogin(false);
-    if (mode === 'login') setIsLogin(true);
+    else if (mode === 'login') setIsLogin(true);
   }, [searchParams]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -58,13 +58,13 @@ const AuthCard: React.FC = () => {
         <div className="flex bg-white/5 rounded-full p-1 mb-8">
           <button
             className={`flex-1 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${isLogin ? 'bg-primary-500 text-dark-900 shadow-lg' : 'text-gray-400 hover:text-white'}`}
-            onClick={() => { setIsLogin(true); setError(''); }}
+            onClick={() => { setSearchParams({ mode: 'login' }); setIsLogin(true); setError(''); }}
           >
             Log In
           </button>
           <button
             className={`flex-1 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${!isLogin ? 'bg-primary-500 text-dark-900 shadow-lg' : 'text-gray-400 hover:text-white'}`}
-            onClick={() => { setIsLogin(false); setError(''); }}
+            onClick={() => { setSearchParams({ mode: 'signup' }); setIsLogin(false); setError(''); }}
           >
             Sign Up
           </button>

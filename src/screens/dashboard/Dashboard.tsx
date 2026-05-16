@@ -116,17 +116,7 @@ const QUOTES = [
   { text: "I just play. I don't think. I just play.", author: "B.B. King" }
 ];
 
-const BADGES = [
-  // Lesson milestones
-  { id: 'first_note', name: 'First Note', icon: '🎵', desc: 'Complete your very first lesson', color: 'from-blue-400 to-blue-600', category: 'Lessons' },
-  { id: 'five_done', name: 'High Five', icon: '✋', desc: 'Complete 5 lessons', color: 'from-violet-400 to-violet-600', category: 'Lessons' },
-  { id: 'all_done', name: 'Graduate', icon: '🎓', desc: 'Complete all lessons', color: 'from-amber-400 to-amber-600', category: 'Lessons' },
-  // Streak milestones
-  { id: 'streak_3', name: '3-Day Flame', icon: '🔥', desc: 'Reach a 3-day streak', color: 'from-orange-400 to-red-500', category: 'Streak' },
-  { id: 'streak_7', name: '7-Day Warrior', icon: '⚡', desc: 'Reach a 7-day streak', color: 'from-yellow-400 to-orange-500', category: 'Streak' },
-  { id: 'streak_30', name: 'Unstoppable', icon: '💎', desc: 'Reach a 30-day streak', color: 'from-cyan-400 to-blue-600', category: 'Streak' },
-  { id: 'level_5', name: 'Intermediate', icon: '🚀', desc: 'Reach Level 5', color: 'from-green-400 to-teal-500', category: 'Levels' },
-];
+
 
 const SCI_TO_SYL: Record<string, string> = {
   'C': 'Do', 'C#': 'Do#', 'Db': 'Reb',
@@ -713,7 +703,7 @@ const VictoryModal: React.FC<{ lesson: Lesson; onHome: () => void; onNext?: () =
   );
 };
 
-const EarTrainingGame: React.FC = () => {
+const EarTrainingGame: React.FC<{ onComplete?: (score: number, total: number) => void }> = ({ onComplete }) => {
   const strings = [
     { name: 'E2', midi: 40 },
     { name: 'A2', midi: 45 },
@@ -810,32 +800,40 @@ const EarTrainingGame: React.FC = () => {
       setFeedback(`Wrong — the right answer was ${correctPosition?.string} fret ${correctPosition?.fret}.`);
     }
     setRoundCount((count) => count + 1);
-    setTimeout(buildQuestion, 1600);
+    
+    // Check for victory condition
+    if (isCorrect && correctCount + 1 >= 10) {
+      if (onComplete) {
+        onComplete(correctCount + 1, roundCount + 1);
+      }
+    } else {
+      setTimeout(buildQuestion, 1600);
+    }
   };
 
   return (
     <div className="space-y-8">
-      <div className="glass-panel p-8 rounded-[3rem] border border-white/10 bg-dark-950/70 shadow-2xl shadow-black/40">
+      <div className="glass-panel p-6 rounded-3xl border border-white/10 bg-dark-950/70 shadow-2xl shadow-black/40">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
           <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-gray-500 mb-2">Ear Training Practice</p>
-            <h3 className="text-3xl font-black text-white">Hear the note. Match the fretboard.</h3>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-1">Ear Training Practice</p>
+            <h3 className="text-2xl font-black text-white">Hear the note. Match the fretboard.</h3>
           </div>
           <div className="text-right">
-            <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Score</p>
-            <p className="text-3xl font-black text-primary-500">{correctCount}/{Math.max(roundCount, 1)}</p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500">Score</p>
+            <p className="text-2xl font-black text-primary-500">{correctCount}/{Math.max(roundCount, 1)}</p>
           </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-[1fr_auto] items-center">
-          <div className="rounded-[2rem] bg-white/5 p-8 border border-white/10">
-            <p className="text-sm text-gray-400 mb-4">A note is played without showing its name. Choose the correct string and fret.</p>
-            <div className="text-7xl font-black text-white mb-2">♪</div>
-            <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Note hidden from view</p>
+          <div className="rounded-3xl bg-white/5 p-6 border border-white/10">
+            <p className="text-xs text-gray-400 mb-4">A note is played without showing its name. Choose the correct string and fret.</p>
+            <div className="text-5xl font-black text-white mb-2">♪</div>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500">Note hidden from view</p>
           </div>
           <button
             onClick={() => currentNote && playNote(currentNote)}
-            className="py-4 px-6 rounded-3xl bg-primary-500 text-dark-900 font-black uppercase tracking-widest hover:bg-primary-400 transition-all"
+            className="py-3 px-5 rounded-2xl bg-primary-500 text-dark-900 font-black uppercase tracking-widest hover:bg-primary-400 transition-all text-sm"
           >
             Play Note Again
           </button>
@@ -849,12 +847,12 @@ const EarTrainingGame: React.FC = () => {
                 key={optionId}
                 onClick={() => handleAnswer(option)}
                 disabled={!!selectedId}
-                className={`glass-panel p-5 rounded-[2rem] text-left text-sm font-bold transition-all ${selectedId === optionId ? 'border-primary-500 bg-primary-500/10 text-white' : 'bg-white/5 hover:border-primary-500/30 hover:bg-white/10 text-gray-200'} ${selectedId ? 'cursor-not-allowed opacity-90' : ''}`}
+                className={`glass-panel p-4 rounded-2xl text-left text-sm font-bold transition-all ${selectedId === optionId ? 'border-primary-500 bg-primary-500/10 text-white' : 'bg-white/5 hover:border-primary-500/30 hover:bg-white/10 text-gray-200'} ${selectedId ? 'cursor-not-allowed opacity-90' : ''}`}
               >
-                <p className="text-xs text-gray-400 uppercase tracking-[0.2em]">String</p>
-                <p className="text-2xl font-black text-white mb-3">{option.string}</p>
-                <p className="text-xs text-gray-400 uppercase tracking-[0.2em]">Fret</p>
-                <p className="text-2xl font-black text-white">{option.fret}</p>
+                <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em]">String</p>
+                <p className="text-xl font-black text-white mb-2">{option.string}</p>
+                <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em]">Fret</p>
+                <p className="text-xl font-black text-white">{option.fret}</p>
               </button>
             );
           })}
@@ -1243,54 +1241,19 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number; achievements?: Array<{ id: number; name: string; description: string; icon: string; earned: boolean }> }> = ({ lessons, streak, achievements: apiAchievements }) => {
   const [showAll, setShowAll] = React.useState(false);
 
-  const completedCount = lessons.filter(l => l.status === 'completed').length;
-  const lvl1Done = lessons.filter(l => l.level === 1 && l.status === 'completed').length;
-  const lvl1Total = lessons.filter(l => l.level === 1).length;
-  const lvl2Done = lessons.filter(l => l.level === 2 && l.status === 'completed').length;
-  const lvl2Total = lessons.filter(l => l.level === 2).length;
-  const lvl3Done = lessons.filter(l => l.level === 3 && l.status === 'completed').length;
-  const lvl3Total = lessons.filter(l => l.level === 3).length;
+  // Use API achievements exclusively
+  const displayBadges = (apiAchievements || []).map(a => ({
+    id: String(a.id),
+    name: a.name,
+    icon: a.icon,
+    desc: a.description,
+    color: 'from-primary-400 to-primary-600',
+    category: 'Achievement',
+    earned: a.earned,
+  }));
 
-  const isUnlockedLocal = (id: string): boolean => {
-    switch (id) {
-      case 'first_note': return completedCount >= 1;
-      case 'five_done': return completedCount >= 5;
-      case 'all_done': return completedCount >= lessons.length;
-      case 'streak_3': return streak >= 3;
-      case 'streak_7': return streak >= 7;
-      case 'streak_30': return streak >= 30;
-      case 'lvl1_master': return lvl1Done === lvl1Total && lvl1Total > 0;
-      case 'lvl2_master': return lvl2Done === lvl2Total && lvl2Total > 0;
-      case 'lvl3_master': return lvl3Done === lvl3Total && lvl3Total > 0;
-      default: return false;
-    }
-  };
-
-  // Use API achievements if available, otherwise fallback to computed from local data
-  const displayBadges = apiAchievements && apiAchievements.length > 0
-    ? apiAchievements.map(a => ({
-      id: String(a.id),
-      name: a.name,
-      icon: a.icon,
-      desc: a.description,
-      color: 'from-primary-400 to-primary-600',
-      category: 'Achievement',
-      earned: a.earned,
-    }))
-    : BADGES.map(b => ({ ...b, earned: isUnlockedLocal(b.id) }));
-
-  const getProgress = (id: string): { current: number; max: number } | null => {
-    switch (id) {
-      case 'five_done': return { current: Math.min(completedCount, 5), max: 5 };
-      case 'all_done': return { current: completedCount, max: Math.max(lessons.length, 1) };
-      case 'streak_3': return { current: Math.min(streak, 3), max: 3 };
-      case 'streak_7': return { current: Math.min(streak, 7), max: 7 };
-      case 'streak_30': return { current: Math.min(streak, 30), max: 30 };
-      case 'lvl1_master': return { current: lvl1Done, max: Math.max(lvl1Total, 1) };
-      case 'lvl2_master': return { current: lvl2Done, max: Math.max(lvl2Total, 1) };
-      case 'lvl3_master': return { current: lvl3Done, max: Math.max(lvl3Total, 1) };
-      default: return null;
-    }
+  const getProgress = (_id: string): { current: number; max: number } | null => {
+    return null; // API achievements are binary (earned or not)
   };
 
   const unlockedBadges = displayBadges.filter(b => b.earned);
@@ -2186,7 +2149,12 @@ const Dashboard: React.FC = () => {
       });
 
       setLessons(mapped);
-      setAchievements(achievementsRes.data);
+      // De-duplicate achievements by name before setting state
+      const rawAchievements = achievementsRes.data || [];
+      const uniqueAchievements = rawAchievements.filter((v: any, i: number, a: any[]) => 
+        a.findIndex(t => t.name === v.name) === i
+      );
+      setAchievements(uniqueAchievements);
       if (songsRes && songsRes.data) {
         setSongs(songsRes.data);
       }
@@ -2325,7 +2293,32 @@ const Dashboard: React.FC = () => {
   }, []);
 
   // --- Audio Logic Sync with Route ---
-  const activeLesson = (currentView === 'practice' || currentView === 'victory') ? lessons.find(l => l.id === urlLessonId) : null;
+  const activeLesson = useMemo(() => {
+    if (currentView !== 'practice' && currentView !== 'victory') return null;
+    
+    // 1. Try regular lessons
+    let lesson = lessons.find(l => l.id === urlLessonId);
+    if (lesson) return lesson;
+    
+    // 2. Try Level 4 songs (they have negative IDs)
+    const songLesson = songsAsLessons.find(l => l.id === urlLessonId);
+    if (songLesson) return songLesson;
+
+    // 3. Special case for Level 5 Ear Training
+    if (urlLessonId === 5 || currentView === 'ear-training') {
+      return {
+        id: 5,
+        title: "Ear Training",
+        level: 5,
+        difficulty: "medium",
+        status: "completed",
+        sequence: [],
+        desc: "Note identification"
+      } as Lesson;
+    }
+    
+    return null;
+  }, [currentView, lessons, urlLessonId, songsAsLessons]);
 
 
 
@@ -3090,10 +3083,7 @@ const Dashboard: React.FC = () => {
               >
                 {Number(urlLevelId) === 4 ? (
                   <>
-                    <div className="text-center mb-8">
-                      <h2 className="text-4xl font-black text-white mb-2 italic tracking-tighter">Level 4 — Songs 🎵</h2>
-                      <p className="text-gray-500">This level contains full-song lessons presented in the same lesson format. Choose one and press "Start Lesson" to begin.</p>
-                    </div>
+
                     <LessonGrid
                       navigate={navigate}
                       searchTerm={searchTerm}
@@ -3621,12 +3611,29 @@ const Dashboard: React.FC = () => {
                     <ArrowLeft size={18} />
                     <span className="hidden sm:inline ml-2 font-semibold">Back to Levels</span>
                   </button>
-                  <div className="text-center sm:text-left flex-1">
-                    <h2 className="text-4xl font-black text-white mb-2 italic tracking-tighter">Ear Training 🎧</h2>
-                    <p className="text-gray-500 font-medium">Hear a note, then choose the matching string and fret.</p>
-                  </div>
+
                 </div>
-                <EarTrainingGame />
+                <EarTrainingGame 
+                  onComplete={() => {
+                    playSuccessSound();
+                    const duration = 3 * 1000;
+                    const animationEnd = Date.now() + duration;
+                    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+                    const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+                    const interval: any = setInterval(function () {
+                      const timeLeft = animationEnd - Date.now();
+                      if (timeLeft <= 0) return clearInterval(interval);
+                      const particleCount = 50 * (timeLeft / duration);
+                      confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }, colors: ['#39FF14', '#ffffff', '#FFD700'], shapes: ['star', 'circle'] });
+                      confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }, colors: ['#39FF14', '#ffffff', '#FFD700'], shapes: ['star', 'circle'] });
+                    }, 250);
+
+                    historyApi.add(5, "Ear Training", 0).catch(console.error);
+                    progressApi.submitProgress(5, 100, []).catch(console.error);
+                    navigate('/dashboard/victory/5');
+                  }}
+                />
               </motion.div>
             )}
           </AnimatePresence>
