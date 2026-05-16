@@ -710,6 +710,164 @@ const VictoryModal: React.FC<{ lesson: Lesson; onHome: () => void; onNext?: () =
     </motion.div>
   );
 };
+
+const EarTrainingGame: React.FC = () => {
+  const strings = [
+    { name: 'E2', midi: 40 },
+    { name: 'A2', midi: 45 },
+    { name: 'D3', midi: 50 },
+    { name: 'G3', midi: 55 },
+    { name: 'B3', midi: 59 },
+    { name: 'E4', midi: 64 },
+  ];
+
+  const availableNotes = [
+    'E2','F2','F#2','G2','G#2','A2','A#2','B2',
+    'C3','C#3','D3','D#3','E3','F3','F#3','G3',
+    'G#3','A3','A#3','B3','C4','C#4','D4','D#4','E4'
+  ] as const;
+
+  const noteValues = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 } as const;
+
+  const noteToMidi = (note: string) => {
+    const match = note.match(/^([A-G])(#?)(\d)$/);
+    if (!match) return null;
+    const [, letter, sharp, octave] = match;
+    const base = noteValues[letter as keyof typeof noteValues];
+    return base + (sharp ? 1 : 0) + 12 * (Number(octave) + 1);
+  };
+
+  const midiToFrequency = (midi: number) => 440 * Math.pow(2, (midi - 69) / 12);
+
+  const playNote = (note: string) => {
+    const midi = noteToMidi(note);
+    if (midi === null) return;
+    const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(midiToFrequency(midi), audioCtx.currentTime);
+    gain.gain.setValueAtTime(0, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 1);
+  };
+
+  const getPositions = (note: string) => {
+    const midi = noteToMidi(note);
+    if (midi === null) return [];
+    return strings
+      .map((string) => ({ string: string.name, fret: midi - string.midi }))
+      .filter((pos) => pos.fret >= 0 && pos.fret <= 12);
+  };
+
+  const shuffle = <T,>(array: T[]) => [...array].sort(() => Math.random() - 0.5);
+
+  const [currentNote, setCurrentNote] = useState<string>('E2');
+  const [correctPosition, setCorrectPosition] = useState<{ string: string; fret: number } | null>(null);
+  const [options, setOptions] = useState<Array<{ string: string; fret: number }>>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<string>('');
+  const [correctCount, setCorrectCount] = useState(0);
+  const [roundCount, setRoundCount] = useState(0);
+
+  const buildQuestion = () => {
+    const note = availableNotes[Math.floor(Math.random() * availableNotes.length)];
+    const positions = getPositions(note);
+    if (positions.length === 0) {
+      return buildQuestion();
+    }
+    const correct = positions[Math.floor(Math.random() * positions.length)];
+    const allPositions = strings.flatMap((string) =>
+      Array.from({ length: 13 }, (_, idx) => ({ string: string.name, fret: idx }))
+    );
+    const wrongOptions = shuffle(allPositions.filter((pos) => pos.string !== correct.string || pos.fret !== correct.fret)).slice(0, 3);
+
+    setCurrentNote(note);
+    setCorrectPosition(correct);
+    setOptions(shuffle([correct, ...wrongOptions]));
+    setSelectedId(null);
+    setFeedback('');
+    playNote(note);
+  };
+
+  useEffect(() => {
+    buildQuestion();
+  }, []);
+
+  const handleAnswer = (option: { string: string; fret: number }) => {
+    setSelectedId(`${option.string}-${option.fret}`);
+    const isCorrect = correctPosition && option.string === correctPosition.string && option.fret === correctPosition.fret;
+    if (isCorrect) {
+      setCorrectCount((count) => count + 1);
+      setFeedback('Correct!');
+    } else {
+      setFeedback(`Wrong — the right answer was ${correctPosition?.string} fret ${correctPosition?.fret}.`);
+    }
+    setRoundCount((count) => count + 1);
+    setTimeout(buildQuestion, 1600);
+  };
+
+  return (
+    <div className="space-y-8">
+      <div className="glass-panel p-8 rounded-[3rem] border border-white/10 bg-dark-950/70 shadow-2xl shadow-black/40">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-gray-500 mb-2">Ear Training Practice</p>
+            <h3 className="text-3xl font-black text-white">Hear the note. Match the fretboard.</h3>
+          </div>
+          <div className="text-right">
+            <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Score</p>
+            <p className="text-3xl font-black text-primary-500">{correctCount}/{Math.max(roundCount, 1)}</p>
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-[1fr_auto] items-center">
+          <div className="rounded-[2rem] bg-white/5 p-8 border border-white/10">
+            <p className="text-sm text-gray-400 mb-4">A note is played without showing its name. Choose the correct string and fret.</p>
+            <div className="text-7xl font-black text-white mb-2">♪</div>
+            <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Note hidden from view</p>
+          </div>
+          <button
+            onClick={() => currentNote && playNote(currentNote)}
+            className="py-4 px-6 rounded-3xl bg-primary-500 text-dark-900 font-black uppercase tracking-widest hover:bg-primary-400 transition-all"
+          >
+            Play Note Again
+          </button>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2 mt-8">
+          {options.map((option) => {
+            const optionId = `${option.string}-${option.fret}`;
+            return (
+              <button
+                key={optionId}
+                onClick={() => handleAnswer(option)}
+                disabled={!!selectedId}
+                className={`glass-panel p-5 rounded-[2rem] text-left text-sm font-bold transition-all ${selectedId === optionId ? 'border-primary-500 bg-primary-500/10 text-white' : 'bg-white/5 hover:border-primary-500/30 hover:bg-white/10 text-gray-200'} ${selectedId ? 'cursor-not-allowed opacity-90' : ''}`}
+              >
+                <p className="text-xs text-gray-400 uppercase tracking-[0.2em]">String</p>
+                <p className="text-2xl font-black text-white mb-3">{option.string}</p>
+                <p className="text-xs text-gray-400 uppercase tracking-[0.2em]">Fret</p>
+                <p className="text-2xl font-black text-white">{option.fret}</p>
+              </button>
+            );
+          })}
+        </div>
+
+        {feedback && (
+          <div className="mt-6 rounded-3xl bg-white/5 p-4 border border-white/10 text-sm text-gray-200">
+            {feedback}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const MotivationQuote: React.FC = () => {
   const [quote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)]);
   return (
@@ -1421,15 +1579,17 @@ const ProfileDropdown: React.FC<{
 const LevelMenu: React.FC<{ navigate: any }> = ({ navigate }) => (
   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
     {[
-      { id: 1, name: "The Foundations", desc: "Learn the strings and open notes." },
-      { id: 2, name: "Fret Mastery", desc: "Navigate the first 3 frets with ease." },
-      { id: 3, name: "Melodies", desc: "Play your first riffs and songs." }
+      { id: 1, name: "The Foundations", desc: "Learn the strings and open notes.", path: '/dashboard/lessons/1' },
+      { id: 2, name: "Fret Mastery", desc: "Navigate the first 3 frets with ease.", path: '/dashboard/lessons/2' },
+      { id: 3, name: "Melodies", desc: "Play your first riffs and songs.", path: '/dashboard/lessons/3' },
+      { id: 4, name: "Songs", desc: "Play full songs and sharpen your performance.", path: '/dashboard/songs' },
+      { id: 5, name: "Ear Training", desc: "Identify notes by ear and match them to the fretboard.", path: '/dashboard/ear-training' }
     ].map(level => (
       <motion.div
         key={level.id}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        onClick={() => navigate(`/dashboard/lessons/${level.id}`)}
+        onClick={() => navigate(level.path)}
         className="glass-panel p-8 rounded-3xl cursor-pointer hover:border-primary-500/50 transition-colors group flex flex-col items-center text-center"
       >
         <span className="text-xs font-bold text-primary-500 bg-primary-500/10 px-3 py-1 rounded-full mb-4 uppercase tracking-wider">Level {level.id}</span>
@@ -2918,6 +3078,21 @@ const Dashboard: React.FC = () => {
                     onExit={() => setCurrentSong(null)}
                   />
                 )}
+              </motion.div>
+            )}
+            {currentView === 'ear-training' && (
+              <motion.div
+                key="ear-training"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="w-full"
+              >
+                <div className="text-center mb-12">
+                  <h2 className="text-4xl font-black text-white mb-2 italic tracking-tighter">Ear Training 🎧</h2>
+                  <p className="text-gray-500 font-medium">Hear a note, then choose the matching string and fret.</p>
+                </div>
+                <EarTrainingGame />
               </motion.div>
             )}
           </AnimatePresence>
