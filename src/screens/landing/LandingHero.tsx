@@ -22,10 +22,10 @@ const LandingHero: React.FC = () => {
         </p>
 
         <div className="flex flex-col w-full sm:w-auto gap-4">
-          <Link to="/login" className="btn-duo btn-duo-primary w-full lg:w-80 h-16 text-xl flex items-center justify-center text-center">
+          <Link to="/login?mode=signup" className="btn-duo btn-duo-primary w-full lg:w-80 h-16 text-xl flex items-center justify-center text-center">
             GET STARTED
           </Link>
-          <Link to="/login" className="btn-duo btn-duo-secondary w-full lg:w-80 h-16 text-xl uppercase flex items-center justify-center text-center px-4 leading-tight">
+          <Link to="/login?mode=login" className="btn-duo btn-duo-secondary w-full lg:w-80 h-16 text-xl uppercase flex items-center justify-center text-center px-4 leading-tight">
             I ALREADY HAVE AN ACCOUNT
           </Link>
         </div>

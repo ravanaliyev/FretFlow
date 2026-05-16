@@ -9,10 +9,10 @@ const Navbar: React.FC = () => {
         <span className="text-2xl font-black text-white tracking-tighter uppercase">fretflow</span>
       </Link>
       <div className="flex items-center gap-4">
-        <Link to="/login" className="btn-duo btn-duo-secondary py-3 px-6 text-sm hidden sm:flex">
+        <Link to="/login?mode=login" className="btn-duo btn-duo-secondary py-3 px-6 text-sm hidden sm:flex">
           LOG IN
         </Link>
-        <Link to="/login" className="btn-duo btn-duo-primary py-3 px-6 text-sm">
+        <Link to="/login?mode=signup" className="btn-duo btn-duo-primary py-3 px-6 text-sm">
           GET STARTED
         </Link>
       </div>
