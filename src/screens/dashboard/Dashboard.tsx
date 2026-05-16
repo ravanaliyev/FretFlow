@@ -1582,7 +1582,7 @@ const LevelMenu: React.FC<{ navigate: any }> = ({ navigate }) => (
       { id: 1, name: "The Foundations", desc: "Learn the strings and open notes.", path: '/dashboard/lessons/1' },
       { id: 2, name: "Fret Mastery", desc: "Navigate the first 3 frets with ease.", path: '/dashboard/lessons/2' },
       { id: 3, name: "Melodies", desc: "Play your first riffs and songs.", path: '/dashboard/lessons/3' },
-      { id: 4, name: "Songs", desc: "Play full songs and sharpen your performance.", path: '/dashboard/songs' },
+      { id: 4, name: "Songs", desc: "Complete a full song as a lesson, just like the earlier levels.", path: '/dashboard/lessons/4' },
       { id: 5, name: "Ear Training", desc: "Identify notes by ear and match them to the fretboard.", path: '/dashboard/ear-training' }
     ].map(level => (
       <motion.div
@@ -2083,6 +2083,22 @@ const Dashboard: React.FC = () => {
   const [songs, setSongs] = useState<Song[]>([]);
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
 
+  // Map songs into Lesson-like objects for Level 4 display
+  const songsAsLessons: Lesson[] = songs.map(s => ({
+    id: -Math.abs(s.id),
+    title: s.title,
+    level: 4,
+    difficulty: s.difficulty === 1 ? 'easy' : s.difficulty === 2 ? 'medium' : 'hard',
+    status: 'available',
+    sequence: (() => {
+      try {
+        const parsed = JSON.parse(s.notes || '[]');
+        return Array.isArray(parsed) ? parsed.map((n: any) => (typeof n === 'string' ? n : (n.note || ''))) : [];
+      } catch (e) { return []; }
+    })(),
+    desc: s.artist || ''
+  }));
+
   useEffect(() => {
     if (!achievementsInitializedRef.current) {
       achievementsInitializedRef.current = true;
@@ -2376,6 +2392,44 @@ const Dashboard: React.FC = () => {
 
   const closePractice = () => {
     navigate(`/dashboard/lessons/${activeLesson?.level || 1}`);
+    // Clean up any temporary song-as-lesson entries (negative ids)
+    if (lastPlayedLessonId && lastPlayedLessonId < 0) {
+      setLessons(prev => prev.filter(l => l.id !== lastPlayedLessonId));
+      setLastPlayedLessonId(null);
+      localStorage.removeItem('fretflow_last_lesson');
+    }
+  };
+
+  const startSongAsLesson = (song: Song) => {
+    let parsed: any = [];
+    try {
+      parsed = JSON.parse(song.notes || '[]');
+    } catch (e) {
+      parsed = [];
+    }
+    const sequence = Array.isArray(parsed) ? parsed.map((n: any) => (typeof n === 'string' ? n : (n.note || '')) ) : [];
+    const tempLesson: Lesson = {
+      id: -Math.abs(song.id),
+      title: song.title,
+      level: 4,
+      difficulty: song.difficulty === 1 ? 'easy' : song.difficulty === 2 ? 'medium' : 'hard',
+      status: 'available',
+      sequence,
+      desc: song.artist || ''
+    };
+    setLessons(prev => [tempLesson, ...prev]);
+    startPractice(tempLesson);
+  };
+
+  const startPracticeFromLesson = (lesson: Lesson) => {
+    // If lesson corresponds to a song (negative id), find the song and start as song-lesson
+    if (lesson.id < 0) {
+      const songId = Math.abs(lesson.id);
+      const song = songs.find(s => s.id === songId);
+      if (song) return startSongAsLesson(song);
+    }
+    // otherwise, start normal practice
+    return startPractice(lesson);
   };
 
 
@@ -2410,147 +2464,206 @@ const Dashboard: React.FC = () => {
 
 
 
-  const PracticeView = () => (
-    <div className="fixed inset-0 z-[100] bg-dark-950 flex flex-col items-center justify-start md:justify-center p-4 md:p-6 overflow-y-auto">
-      <div className="w-full max-w-5xl flex flex-col items-center gap-6 md:gap-12 mt-16 md:mt-0">
-        <button
-          onClick={closePractice}
-          className="md:absolute md:top-8 md:left-8 glass-panel px-6 py-3 rounded-2xl text-gray-400 hover:text-white flex items-center gap-2 transition-all self-start mb-4 md:mb-0"
-        >
-          <ArrowLeft size={18} /> <span className="text-sm font-bold">Back to Dashboard</span>
-        </button>
+  const PracticeView = () => {
+    // If this is a song-based lesson (temporary negative id), render SongPlayer UI
+    if (activeLesson && activeLesson.id < 0) {
+      const songId = Math.abs(activeLesson.id);
+      const song = songs.find(s => s.id === songId);
+      if (!song) return (
+        <div className="fixed inset-0 z-[100] bg-dark-950 flex items-center justify-center">Missing song data</div>
+      );
 
-        <div className="text-center">
-          <h1 className="text-2xl md:text-5xl font-bold text-white mb-2 md:mb-4">{activeLesson?.title}</h1>
-          <p className="text-gray-400 uppercase tracking-widest text-[10px] md:text-sm">Interactive Fretboard Session</p>
-        </div>
+      const onCompleteSong = (_score: number, _accuracy: number) => {
+        // Mark lesson completed and unlock next, similar to handleMatch completion
+        setLessons(prevLessons => {
+          const currentIndex = prevLessons.findIndex(l => l.id === activeLesson.id);
+          const nextLesson = prevLessons[currentIndex + 1];
 
-        {/* Fretboard */}
-        <div className="w-full overflow-x-auto pb-4 no-scrollbar">
-          <div className="glass-panel p-6 md:p-8 rounded-3xl min-w-[800px] relative border-white/5 bg-gradient-to-b from-dark-800 to-dark-900">
-            {STRINGS.map((string, sIdx) => (
-              <div key={string} className="h-10 flex items-center relative group">
-                {/* String line */}
-                <div
-                  className="absolute w-full bg-gradient-to-r from-gray-400 via-gray-200 to-gray-400 shadow-[0_1px_2px_rgba(0,0,0,0.5)] z-10"
-                  style={{ height: `${0.5 + sIdx * 0.4}px`, opacity: 0.8 }}
-                />
+          const updated = prevLessons.map(l => {
+            if (l.id === activeLesson.id) return { ...l, status: 'completed' as const };
+            if (nextLesson && l.id === nextLesson.id && l.status === 'locked') return { ...l, status: 'available' as const };
+            return l;
+          });
+          if (nextLesson) {
+            localStorage.setItem('fretflow_last_lesson', nextLesson.id.toString());
+            setLastPlayedLessonId(nextLesson.id);
+          }
+          return updated;
+        });
 
-                {/* Frets */}
-                <div className={`flex w-full h-full ${isLefty ? 'flex-row-reverse' : ''}`}>
-                  {Array.from({ length: FRET_COUNT + 1 }).map((_, fIdx) => (
-                    <div
-                      key={fIdx}
-                      className={`h-full flex items-center justify-center relative border-white/20 last:border-0 
-                        ${isLefty ? 'border-l' : 'border-r'} 
-                        ${fIdx === 0 ? (isLefty ? 'border-l-[6px] border-l-gray-300/20' : 'border-r-[6px] border-r-gray-300/20') : ''}`}
-                      style={{
-                        flex: Math.pow(0.94, fIdx) * 10,
-                      }}
-                    >
-                      {sIdx === 0 && (
-                        <span className="absolute -top-6 text-[10px] text-gray-500 font-mono font-bold">{fIdx}</span>
-                      )}
+        setHistory(prev => {
+          if (prev.length > 0 && prev[0].title === activeLesson.title) return prev;
+          return [
+            { id: Date.now(), title: activeLesson.title, date: new Date().toLocaleDateString() },
+            ...prev
+          ];
+        });
 
-                      {sIdx === 2 && [3, 5, 7, 9].includes(fIdx) && (
-                        <div className="absolute w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-white/10 -z-0" />
-                      )}
-                      {fIdx === 12 && (sIdx === 1 || sIdx === 4) && (
-                        <div className="absolute w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-white/10 -z-0" />
-                      )}
+        // Sync to backend
+        historyApi.add(activeLesson.id, activeLesson.title, 0).catch(console.error);
+        progressApi.submitProgress(activeLesson.id, 100, activeLesson.sequence).catch(console.error);
 
-                      <AnimatePresence>
-                        {activeLesson && activeLesson.sequence && activeLesson.sequence[currentSequenceIndex] === getNoteAt(string, fIdx) && (
-                          <motion.div
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0, opacity: 0 }}
-                            className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-primary-500 shadow-[0_0_20px_rgba(57,255,20,0.8)] z-20 flex items-center justify-center text-[10px] font-black text-dark-900"
-                          >
-                            {formatNoteName(getNoteAt(string, fIdx), notationStyle).replace(/\d/, '')}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+        setIsVictory(true);
+      };
+
+      return (
+        <div className="fixed inset-0 z-[100] bg-dark-950 flex flex-col items-center justify-start md:justify-center p-4 md:p-6 overflow-y-auto">
+          <div className="w-full max-w-5xl flex flex-col items-center gap-6 md:gap-12 mt-16 md:mt-0">
+            <SongPlayer
+              song={song}
+              currentPitch={currentPitch}
+              notationStyle={notationStyle}
+              formatNoteName={formatNoteName}
+              onComplete={onCompleteSong}
+              onExit={closePractice}
+            />
           </div>
         </div>
+      );
+    }
 
-        <div className="flex flex-col items-center gap-6 md:gap-8 w-full">
-          <div className="flex gap-2 md:gap-4 overflow-x-auto no-scrollbar w-full justify-center py-2">
-            {activeLesson && activeLesson.sequence && activeLesson.sequence.map((_, i) => (
-              <div
-                key={i}
-                className={`w-3 h-3 md:w-4 md:h-4 rounded-full flex-shrink-0 transition-all duration-500 ${i < currentSequenceIndex ? 'bg-green-500' :
-                  i === currentSequenceIndex ? 'bg-primary-500 animate-pulse scale-125 shadow-[0_0_10px_rgba(57,255,20,0.5)]' : 'bg-gray-800'
-                  }`}
-              />
-            ))}
-          </div>
+    return (
+      <div className="fixed inset-0 z-[100] bg-dark-950 flex flex-col items-center justify-start md:justify-center p-4 md:p-6 overflow-y-auto">
+        <div className="w-full max-w-5xl flex flex-col items-center gap-6 md:gap-12 mt-16 md:mt-0">
+          <button
+            onClick={closePractice}
+            className="md:absolute md:top-8 md:left-8 glass-panel px-6 py-3 rounded-2xl text-gray-400 hover:text-white flex items-center gap-2 transition-all self-start mb-4 md:mb-0"
+          >
+            <ArrowLeft size={18} /> <span className="text-sm font-bold">Back to Dashboard</span>
+          </button>
 
           <div className="text-center">
-            <p className="text-gray-500 text-[10px] md:text-sm mb-1 md:mb-2 uppercase tracking-widest font-semibold">Target Note</p>
-            <h2 className="text-4xl md:text-7xl font-black text-primary-500 drop-shadow-[0_0_20px_rgba(57,255,20,0.4)]">
-              {activeLesson && activeLesson.sequence ? formatNoteName(activeLesson.sequence[currentSequenceIndex] || '', notationStyle) : '--'}
-            </h2>
+            <h1 className="text-2xl md:text-5xl font-bold text-white mb-2 md:mb-4">{activeLesson?.title}</h1>
+            <p className="text-gray-400 uppercase tracking-widest text-[10px] md:text-sm">Interactive Fretboard Session</p>
           </div>
 
-          <div className="flex flex-col items-center gap-3 md:gap-4">
-            <button
-              onClick={() => {
-                if (!isListening && processorRef.current) {
-                  processorRef.current.start().then(() => setIsListening(true)).catch(err => {
-                    console.error('Manual mic start failed:', err);
-                    alert('Could not access microphone. Please ensure you have given permission in browser settings.');
-                  });
-                }
-              }}
-              className="glass-panel px-4 md:px-6 py-2 md:py-3 rounded-2xl flex items-center gap-2 md:gap-3 text-[10px] md:text-sm hover:bg-white/10 transition-all active:scale-95 group"
-            >
-              {isListening ? (
-                <><Mic className="text-green-500 animate-pulse" size={16} /> <span className="text-green-500/80 font-medium tracking-wide">Listening...</span></>
-              ) : (
-                <><MicOff className="text-red-500 group-hover:text-primary-500 transition-colors" size={16} /> <span className="text-red-500/80 group-hover:text-primary-500 transition-colors">Microphone Off (Click to enable)</span></>
-              )}
-            </button>
-            <div className="text-2xl md:text-4xl font-mono font-bold text-white/50">{formatNoteName(currentPitch, notationStyle)}</div>
+          {/* Fretboard */}
+          <div className="w-full overflow-x-auto pb-4 no-scrollbar">
+            <div className="glass-panel p-6 md:p-8 rounded-3xl min-w-[800px] relative border-white/5 bg-gradient-to-b from-dark-800 to-dark-900">
+              {STRINGS.map((string, sIdx) => (
+                <div key={string} className="h-10 flex items-center relative group">
+                  {/* String line */}
+                  <div
+                    className="absolute w-full bg-gradient-to-r from-gray-400 via-gray-200 to-gray-400 shadow-[0_1px_2px_rgba(0,0,0,0.5)] z-10"
+                    style={{ height: `${0.5 + sIdx * 0.4}px`, opacity: 0.8 }}
+                  />
+
+                  {/* Frets */}
+                  <div className={`flex w-full h-full ${isLefty ? 'flex-row-reverse' : ''}`}>
+                    {Array.from({ length: FRET_COUNT + 1 }).map((_, fIdx) => (
+                      <div
+                        key={fIdx}
+                        className={`h-full flex items-center justify-center relative border-white/20 last:border-0 
+                          ${isLefty ? 'border-l' : 'border-r'} 
+                          ${fIdx === 0 ? (isLefty ? 'border-l-[6px] border-l-gray-300/20' : 'border-r-[6px] border-r-gray-300/20') : ''}`}
+                        style={{
+                          flex: Math.pow(0.94, fIdx) * 10,
+                        }}
+                      >
+                        {sIdx === 0 && (
+                          <span className="absolute -top-6 text-[10px] text-gray-500 font-mono font-bold">{fIdx}</span>
+                        )}
+
+                        {sIdx === 2 && [3, 5, 7, 9].includes(fIdx) && (
+                          <div className="absolute w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-white/10 -z-0" />
+                        )}
+                        {fIdx === 12 && (sIdx === 1 || sIdx === 4) && (
+                          <div className="absolute w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-white/10 -z-0" />
+                        )}
+
+                        <AnimatePresence>
+                          {activeLesson && activeLesson.sequence && activeLesson.sequence[currentSequenceIndex] === getNoteAt(string, fIdx) && (
+                            <motion.div
+                              initial={{ scale: 0, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              exit={{ scale: 0, opacity: 0 }}
+                              className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-primary-500 shadow-[0_0_20px_rgba(57,255,20,0.8)] z-20 flex items-center justify-center text-[10px] font-black text-dark-900"
+                            >
+                              {formatNoteName(getNoteAt(string, fIdx), notationStyle).replace(/\d/, '')}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col items-center gap-6 md:gap-8 w-full">
+            <div className="flex gap-2 md:gap-4 overflow-x-auto no-scrollbar w-full justify-center py-2">
+              {activeLesson && activeLesson.sequence && activeLesson.sequence.map((_, i) => (
+                <div
+                  key={i}
+                  className={`w-3 h-3 md:w-4 md:h-4 rounded-full flex-shrink-0 transition-all duration-500 ${i < currentSequenceIndex ? 'bg-green-500' :
+                    i === currentSequenceIndex ? 'bg-primary-500 animate-pulse scale-125 shadow-[0_0_10px_rgba(57,255,20,0.5)]' : 'bg-gray-800'
+                    }`}
+                />
+              ))}
+            </div>
+
+            <div className="text-center">
+              <p className="text-gray-500 text-[10px] md:text-sm mb-1 md:mb-2 uppercase tracking-widest font-semibold">Target Note</p>
+              <h2 className="text-4xl md:text-7xl font-black text-primary-500 drop-shadow-[0_0_20px_rgba(57,255,20,0.4)]">
+                {activeLesson && activeLesson.sequence ? formatNoteName(activeLesson.sequence[currentSequenceIndex] || '', notationStyle) : '--'}
+              </h2>
+            </div>
+
+            <div className="flex flex-col items-center gap-3 md:gap-4">
+              <button
+                onClick={() => {
+                  if (!isListening && processorRef.current) {
+                    processorRef.current.start().then(() => setIsListening(true)).catch(err => {
+                      console.error('Manual mic start failed:', err);
+                      alert('Could not access microphone. Please ensure you have given permission in browser settings.');
+                    });
+                  }
+                }}
+                className="glass-panel px-4 md:px-6 py-2 md:py-3 rounded-2xl flex items-center gap-2 md:gap-3 text-[10px] md:text-sm hover:bg-white/10 transition-all active:scale-95 group"
+              >
+                {isListening ? (
+                  <><Mic className="text-green-500 animate-pulse" size={16} /> <span className="text-green-500/80 font-medium tracking-wide">Listening...</span></>
+                ) : (
+                  <><MicOff className="text-red-500 group-hover:text-primary-500 transition-colors" size={16} /> <span className="text-red-500/80 group-hover:text-primary-500 transition-colors">Microphone Off (Click to enable)</span></>
+                )}
+              </button>
+              <div className="text-2xl md:text-4xl font-mono font-bold text-white/50">{formatNoteName(currentPitch, notationStyle)}</div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <AnimatePresence>
-        {isVictory && activeLesson && (
-          <VictoryModal
-            lesson={activeLesson}
-            onHome={() => {
-              setIsVictory(false);
-              navigate('/dashboard');
-            }}
-            onNext={() => {
-              const currentIndex = lessons.findIndex(l => l.id === activeLesson.id);
-              const nextLesson = lessons[currentIndex + 1];
-
-              setIsVictory(false);
-              setCurrentSequenceIndex(0);
-              if (nextLesson) {
-                navigate(`/dashboard/practice/${nextLesson.id}`);
-              } else {
+        <AnimatePresence>
+          {isVictory && activeLesson && (
+            <VictoryModal
+              lesson={activeLesson}
+              onHome={() => {
+                setIsVictory(false);
                 navigate('/dashboard');
-              }
-            }}
-          />
-        )}
-      </AnimatePresence>
-    </div>
-  );
+              }}
+              onNext={() => {
+                const currentIndex = lessons.findIndex(l => l.id === activeLesson.id);
+                const nextLesson = lessons[currentIndex + 1];
+
+                setIsVictory(false);
+                setCurrentSequenceIndex(0);
+                if (nextLesson) {
+                  navigate(`/dashboard/practice/${nextLesson.id}`);
+                } else {
+                  navigate('/dashboard');
+                }
+              }}
+            />
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-dark-900 text-white font-sans overflow-x-hidden pb-20 md:pb-0">
       {/* Header */}
-      <header className={`sticky top-0 z-[1000] bg-dark-900/80 backdrop-blur-xl border-b border-white/5 ${currentView === 'practice' ? 'hidden' : ''}`}>
+      <header className={`sticky top-0 z-[1000] bg-dark-900/80 backdrop-blur-xl border-b border-white/5 ${currentView === 'practice' && !(activeLesson && activeLesson.id < 0) ? 'hidden' : ''}`}>
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4 md:gap-12">
             <h1 className="text-xl md:text-2xl font-black tracking-tighter bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent shrink-0">
@@ -2560,7 +2673,7 @@ const Dashboard: React.FC = () => {
             <nav className="hidden md:flex items-center gap-8">
               <button
                 onClick={() => navigate('/dashboard')}
-                className={`text-sm font-semibold transition-colors ${urlView === 'levels' || urlView === 'lessons' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
+                className={`text-sm font-semibold transition-colors ${urlView === 'levels' || urlView === 'lessons' || urlView === 'ear-training' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
               >
                 Curriculum
               </button>
@@ -2750,7 +2863,7 @@ const Dashboard: React.FC = () => {
       </AnimatePresence>
 
 
-      <div className={`container mx-auto py-12 px-6 max-w-5xl ${currentView === 'practice' ? 'hidden' : ''}`}>
+      <div className={`container mx-auto py-12 px-6 max-w-5xl ${currentView === 'practice' && !(activeLesson && activeLesson.id < 0) ? 'hidden' : ''}`}>
         {/* Main Content - Full Width */}
         <main className="w-full">
           {(currentView === 'levels' || currentView === 'lessons') && (
@@ -2788,24 +2901,47 @@ const Dashboard: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
               >
-                <LessonGrid
-                  navigate={navigate}
-                  searchTerm={searchTerm}
-                  setSearchTerm={setSearchTerm}
-                  difficultyFilter={difficultyFilter}
-                  setDifficultyFilter={setDifficultyFilter}
-                  filteredLessons={filteredLessons}
-                  startPractice={startPractice}
-                  userRole={userRole}
-                  onAdd={() => { setEditingLesson(null); setAdminTab('Add New'); setShowAdminModal(true); }}
-                  onEdit={(lesson) => {
-                    setEditingLesson(lesson);
-                    setAdminTab('Add New');
-                    setShowAdminModal(true);
-                  }}
-                  onReorder={handleReorder}
-                  lessons={lessons}
-                />
+                {Number(urlLevelId) === 4 ? (
+                  <>
+                    <div className="text-center mb-8">
+                      <h2 className="text-4xl font-black text-white mb-2 italic tracking-tighter">Level 4 — Songs 🎵</h2>
+                      <p className="text-gray-500">This level contains full-song lessons presented in the same lesson format. Choose one and press "Start Lesson" to begin.</p>
+                    </div>
+                    <LessonGrid
+                      navigate={navigate}
+                      searchTerm={searchTerm}
+                      setSearchTerm={setSearchTerm}
+                      difficultyFilter={difficultyFilter}
+                      setDifficultyFilter={setDifficultyFilter}
+                      filteredLessons={songsAsLessons}
+                      startPractice={startPracticeFromLesson}
+                      userRole={userRole}
+                      onAdd={() => {}}
+                      onEdit={() => {}}
+                      onReorder={() => {}}
+                      lessons={songsAsLessons}
+                    />
+                  </>
+                ) : (
+                  <LessonGrid
+                    navigate={navigate}
+                    searchTerm={searchTerm}
+                    setSearchTerm={setSearchTerm}
+                    difficultyFilter={difficultyFilter}
+                    setDifficultyFilter={setDifficultyFilter}
+                    filteredLessons={filteredLessons}
+                    startPractice={startPractice}
+                    userRole={userRole}
+                    onAdd={() => { setEditingLesson(null); setAdminTab('Add New'); setShowAdminModal(true); }}
+                    onEdit={(lesson) => {
+                      setEditingLesson(lesson);
+                      setAdminTab('Add New');
+                      setShowAdminModal(true);
+                    }}
+                    onReorder={handleReorder}
+                    lessons={lessons}
+                  />
+                )}
               </motion.div>
             )}
             {currentView === 'activity' && (
@@ -3086,11 +3222,20 @@ const Dashboard: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="w-full"
+                className="w-full max-w-5xl mx-auto space-y-8"
               >
-                <div className="text-center mb-12">
-                  <h2 className="text-4xl font-black text-white mb-2 italic tracking-tighter">Ear Training 🎧</h2>
-                  <p className="text-gray-500 font-medium">Hear a note, then choose the matching string and fret.</p>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+                  <button
+                    onClick={() => navigate('/dashboard')}
+                    className="glass-panel inline-flex items-center justify-center px-5 py-3 rounded-2xl text-gray-300 hover:text-white transition-colors"
+                  >
+                    <ArrowLeft size={18} />
+                    <span className="hidden sm:inline ml-2 font-semibold">Back to Levels</span>
+                  </button>
+                  <div className="text-center sm:text-left flex-1">
+                    <h2 className="text-4xl font-black text-white mb-2 italic tracking-tighter">Ear Training 🎧</h2>
+                    <p className="text-gray-500 font-medium">Hear a note, then choose the matching string and fret.</p>
+                  </div>
                 </div>
                 <EarTrainingGame />
               </motion.div>
@@ -3100,7 +3245,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Bottom Navigation for Mobile */}
-      <div className={`md:hidden fixed bottom-0 left-0 right-0 z-[1000] bg-dark-950/80 backdrop-blur-xl border-t border-white/5 px-6 py-3 flex items-center justify-between pb-8 ${currentView === 'practice' ? 'hidden' : ''}`}>
+      <div className={`md:hidden fixed bottom-0 left-0 right-0 z-[1000] bg-dark-950/80 backdrop-blur-xl border-t border-white/5 px-6 py-3 flex items-center justify-between pb-8 ${currentView === 'practice' && !(activeLesson && activeLesson.id < 0) ? 'hidden' : ''}`}>
         <button
           onClick={() => navigate('/dashboard')}
           className={`flex flex-col items-center gap-1 ${urlView === 'levels' || urlView === 'lessons' ? 'text-primary-500' : 'text-gray-500'}`}
