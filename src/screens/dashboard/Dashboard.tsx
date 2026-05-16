@@ -30,6 +30,7 @@ import {
   ChevronDown,
   Minus,
   Play,
+  RotateCcw,
   Music
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -2001,7 +2002,7 @@ const Dashboard: React.FC = () => {
     try {
       const res = await duelsApi.finishDuel(urlInviteCode, duelScore, duelAccuracy);
       setDuel(res.data);
-      setDuelMessage('Your duel score is registered.');
+      // setDuelMessage('Your duel score is registered.');
       setDuelError(null);
     } catch (err: any) {
       console.error('Failed to submit duel result:', err);
@@ -2313,7 +2314,7 @@ const Dashboard: React.FC = () => {
           console.error('Failed to submit duel result:', err);
           setDuelError('Unable to submit duel result automatically. Please try again.');
         });
-        setDuelMessage('Duel finished. Your score was submitted. Waiting for your opponent.');
+        // setDuelMessage('Duel finished. Your score was submitted. Waiting for your opponent.');
       } else {
         if (gameScore > gameHighScore) {
           setGameHighScore(gameScore);
@@ -3238,49 +3239,28 @@ const Dashboard: React.FC = () => {
                         Detecting: <span className="text-primary-500">{formatNoteName(currentPitch, notationStyle) || '--'}</span>
                       </div>
 
-                      <button
-                        onClick={() => setGamePhase('idle')}
-                        className="mt-8 text-gray-500 hover:text-rose-500 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2"
-                      >
-                        <X size={14} /> Stop Challenge
-                      </button>
-                    </div>
-                  )}
-
-                  {gamePhase === 'result' && (
-                    <div className="text-center">
-                      <div className="text-primary-500 mb-6">
-                        <Trophy size={64} className="mx-auto" />
-                      </div>
-                      <h4 className="text-2xl font-bold text-white mb-2">Game Over!</h4>
-                      <p className="text-gray-400 mb-8 text-lg">You scored <span className="text-primary-500 font-black">{gameScore}</span> notes!</p>
-                      {gameScore >= gameHighScore && gameScore > 0 && (
-                        <div className="mb-8 p-3 bg-primary-500/10 rounded-xl text-primary-500 font-bold text-sm">
-                          New Personal Best! 🎉
+                          <div className="mt-8 flex flex-col gap-3 w-full sm:w-auto">
+                            <button
+                              onClick={pickRandomNote}
+                              className="px-8 py-4 rounded-3xl bg-white/10 text-white font-bold hover:bg-white/20 transition-all"
+                            >
+                              Skip Note
+                            </button>
+                            <button
+                              onClick={() => setGamePhase('idle')}
+                              className="text-gray-500 hover:text-rose-500 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2 justify-center"
+                            >
+                              <X size={14} /> Stop Challenge
+                            </button>
+                          </div>
                         </div>
                       )}
-                      <div className="flex gap-4">
-                        <button
-                          onClick={() => setGamePhase('idle')}
-                          className="px-8 py-4 rounded-xl bg-white/5 text-gray-400 font-bold hover:bg-white/10 transition-all"
-                        >
-                          Menu
-                        </button>
-                        <button
-                          onClick={startChallenge}
-                          className="px-8 py-4 rounded-xl bg-primary-500 text-dark-900 font-black hover:scale-105 transition-all"
-                        >
-                          Try Again
-                        </button>
-                      </div>
+                      
+                      {gamePhase === 'idle' && (
+                        <LeaderboardComponent data={leaderboard} currentUser={user?.username} userScore={gameHighScore} />
+                      )}
                     </div>
-                  )}
-                </div>
-
-                {gamePhase === 'idle' && (
-                  <LeaderboardComponent data={leaderboard} currentUser={user?.username} userScore={gameHighScore} />
-                )}
-              </motion.div>
+                  </motion.div>
             )}
 
             {currentView === 'duel' && (
@@ -3372,12 +3352,12 @@ const Dashboard: React.FC = () => {
                             <div className="rounded-3xl bg-white/5 p-4">
                               <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Host</p>
                               <p className="mt-2 text-lg font-bold text-white">{duel?.host_username || 'Waiting...'}</p>
-                              <p className="text-sm text-gray-400">{duel?.host_score != null ? `Score: ${duel.host_score}` : 'No score yet'}</p>
+                              {/* Removed score display as requested */}
                             </div>
                             <div className="rounded-3xl bg-white/5 p-4">
                               <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Guest</p>
                               <p className="mt-2 text-lg font-bold text-white">{duel?.guest_username || 'Waiting for guest'}</p>
-                              <p className="text-sm text-gray-400">{duel?.guest_score != null ? `Score: ${duel.guest_score}` : 'No score yet'}</p>
+                              {/* Removed score display as requested */}
                             </div>
                           </div>
 
@@ -3430,12 +3410,18 @@ const Dashboard: React.FC = () => {
                                   <p className="mt-2 text-2xl font-black text-white">{gameTargetNote || '—'}</p>
                                 </div>
                               </div>
+                              <div className="mt-8 flex flex-col gap-3 w-full sm:w-auto">
+                                <button
+                                  onClick={pickRandomNote}
+                                  className="px-8 py-4 rounded-3xl bg-white/10 text-white font-bold hover:bg-white/20 transition-all"
+                                >
+                                  Skip Note
+                                </button>
+                              </div>
                               {gamePhase === 'countdown' && (
                                 <p className="mt-4 text-3xl font-black text-primary-400">Starts in {gameCountdown}</p>
                               )}
-                              {gamePhase === 'result' && (
-                                <p className="mt-4 text-lg text-gray-300">Your duel result has been submitted.</p>
-                              )}
+                              {/* Removed result message as requested */}
                             </div>
                           )}
                         </div>
@@ -3450,50 +3436,24 @@ const Dashboard: React.FC = () => {
                         </button>
                       )}
 
-                      {(duel && (user?.id === duel.host_user_id || user?.id === duel.guest_user_id)) && duel.status !== 'finished' && duel.status !== 'started' && (
-                        <div className="space-y-4">
-                          <div className="grid gap-4 sm:grid-cols-2">
-                            <label className="space-y-2">
-                              <span className="text-sm text-gray-400">Your Score</span>
-                              <input
-                                type="number"
-                                min={0}
-                                value={duelScore}
-                                onChange={(event) => setDuelScore(Number(event.target.value))}
-                                className="w-full rounded-3xl border border-white/10 bg-dark-950 px-4 py-3 text-white outline-none"
-                              />
-                            </label>
-                            <label className="space-y-2">
-                              <span className="text-sm text-gray-400">Accuracy %</span>
-                              <input
-                                type="number"
-                                min={0}
-                                max={100}
-                                value={duelAccuracy}
-                                onChange={(event) => setDuelAccuracy(Number(event.target.value))}
-                                className="w-full rounded-3xl border border-white/10 bg-dark-950 px-4 py-3 text-white outline-none"
-                              />
-                            </label>
+                      {duel?.status === 'finished' && (
+                        <div className="rounded-3xl bg-white/5 p-6 border border-primary-500/20 text-center space-y-6">
+                          <div>
+                            <p className="text-sm uppercase tracking-[0.2em] text-gray-500">Result</p>
+                            <p className="mt-3 text-2xl font-black text-white">
+                              {duel.winner_user_id === user?.id
+                                ? 'You won the duel!'
+                                : duel.winner_user_id === null
+                                  ? 'It’s a tie!'
+                                  : `${duel.guest_user_id === user?.id ? duel.host_username : duel.guest_username} won`}
+                            </p>
                           </div>
                           <button
-                            onClick={submitDuelResult}
-                            className="w-full rounded-3xl bg-primary-500 px-6 py-4 text-base font-black text-dark-900 hover:bg-primary-400 transition-all"
+                            onClick={createDuel}
+                            className="w-full rounded-3xl bg-primary-500 px-6 py-4 text-base font-black text-dark-900 hover:bg-primary-400 transition-all flex items-center justify-center gap-2"
                           >
-                            Submit Duel Score
+                            <RotateCcw size={20} /> Rematch
                           </button>
-                        </div>
-                      )}
-
-                      {duel?.status === 'finished' && (
-                        <div className="rounded-3xl bg-white/5 p-6 border border-primary-500/20 text-center">
-                          <p className="text-sm uppercase tracking-[0.2em] text-gray-500">Result</p>
-                          <p className="mt-3 text-2xl font-black text-white">
-                            {duel.winner_user_id === user?.id
-                              ? 'You won the duel!'
-                              : duel.winner_user_id === null
-                                ? 'It’s a tie!'
-                                : `${duel.guest_user_id === user?.id ? duel.host_username : duel.guest_username} won`}
-                          </p>
                         </div>
                       )}
                     </div>
