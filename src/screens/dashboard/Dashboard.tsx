@@ -817,19 +817,18 @@ const EarTrainingGame: React.FC<{ onComplete?: (score: number, total: number) =>
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
           <div>
             <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-1">Ear Training Practice</p>
-            <h3 className="text-2xl font-black text-white">Hear the note. Match the fretboard.</h3>
+            <h3 className="text-lg font-black text-white">Hear the note. Match the fretboard.</h3>
           </div>
           <div className="text-right">
             <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500">Score</p>
-            <p className="text-2xl font-black text-primary-500">{correctCount}/{Math.max(roundCount, 1)}</p>
+            <p className="text-lg font-black text-primary-500">{correctCount}/{Math.max(roundCount, 1)}</p>
           </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-[1fr_auto] items-center">
-          <div className="rounded-3xl bg-white/5 p-6 border border-white/10">
-            <p className="text-xs text-gray-400 mb-4">A note is played without showing its name. Choose the correct string and fret.</p>
-            <div className="text-5xl font-black text-white mb-2">♪</div>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500">Note hidden from view</p>
+          <div className="rounded-3xl bg-white/5 p-4 border border-white/10">
+            <p className="text-[10px] text-gray-400 mb-2 leading-relaxed">A note is played without showing its name. Choose the correct string and fret.</p>
+            <div className="text-3xl font-black text-white mb-1">♪</div>
           </div>
           <button
             onClick={() => currentNote && playNote(currentNote)}
@@ -847,12 +846,19 @@ const EarTrainingGame: React.FC<{ onComplete?: (score: number, total: number) =>
                 key={optionId}
                 onClick={() => handleAnswer(option)}
                 disabled={!!selectedId}
-                className={`glass-panel p-4 rounded-2xl text-left text-sm font-bold transition-all ${selectedId === optionId ? 'border-primary-500 bg-primary-500/10 text-white' : 'bg-white/5 hover:border-primary-500/30 hover:bg-white/10 text-gray-200'} ${selectedId ? 'cursor-not-allowed opacity-90' : ''}`}
+                className={`glass-panel p-3 rounded-2xl text-left text-xs font-bold transition-all ${selectedId === optionId ? 'border-primary-500 bg-primary-500/10 text-white' : 'bg-white/5 hover:border-primary-500/30 hover:bg-white/10 text-gray-200'} ${selectedId ? 'cursor-not-allowed opacity-90' : ''}`}
               >
-                <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em]">String</p>
-                <p className="text-xl font-black text-white mb-2">{option.string}</p>
-                <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em]">Fret</p>
-                <p className="text-xl font-black text-white">{option.fret}</p>
+                <div className="flex items-center justify-around py-1">
+                  <div className="text-center">
+                    <span className="block text-[8px] text-gray-500 uppercase tracking-[0.2em] mb-0.5">String</span>
+                    <span className="text-lg font-black text-white leading-none">{option.string}</span>
+                  </div>
+                  <div className="w-px h-8 bg-white/10" />
+                  <div className="text-center">
+                    <span className="block text-[8px] text-gray-500 uppercase tracking-[0.2em] mb-0.5">Fret</span>
+                    <span className="text-lg font-black text-white leading-none">{option.fret}</span>
+                  </div>
+                </div>
               </button>
             );
           })}
