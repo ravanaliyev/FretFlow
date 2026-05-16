@@ -132,7 +132,7 @@ export async function initializeDatabase() {
     -- Achievements table
     CREATE TABLE IF NOT EXISTS achievements (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
+        name TEXT UNIQUE NOT NULL,
         description TEXT NOT NULL,
         icon TEXT NOT NULL,
         xp_reward INTEGER DEFAULT 20
@@ -232,17 +232,21 @@ export async function initializeDatabase() {
 
   // Seed default achievements if not exists
   const achievements = await db.execute('SELECT COUNT(*) as count FROM achievements');
-  if (achievements.rows[0].count === 0) {
     await db.execute(`
-      INSERT INTO achievements (name, description, icon, xp_reward) VALUES
+      INSERT OR IGNORE INTO achievements (name, description, icon, xp_reward) VALUES
         ('First Note', 'Complete your first lesson', '🎵', 20),
         ('Perfect Pitch', '100% accuracy on a lesson', '⭐', 25),
         ('Streak Starter', '3 day practice streak', '🔥', 30),
         ('Week Warrior', '7 day practice streak', '⚡', 50),
         ('Song Master', 'Complete 10 songs', '🏆', 75),
-        ('Lesson Legend', 'Complete 25 lessons', '🏅', 100)
+        ('Lesson Legend', 'Complete 25 lessons', '🏅', 100),
+        ('Level 1 Graduate', 'Complete all lessons in Level 1', '🎓', 50),
+        ('Duelist', 'Play your first duel', '⚔️', 30),
+        ('Champion', 'Win your first duel', '🏆', 100),
+        ('Speed Demon', 'Reach a score of 50 in Speed Challenge', '🏎️', 50),
+        ('Night Owl', 'Practice between 10 PM and 4 AM', '🦉', 25),
+        ('Early Bird', 'Practice between 5 AM and 9 AM', '🐦', 25)
     `);
-  }
 
   // Seed default lessons if not exists
   const lessons = await db.execute('SELECT COUNT(*) as count FROM lessons');

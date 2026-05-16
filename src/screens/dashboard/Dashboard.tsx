@@ -1305,7 +1305,7 @@ const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number; achievements?
           <div className="flex items-center gap-3">
             <h3 className="text-sm font-black uppercase tracking-[0.3em] text-gray-500">Achievements</h3>
             <span className="text-[10px] font-bold bg-primary-500/10 text-primary-500 px-2 py-0.5 rounded-full">
-              {unlockedCount}/{BADGES.length}
+              {unlockedCount}/{displayBadges.length}
             </span>
           </div>
           <button
@@ -1364,7 +1364,7 @@ const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number; achievements?
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <h2 className="text-2xl font-black text-white">All Achievements</h2>
-                  <p className="text-xs text-gray-500 mt-1">{unlockedCount} of {BADGES.length} unlocked</p>
+                  <p className="text-xs text-gray-500 mt-1">{unlockedCount} of {displayBadges.length} unlocked</p>
                 </div>
                 <button
                   onClick={() => setShowAll(false)}
@@ -1378,7 +1378,7 @@ const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number; achievements?
               <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden mb-10">
                 <div
                   className="h-full bg-gradient-to-r from-primary-500 to-primary-400 transition-all duration-500"
-                  style={{ width: `${(unlockedCount / BADGES.length) * 100}%` }}
+                  style={{ width: `${(unlockedCount / Math.max(displayBadges.length, 1)) * 100}%` }}
                 />
               </div>
 
@@ -1802,7 +1802,14 @@ const Dashboard: React.FC = () => {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('fretflow_notifications');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
   const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('fretflow_theme') === 'light' ? 'light' : 'dark'));
   const [notationStyle, setNotationStyle] = useState<'scientific' | 'syllabic'>(
     () => (localStorage.getItem('fretflow_notation') === 'syllabic' ? 'syllabic' : 'scientific')
@@ -1813,6 +1820,10 @@ const Dashboard: React.FC = () => {
   const [supportMessage, setSupportMessage] = useState('');
   const [supportSubmitted, setSupportSubmitted] = useState(false);
   const notificationsRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem('fretflow_notifications', JSON.stringify(notifications));
+  }, [notifications]);
   const achievementsInitializedRef = useRef(false);
   const previousEarnedAchievementsRef = useRef<number[]>([]);
   const [, setAdminTab] = useState<'Add New' | 'Manage'>('Add New');
@@ -2230,6 +2241,8 @@ const Dashboard: React.FC = () => {
   }));
 
   useEffect(() => {
+    if (achievements.length === 0) return;
+
     if (!achievementsInitializedRef.current) {
       achievementsInitializedRef.current = true;
       previousEarnedAchievementsRef.current = achievements.filter(a => a.earned).map(a => a.id);

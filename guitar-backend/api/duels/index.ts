@@ -261,6 +261,15 @@ router.post('/:inviteCode/finish', async (req: Request, res: Response) => {
     }
 
     const finishedDuel = await getDuelByCode(inviteCode);
+    
+    // Check achievements for both players
+    import('../../src/services/achievement.service.js').then(m => {
+      m.checkAndGrantAchievements(finishedDuel.host_user_id).catch(console.error);
+      if (finishedDuel.guest_user_id) {
+        m.checkAndGrantAchievements(finishedDuel.guest_user_id).catch(console.error);
+      }
+    });
+
     res.json({ data: finishedDuel });
   } catch (_error) {
     console.error(_error);
