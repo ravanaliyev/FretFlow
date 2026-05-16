@@ -397,8 +397,8 @@ const Metronome: React.FC = () => {
           <button
             onClick={toggleMetronome}
             className={`w-full py-6 rounded-[2rem] font-black text-xl tracking-widest transition-all shadow-2xl flex items-center justify-center gap-4 ${isPlaying
-                ? 'bg-rose-500 text-white shadow-rose-500/20'
-                : 'bg-primary-500 text-dark-900 shadow-primary-500/20 hover:scale-[1.02]'
+              ? 'bg-rose-500 text-white shadow-rose-500/20'
+              : 'bg-primary-500 text-dark-900 shadow-primary-500/20 hover:scale-[1.02]'
               }`}
           >
             {isPlaying ? (
@@ -415,9 +415,9 @@ const Metronome: React.FC = () => {
 
 // --- Song Mode Components ---
 
-const SongLibrary: React.FC<{ 
-  songs: Song[], 
-  onSelect: (song: Song) => void 
+const SongLibrary: React.FC<{
+  songs: Song[],
+  onSelect: (song: Song) => void
 }> = ({ songs, onSelect }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -441,13 +441,12 @@ const SongLibrary: React.FC<{
                 <p className="text-xs text-gray-500 font-medium">{song.artist}</p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest">
-              <span className={`px-2 py-1 rounded-lg ${
-                song.difficulty === 1 ? 'bg-green-500/10 text-green-500' :
-                song.difficulty === 2 ? 'bg-yellow-500/10 text-yellow-500' :
-                'bg-rose-500/10 text-rose-500'
-              }`}>
+              <span className={`px-2 py-1 rounded-lg ${song.difficulty === 1 ? 'bg-green-500/10 text-green-500' :
+                  song.difficulty === 2 ? 'bg-yellow-500/10 text-yellow-500' :
+                    'bg-rose-500/10 text-rose-500'
+                }`}>
                 {song.difficulty === 1 ? 'Easy' : song.difficulty === 2 ? 'Medium' : 'Hard'}
               </span>
               <span className="text-gray-500">{song.xp_reward} XP</span>
@@ -479,7 +478,7 @@ const SongPlayer: React.FC<{
   const [hits, setHits] = useState<Set<number>>(new Set());
   const [misses, setMisses] = useState<Set<number>>(new Set());
   const [feedback, setFeedback] = useState<{ text: string, color: string } | null>(null);
-  
+
   const requestRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
   const songData = useRef<any[]>([]);
@@ -498,7 +497,7 @@ const SongPlayer: React.FC<{
 
   const update = (time: number) => {
     if (!isPlaying) return;
-    
+
     if (startTimeRef.current === 0) startTimeRef.current = time;
     const elapsed = (time - startTimeRef.current) / 1000;
     setCurrentTime(elapsed);
@@ -509,7 +508,7 @@ const SongPlayer: React.FC<{
 
       const diff = Math.abs(elapsed - note.t);
       const isWindowOpen = diff < 0.25;
-      
+
       if (isWindowOpen) {
         if (currentPitch === note.n) {
           setHits(prev => new Set([...prev, idx]));
@@ -549,7 +548,7 @@ const SongPlayer: React.FC<{
     <div className="w-full flex flex-col gap-8">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-           <button 
+          <button
             onClick={onExit}
             className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-gray-500 hover:text-white transition-colors"
           >
@@ -586,11 +585,10 @@ const SongPlayer: React.FC<{
                 className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center gap-2"
                 style={{ left: x }}
               >
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl transition-all shadow-xl ${
-                  hits.has(idx) ? 'bg-primary-500 text-dark-900 scale-110' :
-                  misses.has(idx) ? 'bg-rose-500/20 text-rose-500 border border-rose-500/30' :
-                  'bg-white/10 text-white border border-white/20'
-                }`}>
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl transition-all shadow-xl ${hits.has(idx) ? 'bg-primary-500 text-dark-900 scale-110' :
+                    misses.has(idx) ? 'bg-rose-500/20 text-rose-500 border border-rose-500/30' :
+                      'bg-white/10 text-white border border-white/20'
+                  }`}>
                   {formatNoteName(note.n, notationStyle)}
                 </div>
                 {!hits.has(idx) && !misses.has(idx) && (
@@ -632,11 +630,11 @@ const SongPlayer: React.FC<{
           </button>
         ) : (
           <div className="flex flex-col items-center gap-4">
-             <div className="px-8 py-3 rounded-full bg-white/5 border border-white/10 text-xs font-bold text-gray-400 flex items-center gap-3">
-               <Mic className="text-primary-500 animate-pulse" size={16} />
-               Detecting: <span className="text-white font-black text-sm">{formatNoteName(currentPitch, notationStyle) || '--'}</span>
-             </div>
-             <button
+            <div className="px-8 py-3 rounded-full bg-white/5 border border-white/10 text-xs font-bold text-gray-400 flex items-center gap-3">
+              <Mic className="text-primary-500 animate-pulse" size={16} />
+              Detecting: <span className="text-white font-black text-sm">{formatNoteName(currentPitch, notationStyle) || '--'}</span>
+            </div>
+            <button
               onClick={() => setIsPlaying(false)}
               className="text-gray-500 hover:text-white font-bold uppercase tracking-widest text-xs"
             >
@@ -726,9 +724,9 @@ const EarTrainingGame: React.FC = () => {
   ];
 
   const availableNotes = [
-    'E2','F2','F#2','G2','G#2','A2','A#2','B2',
-    'C3','C#3','D3','D#3','E3','F3','F#3','G3',
-    'G#3','A3','A#3','B3','C4','C#4','D4','D#4','E4'
+    'E2', 'F2', 'F#2', 'G2', 'G#2', 'A2', 'A#2', 'B2',
+    'C3', 'C#3', 'D3', 'D#3', 'E3', 'F3', 'F#3', 'G3',
+    'G#3', 'A3', 'A#3', 'B3', 'C4', 'C#4', 'D4', 'D#4', 'E4'
   ] as const;
 
   const noteValues = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 } as const;
@@ -1984,8 +1982,13 @@ const Dashboard: React.FC = () => {
     try {
       const res = await duelsApi.readyDuel(urlInviteCode);
       setDuel(res.data);
+      setDuelMessage('You are ready! Waiting for your opponent...');
+      
+      // If we're already started, ensure we're in idle to trigger the challenge
+      if (res.data.status === 'started' && gamePhase !== 'idle') {
+        setGamePhase('idle');
+      }
       setDuelError(null);
-      setDuelMessage('Ready! Waiting for your opponent...');
     } catch (err: any) {
       console.error('Failed to ready duel:', err);
       setDuelError('Could not set ready state. Try again.');
@@ -2009,6 +2012,21 @@ const Dashboard: React.FC = () => {
       setDuelError('Failed to submit duel score. Make sure you are joined to the duel.');
     }
   };
+
+  useEffect(() => {
+    if (currentView === 'duel') {
+      setDuel(null); // Clear previous duel data immediately
+      setGamePhase('idle');
+      setGameTimeLeft(30);
+      setGameScore(0);
+      setGameCountdown(3);
+      setDuelMessage(null);
+      setDuelError(null);
+      setDuelAccuracy(0);
+      setGameScore(0); // Reset score for new duel
+      setGameTimeLeft(30); // Reset timer for new duel
+    }
+  }, [urlInviteCode, currentView]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
@@ -2167,7 +2185,7 @@ const Dashboard: React.FC = () => {
       if (profileRes) {
         setUserXp(profileRes.xp_total || 0);
         setUserLevel(profileRes.level || 1);
-        
+
         // Sync High Score
         if (profileRes.best_score !== undefined) {
           setGameHighScore(profileRes.best_score);
@@ -2529,7 +2547,7 @@ const Dashboard: React.FC = () => {
     } catch (e) {
       parsed = [];
     }
-    const sequence = Array.isArray(parsed) ? parsed.map((n: any) => (typeof n === 'string' ? n : (n.note || '')) ) : [];
+    const sequence = Array.isArray(parsed) ? parsed.map((n: any) => (typeof n === 'string' ? n : (n.note || ''))) : [];
     const tempLesson: Lesson = {
       id: -Math.abs(song.id),
       title: song.title,
@@ -3044,9 +3062,9 @@ const Dashboard: React.FC = () => {
                       filteredLessons={songsAsLessons}
                       startPractice={startPracticeFromLesson}
                       userRole={userRole}
-                      onAdd={() => {}}
-                      onEdit={() => {}}
-                      onReorder={() => {}}
+                      onAdd={() => { }}
+                      onEdit={() => { }}
+                      onReorder={() => { }}
                       lessons={songsAsLessons}
                     />
                   </>
@@ -3239,28 +3257,28 @@ const Dashboard: React.FC = () => {
                         Detecting: <span className="text-primary-500">{formatNoteName(currentPitch, notationStyle) || '--'}</span>
                       </div>
 
-                          <div className="mt-8 flex flex-col gap-3 w-full sm:w-auto">
-                            <button
-                              onClick={pickRandomNote}
-                              className="px-8 py-4 rounded-3xl bg-white/10 text-white font-bold hover:bg-white/20 transition-all"
-                            >
-                              Skip Note
-                            </button>
-                            <button
-                              onClick={() => setGamePhase('idle')}
-                              className="text-gray-500 hover:text-rose-500 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2 justify-center"
-                            >
-                              <X size={14} /> Stop Challenge
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {gamePhase === 'idle' && (
-                        <LeaderboardComponent data={leaderboard} currentUser={user?.username} userScore={gameHighScore} />
-                      )}
+                      <div className="mt-8 flex flex-col gap-3 w-full sm:w-auto">
+                        <button
+                          onClick={pickRandomNote}
+                          className="px-8 py-4 rounded-3xl bg-white/10 text-white font-bold hover:bg-white/20 transition-all"
+                        >
+                          Skip Note
+                        </button>
+                        <button
+                          onClick={() => setGamePhase('idle')}
+                          className="text-gray-500 hover:text-rose-500 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2 justify-center"
+                        >
+                          <X size={14} /> Stop Challenge
+                        </button>
+                      </div>
                     </div>
-                  </motion.div>
+                  )}
+
+                  {gamePhase === 'idle' && (
+                    <LeaderboardComponent data={leaderboard} currentUser={user?.username} userScore={gameHighScore} />
+                  )}
+                </div>
+              </motion.div>
             )}
 
             {currentView === 'duel' && (
@@ -3441,15 +3459,39 @@ const Dashboard: React.FC = () => {
                           <div>
                             <p className="text-sm uppercase tracking-[0.2em] text-gray-500">Result</p>
                             <p className="mt-3 text-2xl font-black text-white">
-                              {duel.winner_user_id === user?.id
-                                ? 'You won the duel!'
-                                : duel.winner_user_id === null
-                                  ? 'It’s a tie!'
-                                  : `${duel.guest_user_id === user?.id ? duel.host_username : duel.guest_username} won`}
+                              {(() => {
+                                // Explicitly check user ID against host/guest to be sure
+                                const isHost = duel.host_user_id === user?.id;
+                                const isGuest = duel.guest_user_id === user?.id;
+                                
+                                // Cast to Number to avoid lexicographical string comparison issues
+                                const hScore = Number(duel.host_score || 0);
+                                const gScore = Number(duel.guest_score || 0);
+
+                                if (duel.winner_user_id === user?.id) return `You won the duel! (${hScore} vs ${gScore}) 🏆`;
+                                
+                                if (duel.winner_user_id !== null && duel.winner_user_id !== user?.id) {
+                                   const winnerName = duel.host_user_id === duel.winner_user_id ? duel.host_username : (duel.guest_username || 'Opponent');
+                                   return `${winnerName} won (${hScore} vs ${gScore}) 🎸`;
+                                }
+
+                                // Fallback check if winner_user_id is null or backend logic failed
+                                if (hScore !== gScore) {
+                                  if (hScore > gScore) {
+                                    return isHost ? `You won the duel! (${hScore} vs ${gScore}) 🏆` : `${duel.host_username} won (${hScore} vs ${gScore}) 🎸`;
+                                  } else {
+                                    return isGuest ? `You won the duel! (${gScore} vs ${hScore}) 🏆` : `${duel.guest_username || 'Opponent'} won (${gScore} vs ${hScore}) 🎸`;
+                                  }
+                                }
+                                return `It’s a tie! (${hScore} - ${gScore}) 🤝`;
+                              })()}
                             </p>
                           </div>
                           <button
-                            onClick={createDuel}
+                            onClick={() => {
+                              setDuel(null);
+                              createDuel();
+                            }}
                             className="w-full rounded-3xl bg-primary-500 px-6 py-4 text-base font-black text-dark-900 hover:bg-primary-400 transition-all flex items-center justify-center gap-2"
                           >
                             <RotateCcw size={20} /> Rematch
@@ -3495,8 +3537,8 @@ const Dashboard: React.FC = () => {
                     <SongLibrary songs={songs} onSelect={(song) => setCurrentSong(song)} />
                   </>
                 ) : (
-                  <SongPlayer 
-                    song={currentSong} 
+                  <SongPlayer
+                    song={currentSong}
                     currentPitch={currentPitch}
                     notationStyle={notationStyle}
                     formatNoteName={formatNoteName}
@@ -3513,7 +3555,7 @@ const Dashboard: React.FC = () => {
                         if (res && res.data) {
                           setSongs(res.data);
                         }
-                      } catch(e) {
+                      } catch (e) {
                         console.error('Failed to submit song score', e);
                       }
                     }}
