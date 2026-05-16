@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   History,
@@ -318,15 +318,15 @@ const Metronome: React.FC = () => {
   }, []);
 
   return (
-    <div className="glass-panel p-8 md:p-12 rounded-[3rem] border-white/10 bg-dark-900/40 backdrop-blur-3xl relative overflow-hidden shadow-2xl flex flex-col items-center">
+    <div className="glass-panel w-full max-w-3xl p-5 sm:p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border-white/10 bg-dark-900/40 backdrop-blur-3xl relative overflow-hidden shadow-2xl flex flex-col items-center">
       {/* Background Glow */}
       <div className={`absolute inset-0 bg-primary-500/5 transition-opacity duration-500 ${isPlaying ? 'opacity-100' : 'opacity-0'}`} />
 
       <div className="relative z-10 w-full flex flex-col items-center">
-        <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-500 mb-12">Rhythm Master</h4>
+        <h4 className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] text-gray-500 mb-6 sm:mb-8 md:mb-12">Rhythm Master</h4>
 
         {/* Visual Beats Grid */}
-        <div className="flex gap-4 mb-16">
+        <div className="flex flex-wrap justify-center gap-2 md:gap-4 mb-8 sm:mb-10 md:mb-16">
           {Array.from({ length: timeSignature }).map((_, i) => (
             <motion.div
               key={i}
@@ -335,32 +335,32 @@ const Metronome: React.FC = () => {
                 backgroundColor: currentBeat === i ? 'var(--color-primary-500)' : 'rgba(255,255,255,0.05)',
                 boxShadow: currentBeat === i ? '0 0 20px var(--color-primary-500)' : 'none'
               }}
-              className="w-4 h-4 md:w-6 md:h-6 rounded-full border border-white/10"
+              className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 rounded-full border border-white/10"
             />
           ))}
         </div>
 
         {/* BPM Display */}
-        <div className="relative mb-12 group cursor-pointer">
+        <div className="relative mb-10 sm:mb-12 w-full max-w-[18rem]">
           <motion.div
             animate={{ scale: isPlaying ? [1, 1.05, 1] : 1 }}
-            transition={{ duration: 60 / bpm, repeat: isPlaying ? Infinity : 0, ease: "easeInOut" }}
-            className="w-48 h-48 md:w-64 md:h-64 rounded-full border-4 border-white/5 flex flex-col items-center justify-center relative bg-white/5 backdrop-blur-md shadow-2xl"
+            transition={{ duration: 60 / bpm, repeat: isPlaying ? Infinity : 0, ease: 'easeInOut' }}
+            className="w-full aspect-square rounded-full border-4 border-white/5 flex flex-col items-center justify-center relative bg-white/5 backdrop-blur-md shadow-2xl"
           >
-            <span className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-2">BPM</span>
-            <span className="text-7xl md:text-8xl font-black text-white tracking-tighter leading-none">{bpm}</span>
+            <span className="text-gray-500 text-[10px] sm:text-[11px] font-bold uppercase tracking-widest mb-1 sm:mb-2">BPM</span>
+            <span className="text-5xl sm:text-6xl md:text-7xl font-black text-white tracking-tighter leading-none">{bpm}</span>
             <div className="absolute inset-0 rounded-full bg-primary-500/10 blur-3xl -z-10 opacity-50" />
           </motion.div>
         </div>
 
         {/* Controls */}
-        <div className="w-full max-w-md space-y-12">
-          <div className="flex items-center gap-6">
+        <div className="w-full max-w-md space-y-6 sm:space-y-8 md:space-y-10">
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
             <button
               onClick={() => setBpm(Math.max(40, bpm - 5))}
-              className="w-12 h-12 rounded-2xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-all active:scale-90"
+              className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-all active:scale-90"
             >
-              <Minus size={20} />
+              <Minus size={18} />
             </button>
             <input
               type="range"
@@ -372,13 +372,13 @@ const Metronome: React.FC = () => {
             />
             <button
               onClick={() => setBpm(Math.min(240, bpm + 5))}
-              className="w-12 h-12 rounded-2xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-all active:scale-90"
+              className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-all active:scale-90"
             >
-              <Plus size={20} />
+              <Plus size={18} />
             </button>
           </div>
 
-          <div className="flex justify-center gap-4">
+          <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
             {[3, 4, 6].map(sig => (
               <button
                 key={sig}
@@ -388,7 +388,7 @@ const Metronome: React.FC = () => {
                     beatRef.current = 0;
                   }
                 }}
-                className={`px-6 py-2 rounded-xl text-xs font-black transition-all ${timeSignature === sig ? 'bg-primary-500 text-dark-900 shadow-lg shadow-primary-500/20' : 'bg-white/5 text-gray-500 hover:text-white'}`}
+                className={`px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-black transition-all ${timeSignature === sig ? 'bg-primary-500 text-dark-900 shadow-lg shadow-primary-500/20' : 'bg-white/5 text-gray-500 hover:text-white'}`}
               >
                 {sig}/4
               </button>
@@ -396,15 +396,15 @@ const Metronome: React.FC = () => {
           </div>
           <button
             onClick={toggleMetronome}
-            className={`w-full py-6 rounded-[2rem] font-black text-xl tracking-widest transition-all shadow-2xl flex items-center justify-center gap-4 ${isPlaying
+            className={`w-full py-3 sm:py-4 rounded-[1.5rem] font-black text-base sm:text-lg tracking-widest transition-all shadow-2xl flex items-center justify-center gap-3 ${isPlaying
               ? 'bg-rose-500 text-white shadow-rose-500/20'
               : 'bg-primary-500 text-dark-900 shadow-primary-500/20 hover:scale-[1.02]'
               }`}
           >
             {isPlaying ? (
-              <><X size={24} /> STOP</>
+              <><X size={22} /> STOP</>
             ) : (
-              <><Play size={24} className="fill-current" /> START</>
+              <><Play size={22} className="fill-current" /> START</>
             )}
           </button>
         </div>
@@ -2233,20 +2233,46 @@ const Dashboard: React.FC = () => {
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
 
   // Map songs into Lesson-like objects for Level 4 display
-  const songsAsLessons: Lesson[] = songs.map(s => ({
-    id: -Math.abs(s.id),
-    title: s.title,
-    level: 4,
-    difficulty: s.difficulty === 1 ? 'easy' : s.difficulty === 2 ? 'medium' : 'hard',
-    status: 'available',
-    sequence: (() => {
-      try {
-        const parsed = JSON.parse(s.notes || '[]');
-        return Array.isArray(parsed) ? parsed.map((n: any) => (typeof n === 'string' ? n : (n.note || ''))) : [];
-      } catch (e) { return []; }
-    })(),
-    desc: s.artist || ''
-  }));
+  const songsAsLessons: Lesson[] = useMemo(() => {
+    return songs.map((s, idx) => {
+      const isCompleted = (s.best_score || 0) > 0;
+      let status: Lesson['status'] = isCompleted ? 'completed' : 'available';
+
+      if (status !== 'completed') {
+        if (idx > 0) {
+          const prevSong = songs[idx - 1];
+          const isPrevCompleted = (prevSong.best_score || 0) > 0;
+          if (!isPrevCompleted) {
+            status = 'locked';
+          }
+        } else {
+          // First song of Level 4 - check if previous level (Level 3) is completed
+          const level3Lessons = lessons.filter(l => l.level === 3);
+          if (level3Lessons.length > 0) {
+            const allLevel3Completed = level3Lessons.every(l => l.status === 'completed');
+            if (!allLevel3Completed) {
+              status = 'locked';
+            }
+          }
+        }
+      }
+
+      return {
+        id: -Math.abs(s.id),
+        title: s.title,
+        level: 4,
+        difficulty: s.difficulty === 1 ? 'easy' : s.difficulty === 2 ? 'medium' : 'hard',
+        status,
+        sequence: (() => {
+          try {
+            const parsed = JSON.parse(s.notes || '[]');
+            return Array.isArray(parsed) ? parsed.map((n: any) => (typeof n === 'string' ? n : (n.note || ''))) : [];
+          } catch (e) { return []; }
+        })(),
+        desc: s.artist || ''
+      };
+    });
+  }, [songs, lessons]);
 
   useEffect(() => {
     if (achievements.length === 0) return;
@@ -2700,7 +2726,7 @@ const Dashboard: React.FC = () => {
 
           {/* Fretboard */}
           <div className="w-full overflow-x-auto pb-4 no-scrollbar">
-            <div className="glass-panel p-6 md:p-8 rounded-3xl min-w-[800px] relative border-white/5 bg-gradient-to-b from-dark-800 to-dark-900">
+            <div className="glass-panel p-6 md:p-8 rounded-3xl min-w-full w-full relative border-white/5 bg-gradient-to-b from-dark-800 to-dark-900">
               {STRINGS.map((string, sIdx) => (
                 <div key={string} className="h-10 flex items-center relative group">
                   {/* String line */}
@@ -3016,7 +3042,7 @@ const Dashboard: React.FC = () => {
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            className="fixed top-24 right-6 z-[250] w-full max-w-sm"
+            className="fixed top-20 left-4 right-4 z-[250] w-full max-w-sm sm:left-auto sm:right-6 sm:w-auto"
           >
             <GuitarTuner currentPitch={currentPitch} frequency={currentFrequency} notationStyle={notationStyle} />
           </motion.div>
@@ -3608,14 +3634,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Bottom Navigation for Mobile */}
-      <div className={`md:hidden fixed bottom-0 left-0 right-0 z-[1000] bg-dark-950/80 backdrop-blur-xl border-t border-white/5 px-6 py-3 flex items-center justify-between pb-8 ${currentView === 'practice' && !(activeLesson && activeLesson.id < 0) ? 'hidden' : ''}`}>
-        <button
-          onClick={() => navigate('/dashboard')}
-          className={`flex flex-col items-center gap-1 ${urlView === 'levels' || urlView === 'lessons' ? 'text-primary-500' : 'text-gray-500'}`}
-        >
-          <Activity size={20} />
-          <span className="text-[10px] font-bold uppercase">Learn</span>
-        </button>
+      <div className={`md:hidden fixed bottom-0 left-0 right-0 z-[1000] bg-dark-950/90 backdrop-blur-xl border-t border-white/10 px-6 py-3 flex items-center justify-between pb-8 rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.5)] ${currentView === 'practice' && !(activeLesson && activeLesson.id < 0) ? 'hidden' : ''}`}>
         <button
           onClick={() => navigate('/dashboard/activity')}
           className={`flex flex-col items-center gap-1 ${urlView === 'activity' ? 'text-primary-500' : 'text-gray-500'}`}
@@ -3629,6 +3648,15 @@ const Dashboard: React.FC = () => {
         >
           <Star size={20} />
           <span className="text-[10px] font-bold uppercase">Play</span>
+        </button>
+        <button
+          onClick={() => navigate('/dashboard')}
+          className={`flex flex-col items-center gap-1 transition-all ${urlView === 'levels' || urlView === 'lessons' ? 'text-primary-500' : 'text-gray-500'}`}
+        >
+          <div className={`p-3 rounded-2xl -mt-8 mb-1 border-t border-x border-white/10 shadow-lg transition-all ${urlView === 'levels' || urlView === 'lessons' ? 'bg-primary-500 text-dark-900 shadow-primary-500/20' : 'bg-dark-900 text-gray-500'}`}>
+            <Activity size={24} strokeWidth={3} />
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-widest">Learn</span>
         </button>
         <button
           onClick={() => navigate('/dashboard/duel')}
@@ -3724,27 +3752,7 @@ const Dashboard: React.FC = () => {
 
       {/* Admin FAB removed - integrated into grid */}
 
-      {/* Bottom Navigation (Mobile Only) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[60] px-6 pb-8 pt-4 bg-dark-900/80 backdrop-blur-2xl border-t border-white/5 flex justify-between items-center">
-        {[
-          { id: 'practice', label: 'Practice', icon: PlayCircle, path: '/dashboard' },
-          { id: 'tuner', label: 'Tuner', icon: Mic, path: '/dashboard/tuner' },
-          { id: 'activity', label: 'Activity', icon: Activity, path: '/dashboard/activity' },
-        ].map((item) => {
-          const isActive = (item.id === 'practice' && (currentView === 'levels' || currentView === 'lessons')) || currentView === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => navigate(item.path)}
-              className={`flex flex-col items-center gap-1 transition-all ${isActive ? 'text-primary-500' : 'text-gray-500'}`}
-            >
-              <item.icon size={20} strokeWidth={isActive ? 3 : 2} />
-              <span className="text-[10px] font-black uppercase tracking-widest">{item.label}</span>
-              {isActive && <motion.div layoutId="mobileNav" className="w-1 h-1 bg-primary-500 rounded-full mt-1" />}
-            </button>
-          );
-        })}
-      </nav>
+
 
 
 
