@@ -146,3 +146,13 @@ export interface LeaderboardEntry {
   score: number;
   last_updated: string;
 }
+
+export interface Song {
+  id: number;
+  title: string;
+  artist: string;
+  difficulty: number;
+  notes: string; // JSON string
+  xp_reward: number;
+  best_score?: number | null;
+}

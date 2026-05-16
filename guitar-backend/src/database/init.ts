@@ -229,5 +229,16 @@ export async function initializeDatabase() {
     `);
   }
 
+  // Seed default songs if not exists
+  const songsCount = await db.execute('SELECT COUNT(*) as count FROM songs');
+  if (songsCount.rows[0].count === 0) {
+    await db.execute(`
+      INSERT INTO songs (title, artist, difficulty, notes, xp_reward) VALUES
+        ('Smoke on the Water (Intro)', 'Deep Purple', 3, '[{"n":"G2","t":0,"d":0.4},{"n":"Bb2","t":0.5,"d":0.4},{"n":"C3","t":1.0,"d":0.7},{"n":"G2","t":2.0,"d":0.4},{"n":"Bb2","t":2.5,"d":0.4},{"n":"Db3","t":3.0,"d":0.3},{"n":"C3","t":3.3,"d":0.7}]', 100),
+        ('Seven Nation Army (Main Riff)', 'The White Stripes', 2, '[{"n":"E2","t":0,"d":0.6},{"n":"E2","t":0.8,"d":0.2},{"n":"G2","t":1.1,"d":0.3},{"n":"E2","t":1.5,"d":0.3},{"n":"D2","t":1.9,"d":0.3},{"n":"C2","t":2.3,"d":0.5},{"n":"B1","t":2.8,"d":0.5}]', 75),
+        ('Come As You Are', 'Nirvana', 2, '[{"n":"E2","t":0,"d":0.4},{"n":"E2","t":0.5,"d":0.4},{"n":"F#2","t":1.0,"d":0.4},{"n":"G2","t":1.5,"d":0.4},{"n":"A2","t":2.0,"d":0.4}]', 80)
+    `);
+  }
+
   console.log('Database initialized successfully');
 }

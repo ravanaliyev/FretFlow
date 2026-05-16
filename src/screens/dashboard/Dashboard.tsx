@@ -29,7 +29,7 @@ import {
   ChevronDown,
   Minus,
   Play,
-  Timer
+  Music
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AudioProcessor } from '../../utils/PitchProcessor';
@@ -41,6 +41,7 @@ import { scoresApi } from '../../api/scores';
 import { adminApi } from '../../api/admin';
 import { usersApi } from '../../api/users';
 import { historyApi } from '../../api/history';
+import { songsApi } from '../../api/songs';
 import { useAuth } from '../../hooks/useAuth';
 import confetti from 'canvas-confetti';
 
@@ -76,6 +77,26 @@ interface LeaderboardItem {
   name: string;
   score: number;
   date: string;
+}
+
+interface Achievement {
+  id: number;
+  name: string;
+  description: string;
+  icon: string;
+  xp_reward: number;
+  earned: boolean;
+  earned_at: string | null;
+}
+
+interface Song {
+  id: number;
+  title: string;
+  artist: string;
+  difficulty: number;
+  notes: string; // JSON string
+  xp_reward: number;
+  best_score?: number | null;
 }
 
 
@@ -121,13 +142,6 @@ const formatNoteName = (note: string, style: 'scientific' | 'syllabic') => {
   const syllabic = SCI_TO_SYL[pitch] || pitch;
   return `${syllabic}${octave}`;
 };
-
-const MASTERY_BADGES = [
-  // Level mastery
-  { id: 'lvl1_master', name: 'String Master', icon: '🎸', desc: 'Complete all Level 1 lessons', color: 'from-primary-400 to-primary-600', category: 'Mastery' },
-  { id: 'lvl2_master', name: 'Fret Explorer', icon: '🗺️', desc: 'Complete all Level 2 lessons', color: 'from-emerald-400 to-teal-600', category: 'Mastery' },
-  { id: 'lvl3_master', name: 'Riff Legend', icon: '🌟', desc: 'Complete all Level 3 lessons', color: 'from-pink-400 to-rose-600', category: 'Mastery' },
-];
 
 // --- Sub-Components ---
 
@@ -229,7 +243,7 @@ const Metronome: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [timeSignature, setTimeSignature] = useState(4);
   const [currentBeat, setCurrentBeat] = useState(0);
-  
+
   const audioContext = useRef<AudioContext | null>(null);
   const nextNoteTime = useRef(0);
   const timerID = useRef<number | null>(null);
@@ -237,13 +251,13 @@ const Metronome: React.FC = () => {
 
   const scheduleNote = (beatNumber: number, time: number) => {
     if (!audioContext.current) return;
-    
+
     const osc = audioContext.current.createOscillator();
     const envelope = audioContext.current.createGain();
 
     // Higher pitch for the first beat
     osc.frequency.value = beatNumber === 0 ? 1000 : 500;
-    
+
     envelope.gain.value = 1;
     envelope.gain.exponentialRampToValueAtTime(1, time + 0.001);
     envelope.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
@@ -263,7 +277,7 @@ const Metronome: React.FC = () => {
 
   const scheduler = () => {
     if (!audioContext.current) return;
-    
+
     while (nextNoteTime.current < audioContext.current.currentTime + 0.1) {
       scheduleNote(beatRef.current, nextNoteTime.current);
       const secondsPerBeat = 60.0 / bpm;
@@ -303,7 +317,7 @@ const Metronome: React.FC = () => {
     <div className="glass-panel p-8 md:p-12 rounded-[3rem] border-white/10 bg-dark-900/40 backdrop-blur-3xl relative overflow-hidden shadow-2xl flex flex-col items-center">
       {/* Background Glow */}
       <div className={`absolute inset-0 bg-primary-500/5 transition-opacity duration-500 ${isPlaying ? 'opacity-100' : 'opacity-0'}`} />
-      
+
       <div className="relative z-10 w-full flex flex-col items-center">
         <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-500 mb-12">Rhythm Master</h4>
 
@@ -312,7 +326,7 @@ const Metronome: React.FC = () => {
           {Array.from({ length: timeSignature }).map((_, i) => (
             <motion.div
               key={i}
-              animate={{ 
+              animate={{
                 scale: currentBeat === i ? 1.2 : 1,
                 backgroundColor: currentBeat === i ? 'var(--color-primary-500)' : 'rgba(255,255,255,0.05)',
                 boxShadow: currentBeat === i ? '0 0 20px var(--color-primary-500)' : 'none'
@@ -324,9 +338,9 @@ const Metronome: React.FC = () => {
 
         {/* BPM Display */}
         <div className="relative mb-12 group cursor-pointer">
-          <motion.div 
+          <motion.div
             animate={{ scale: isPlaying ? [1, 1.05, 1] : 1 }}
-            transition={{ duration: 60/bpm, repeat: isPlaying ? Infinity : 0, ease: "easeInOut" }}
+            transition={{ duration: 60 / bpm, repeat: isPlaying ? Infinity : 0, ease: "easeInOut" }}
             className="w-48 h-48 md:w-64 md:h-64 rounded-full border-4 border-white/5 flex flex-col items-center justify-center relative bg-white/5 backdrop-blur-md shadow-2xl"
           >
             <span className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-2">BPM</span>
@@ -338,21 +352,21 @@ const Metronome: React.FC = () => {
         {/* Controls */}
         <div className="w-full max-w-md space-y-12">
           <div className="flex items-center gap-6">
-            <button 
+            <button
               onClick={() => setBpm(Math.max(40, bpm - 5))}
               className="w-12 h-12 rounded-2xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-all active:scale-90"
             >
               <Minus size={20} />
             </button>
-            <input 
-              type="range" 
-              min="40" 
-              max="240" 
-              value={bpm} 
+            <input
+              type="range"
+              min="40"
+              max="240"
+              value={bpm}
               onChange={(e) => setBpm(parseInt(e.target.value))}
               className="flex-1 h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-primary-500"
             />
-            <button 
+            <button
               onClick={() => setBpm(Math.min(240, bpm + 5))}
               className="w-12 h-12 rounded-2xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-all active:scale-90"
             >
@@ -376,14 +390,12 @@ const Metronome: React.FC = () => {
               </button>
             ))}
           </div>
-
           <button
             onClick={toggleMetronome}
-            className={`w-full py-6 rounded-[2rem] font-black text-xl tracking-widest transition-all shadow-2xl flex items-center justify-center gap-4 ${
-              isPlaying 
-                ? 'bg-rose-500 text-white shadow-rose-500/20' 
+            className={`w-full py-6 rounded-[2rem] font-black text-xl tracking-widest transition-all shadow-2xl flex items-center justify-center gap-4 ${isPlaying
+                ? 'bg-rose-500 text-white shadow-rose-500/20'
                 : 'bg-primary-500 text-dark-900 shadow-primary-500/20 hover:scale-[1.02]'
-            }`}
+              }`}
           >
             {isPlaying ? (
               <><X size={24} /> STOP</>
@@ -392,6 +404,242 @@ const Metronome: React.FC = () => {
             )}
           </button>
         </div>
+      </div>
+    </div>
+  );
+};
+
+// --- Song Mode Components ---
+
+const SongLibrary: React.FC<{ 
+  songs: Song[], 
+  onSelect: (song: Song) => void 
+}> = ({ songs, onSelect }) => {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {songs && Array.isArray(songs) && songs.map(song => (
+        <motion.div
+          key={song.id}
+          whileHover={{ y: -5, scale: 1.02 }}
+          onClick={() => onSelect(song)}
+          className="glass-panel p-6 rounded-[2rem] cursor-pointer group relative overflow-hidden bg-white/[0.02] border-white/5"
+        >
+          <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Music size={80} />
+          </div>
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-primary-500/10 flex items-center justify-center text-primary-500">
+                <Music size={20} />
+              </div>
+              <div>
+                <h3 className="font-bold text-white group-hover:text-primary-500 transition-colors">{song.title}</h3>
+                <p className="text-xs text-gray-500 font-medium">{song.artist}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest">
+              <span className={`px-2 py-1 rounded-lg ${
+                song.difficulty === 1 ? 'bg-green-500/10 text-green-500' :
+                song.difficulty === 2 ? 'bg-yellow-500/10 text-yellow-500' :
+                'bg-rose-500/10 text-rose-500'
+              }`}>
+                {song.difficulty === 1 ? 'Easy' : song.difficulty === 2 ? 'Medium' : 'Hard'}
+              </span>
+              <span className="text-gray-500">{song.xp_reward} XP</span>
+            </div>
+
+            {song.best_score !== undefined && song.best_score !== null && (
+              <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
+                <span className="text-[10px] text-gray-600 font-bold uppercase">Best Score</span>
+                <span className="text-sm font-black text-primary-500">{song.best_score}</span>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  );
+};
+const SongPlayer: React.FC<{
+  song: Song,
+  currentPitch: string,
+  notationStyle: 'scientific' | 'syllabic',
+  formatNoteName: (note: string, style: 'scientific' | 'syllabic') => string,
+  onComplete: (score: number, accuracy: number) => void,
+  onExit: () => void
+}> = ({ song, currentPitch, notationStyle, formatNoteName, onComplete, onExit }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [score, setScore] = useState(0);
+  const [hits, setHits] = useState<Set<number>>(new Set());
+  const [misses, setMisses] = useState<Set<number>>(new Set());
+  const [feedback, setFeedback] = useState<{ text: string, color: string } | null>(null);
+  
+  const requestRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number>(0);
+  const songData = useRef<any[]>([]);
+
+  useEffect(() => {
+    try {
+      songData.current = JSON.parse(song.notes);
+    } catch (e) {
+      console.error("Invalid song notes JSON", e);
+      songData.current = [];
+    }
+  }, [song]);
+
+  const PIXELS_PER_SECOND = 250;
+  const TARGET_X = 120;
+
+  const update = (time: number) => {
+    if (!isPlaying) return;
+    
+    if (startTimeRef.current === 0) startTimeRef.current = time;
+    const elapsed = (time - startTimeRef.current) / 1000;
+    setCurrentTime(elapsed);
+
+    // Collision Detection
+    songData.current.forEach((note, idx) => {
+      if (hits.has(idx) || misses.has(idx)) return;
+
+      const diff = Math.abs(elapsed - note.t);
+      const isWindowOpen = diff < 0.25;
+      
+      if (isWindowOpen) {
+        if (currentPitch === note.n) {
+          setHits(prev => new Set([...prev, idx]));
+          setScore(s => s + 100);
+          setFeedback({ text: 'PERFECT', color: 'text-primary-500' });
+          setTimeout(() => setFeedback(null), 500);
+        }
+      } else if (elapsed > note.t + 0.3) {
+        setMisses(prev => new Set([...prev, idx]));
+        setFeedback({ text: 'MISS', color: 'text-rose-500' });
+        setTimeout(() => setFeedback(null), 500);
+      }
+    });
+
+    const lastNote = songData.current[songData.current.length - 1];
+    if (lastNote && elapsed > lastNote.t + 2) {
+      const accuracy = Math.round((hits.size / songData.current.length) * 100);
+      onComplete(score, accuracy);
+      setIsPlaying(false);
+    }
+
+    requestRef.current = requestAnimationFrame(update);
+  };
+
+  useEffect(() => {
+    if (isPlaying) {
+      requestRef.current = requestAnimationFrame(update);
+    } else {
+      if (requestRef.current) cancelAnimationFrame(requestRef.current);
+    }
+    return () => {
+      if (requestRef.current) cancelAnimationFrame(requestRef.current);
+    };
+  }, [isPlaying, currentPitch]);
+
+  return (
+    <div className="w-full flex flex-col gap-8">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+           <button 
+            onClick={onExit}
+            className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-gray-500 hover:text-white transition-colors"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <div>
+            <h2 className="text-2xl font-black text-white italic tracking-tighter">{song.title}</h2>
+            <p className="text-gray-500 font-bold uppercase tracking-widest text-[10px]">{song.artist}</p>
+          </div>
+        </div>
+        <div className="flex gap-4 items-center">
+          <div className="text-right">
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Score</p>
+            <p className="text-3xl font-black text-primary-500">{score.toLocaleString()}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="glass-panel h-64 rounded-[3rem] relative overflow-hidden bg-dark-950/50 border-white/5 shadow-inner">
+        {/* Playhead / Target Line */}
+        <div className="absolute top-0 bottom-0 w-1 bg-primary-500/30 z-20 shadow-[0_0_15px_rgba(57,255,20,0.4)]" style={{ left: TARGET_X }}>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full border-4 border-primary-500/50 bg-primary-500/10 animate-ping" />
+        </div>
+
+        {/* Scrolling Notes */}
+        <div className="absolute inset-0 z-10 pointer-events-none">
+          {songData.current.map((note, idx) => {
+            const x = (note.t - currentTime) * PIXELS_PER_SECOND + TARGET_X;
+            if (x < -100 || x > 1200) return null;
+
+            return (
+              <motion.div
+                key={idx}
+                className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center gap-2"
+                style={{ left: x }}
+              >
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl transition-all shadow-xl ${
+                  hits.has(idx) ? 'bg-primary-500 text-dark-900 scale-110' :
+                  misses.has(idx) ? 'bg-rose-500/20 text-rose-500 border border-rose-500/30' :
+                  'bg-white/10 text-white border border-white/20'
+                }`}>
+                  {formatNoteName(note.n, notationStyle)}
+                </div>
+                {!hits.has(idx) && !misses.has(idx) && (
+                  <div className="w-1.5 h-1.5 bg-white/20 rounded-full" />
+                )}
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Feedback Overlay */}
+        <AnimatePresence>
+          {feedback && (
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1.2, opacity: 1 }}
+              exit={{ scale: 1.5, opacity: 0 }}
+              className={`absolute top-12 left-[120px] -translate-x-1/2 font-black text-2xl italic tracking-tighter z-30 ${feedback.color}`}
+            >
+              {feedback.text}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      <div className="flex justify-center">
+        {!isPlaying ? (
+          <button
+            onClick={() => {
+              setIsPlaying(true);
+              startTimeRef.current = 0;
+              setHits(new Set());
+              setMisses(new Set());
+              setScore(0);
+            }}
+            className="bg-primary-500 text-dark-900 px-12 py-5 rounded-3xl font-black text-2xl hover:scale-105 transition-all shadow-2xl shadow-primary-500/30 flex items-center gap-4"
+          >
+            <Play size={24} fill="currentColor" /> START SONG
+          </button>
+        ) : (
+          <div className="flex flex-col items-center gap-4">
+             <div className="px-8 py-3 rounded-full bg-white/5 border border-white/10 text-xs font-bold text-gray-400 flex items-center gap-3">
+               <Mic className="text-primary-500 animate-pulse" size={16} />
+               Detecting: <span className="text-white font-black text-sm">{formatNoteName(currentPitch, notationStyle) || '--'}</span>
+             </div>
+             <button
+              onClick={() => setIsPlaying(false)}
+              className="text-gray-500 hover:text-white font-bold uppercase tracking-widest text-xs"
+            >
+              Stop Session
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -673,14 +921,14 @@ const LevelRoadmap: React.FC<{ currentXp: number }> = ({ currentXp }) => {
     { level: 10, xp: 20000, title: 'Guitar Hero 🎸' },
   ];
 
-  const currentLevelIndex = levels.findIndex(l => currentXp < l.xp) === -1 
-    ? levels.length - 1 
+  const currentLevelIndex = levels.findIndex(l => currentXp < l.xp) === -1
+    ? levels.length - 1
     : levels.findIndex(l => currentXp < l.xp) - 1;
 
   const displayLevels = isExpanded ? levels : [levels[currentLevelIndex]];
-    
+
   return (
-    <motion.div 
+    <motion.div
       animate={shouldFlash ? {
         boxShadow: ['0 0 0px rgba(57,255,20,0)', '0 0 30px rgba(57,255,20,0.4)', '0 0 0px rgba(57,255,20,0)'],
         borderColor: ['rgba(255,255,255,0.05)', 'rgba(57,255,20,0.5)', 'rgba(255,255,255,0.05)']
@@ -688,7 +936,7 @@ const LevelRoadmap: React.FC<{ currentXp: number }> = ({ currentXp }) => {
       transition={{ duration: 1.5, ease: "easeInOut" }}
       className="glass-panel p-6 rounded-3xl bg-white/[0.02] border border-white/5 mb-8"
     >
-      <div 
+      <div
         className="flex items-center justify-between mb-6 cursor-pointer group"
         onClick={() => setIsExpanded(!isExpanded)}
       >
@@ -713,13 +961,13 @@ const LevelRoadmap: React.FC<{ currentXp: number }> = ({ currentXp }) => {
             const isUnlocked = globalIdx <= currentLevelIndex;
             const isNext = globalIdx === currentLevelIndex + 1;
             return (
-              <motion.div 
+              <motion.div
                 layout
                 initial={{ opacity: 0, height: 0, marginBottom: 0 }}
                 animate={{ opacity: 1, height: 'auto', marginBottom: 12 }}
                 exit={{ opacity: 0, height: 0, marginBottom: 0 }}
                 transition={{ duration: 0.3, ease: 'easeInOut' }}
-                key={l.level} 
+                key={l.level}
                 className="overflow-hidden"
               >
                 <div className={`flex items-center justify-between p-3 rounded-2xl border ${isCurrent ? 'bg-primary-500/10 border-primary-500/30 shadow-[0_0_15px_rgba(57,255,20,0.1)]' : isUnlocked ? 'bg-white/5 border-white/10' : 'bg-transparent border-white/5 opacity-40'} transition-all`}>
@@ -778,8 +1026,8 @@ const LeaderboardComponent: React.FC<{ data: LeaderboardItem[], currentUser?: st
             key={item.id}
             className={`flex items-center justify-between p-5 rounded-2xl border transition-all ${item.name === currentUser ? 'bg-primary-500/20 border-primary-500 shadow-[0_0_15px_rgba(57,255,20,0.2)]' :
               i === 0 ? 'bg-primary-500/10 border-primary-500/30' :
-              i === 1 ? 'bg-white/5 border-white/10' :
-              i === 2 ? 'bg-white/[0.03] border-white/5' : 'bg-transparent border-white/5'
+                i === 1 ? 'bg-white/5 border-white/10' :
+                  i === 2 ? 'bg-white/[0.03] border-white/5' : 'bg-transparent border-white/5'
               }`}
           >
             <div className="flex items-center gap-4">
@@ -1516,8 +1764,12 @@ const Dashboard: React.FC = () => {
   });
 
   const [practiceStats, setPracticeStats] = useState<Record<string, number>>(() => {
-    const saved = localStorage.getItem('fretflow_stats');
-    if (saved) return JSON.parse(saved);
+    try {
+      const saved = localStorage.getItem('fretflow_stats');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error('Failed to parse practice stats:', e);
+    }
 
     // Generate realistic mock data if empty to show the chart working
     const mockData: Record<string, number> = {};
@@ -1582,19 +1834,20 @@ const Dashboard: React.FC = () => {
 
   const refreshData = async () => {
     try {
-      const [lessonsRes, progressRes, profileRes, historyRes, achievementsRes] = await Promise.all([
+      const [lessonsRes, progressRes, profileRes, historyRes, achievementsRes, songsRes] = await Promise.all([
         lessonsApi.getAll(),
         progressApi.getLessonProgress(),
         gamificationApi.getProfile(),
         historyApi.getAll(),
         gamificationApi.getAchievements(),
+        songsApi.getAll(),
       ]);
 
-      const progressMap = new Map(
-        progressRes.data.map(p => [p.lesson_id, p])
+      const progressMap = new Map<number, any>(
+        progressRes.data.map((p: any) => [p.lesson_id, p])
       );
 
-      const mapped: Lesson[] = lessonsRes.data.map((l, idx) => {
+      const mapped: Lesson[] = lessonsRes.data.map((l: any, idx: number) => {
         const progress = progressMap.get(l.id);
         let status: Lesson['status'] = 'available';
         if (progress?.is_completed) {
@@ -1625,31 +1878,36 @@ const Dashboard: React.FC = () => {
 
       setLessons(mapped);
       setAchievements(achievementsRes.data);
+      if (songsRes && songsRes.data) {
+        setSongs(songsRes.data);
+      }
 
       // Update streak data from API profile
-      setStreakData((prev: any) => ({
-        ...prev,
-        count: profileRes.streak.current,
-        isFrozen: false,
-        lastUpdated: profileRes.streak.last_practice || new Date().toDateString(),
-      }));
-
-      // Store XP and level for display
-      setUserXp(profileRes.xp_total);
-      setUserLevel(profileRes.level);
-      
-      // Sync High Score
-      if (profileRes.best_score !== undefined) {
-        setGameHighScore(profileRes.best_score);
+      if (profileRes && profileRes.streak) {
+        setStreakData((prev: any) => ({
+          ...prev,
+          count: profileRes.streak.current || 0,
+          isFrozen: false,
+          lastUpdated: profileRes.streak.last_practice || new Date().toDateString(),
+        }));
       }
-      
-      // Update history
-      const mappedHistory: HistoryItem[] = historyRes.map((h: any) => ({
-        id: h.id,
-        title: h.lesson_title || h.title,
-        date: new Date(h.completed_at).toLocaleDateString()
-      }));
-      setHistory(mappedHistory);
+
+      if (profileRes) {
+        setUserXp(profileRes.xp_total || 0);
+        setUserLevel(profileRes.level || 1);
+        
+        // Sync High Score
+        if (profileRes.best_score !== undefined) {
+          setGameHighScore(profileRes.best_score);
+        }
+
+        const mappedHistory: HistoryItem[] = (historyRes || []).map((h: any) => ({
+          id: h.id,
+          title: h.lesson_title || h.title,
+          date: h.completed_at ? new Date(h.completed_at).toLocaleDateString() : 'Recent'
+        }));
+        setHistory(mappedHistory);
+      }
 
     } catch (err) {
       console.error('Failed to load API data:', err);
@@ -1661,7 +1919,9 @@ const Dashboard: React.FC = () => {
     refreshData();
   }, []);
 
-  const [achievements, setAchievements] = useState<Array<{ id: number; name: string; description: string; icon: string; xp_reward: number; earned: boolean; earned_at: string | null }>>([]);
+  const [achievements, setAchievements] = useState<Array<Achievement>>([]);
+  const [songs, setSongs] = useState<Song[]>([]);
+  const [currentSong, setCurrentSong] = useState<Song | null>(null);
 
   useEffect(() => {
     if (!achievementsInitializedRef.current) {
@@ -1758,11 +2018,11 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     if (gamePhase === 'playing' && gameTimeLeft === 0) {
       setGamePhase('result');
-      
+
       if (gameScore > gameHighScore) {
         setGameHighScore(gameScore);
         localStorage.setItem('fretflow_highscore', gameScore.toString());
-        
+
         // Sync to backend
         scoresApi.submitChallengeScore(gameScore).catch(err => {
           console.error('Failed to sync high score:', err);
@@ -1969,17 +2229,17 @@ const Dashboard: React.FC = () => {
   });
 
   const progressPercentage = Math.round((lessons.filter(l => l.status === 'completed').length / lessons.length) * 100);
-  
+
   const handleReorder = async (lessonId: number, direction: 'up' | 'down') => {
     const currentIndex = lessons.findIndex(l => l.id === lessonId);
     if (currentIndex === -1) return;
-    
+
     const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
     if (targetIndex < 0 || targetIndex >= lessons.length) return;
-    
+
     const lesson1 = lessons[currentIndex];
     const lesson2 = lessons[targetIndex];
-    
+
     try {
       await adminApi.reorderLessons(lesson1.id, lesson2.id);
       await refreshData();
@@ -2040,7 +2300,7 @@ const Dashboard: React.FC = () => {
                       )}
 
                       <AnimatePresence>
-                        {activeLesson?.sequence[currentSequenceIndex] === getNoteAt(string, fIdx) && (
+                        {activeLesson && activeLesson.sequence && activeLesson.sequence[currentSequenceIndex] === getNoteAt(string, fIdx) && (
                           <motion.div
                             initial={{ scale: 0, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
@@ -2061,7 +2321,7 @@ const Dashboard: React.FC = () => {
 
         <div className="flex flex-col items-center gap-6 md:gap-8 w-full">
           <div className="flex gap-2 md:gap-4 overflow-x-auto no-scrollbar w-full justify-center py-2">
-            {activeLesson?.sequence.map((_, i) => (
+            {activeLesson && activeLesson.sequence && activeLesson.sequence.map((_, i) => (
               <div
                 key={i}
                 className={`w-3 h-3 md:w-4 md:h-4 rounded-full flex-shrink-0 transition-all duration-500 ${i < currentSequenceIndex ? 'bg-green-500' :
@@ -2074,7 +2334,7 @@ const Dashboard: React.FC = () => {
           <div className="text-center">
             <p className="text-gray-500 text-[10px] md:text-sm mb-1 md:mb-2 uppercase tracking-widest font-semibold">Target Note</p>
             <h2 className="text-4xl md:text-7xl font-black text-primary-500 drop-shadow-[0_0_20px_rgba(57,255,20,0.4)]">
-              {formatNoteName(activeLesson?.sequence[currentSequenceIndex] || '', notationStyle)}
+              {activeLesson && activeLesson.sequence ? formatNoteName(activeLesson.sequence[currentSequenceIndex] || '', notationStyle) : '--'}
             </h2>
           </div>
 
@@ -2126,7 +2386,7 @@ const Dashboard: React.FC = () => {
       </AnimatePresence>
     </div>
   );
-  
+
   return (
     <div className="min-h-screen bg-dark-900 text-white font-sans overflow-x-hidden pb-20 md:pb-0">
       {/* Header */}
@@ -2149,6 +2409,12 @@ const Dashboard: React.FC = () => {
                 className={`text-sm font-semibold transition-colors ${urlView === 'activity' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
               >
                 Activity
+              </button>
+              <button
+                onClick={() => navigate('/dashboard/songs')}
+                className={`text-sm font-semibold transition-colors ${urlView === 'songs' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
+              >
+                Songs
               </button>
               <button
                 onClick={() => navigate('/dashboard/challenge')}
@@ -2175,7 +2441,7 @@ const Dashboard: React.FC = () => {
             {/* Streak Component */}
             <div
               onClick={() => setShowStreakModal(true)}
-              className="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group"
+              className="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 rounded-full bg-white/5 border border-white/10 hover:bg-primary-500/10 hover:border-primary-500/30 transition-all cursor-pointer group"
             >
               <div className="relative">
                 <svg
@@ -2205,8 +2471,8 @@ const Dashboard: React.FC = () => {
                   )}
                 </svg>
               </div>
-              <span className={`text-sm font-black ${streakData.isFrozen ? 'text-cyan-400' :
-                streakData.count > 0 ? 'text-primary-500' : 'text-gray-500'
+              <span className={`text-sm font-black transition-colors ${streakData.isFrozen ? 'text-cyan-400 group-hover:text-cyan-300' :
+                streakData.count > 0 ? 'text-primary-500 group-hover:text-primary-300' : 'text-gray-500 group-hover:text-primary-400'
                 }`}>
                 {streakData.count}
               </span>
@@ -2226,7 +2492,7 @@ const Dashboard: React.FC = () => {
                 />
               </div>
             </div>
-            <button 
+            <button
               onClick={() => navigate('/dashboard/activity', { state: { flashRank: true } })}
               title="View Achievements & History"
               className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 hover:bg-primary-500/10 hover:border-primary-500/30 transition-all active:scale-95 group"
@@ -2238,10 +2504,10 @@ const Dashboard: React.FC = () => {
               <button
                 onClick={() => setShowNotifications((value) => !value)}
                 data-notification-button
-                className="relative w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-300 hover:bg-white/10 transition-all active:scale-95"
+                className="relative w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-300 hover:bg-primary-500/10 hover:border-primary-500/30 transition-all active:scale-95 group"
                 aria-label="Notifications"
               >
-                <Bell size={20} />
+                <Bell size={20} className="group-hover:text-primary-400 transition-colors" />
                 {notifications.some((n) => !n.read) && (
                   <span className="absolute -top-1 -right-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-black text-white px-[6px]">
                     {notifications.filter((n) => !n.read).length}
@@ -2607,6 +2873,51 @@ const Dashboard: React.FC = () => {
                   <p className="text-gray-500 font-medium">Keep your rhythm tight and your timing perfect.</p>
                 </div>
                 <Metronome />
+              </motion.div>
+            )}
+
+            {currentView === 'songs' && (
+              <motion.div
+                key="songs"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="w-full"
+              >
+                {!currentSong ? (
+                  <>
+                    <div className="text-center mb-12">
+                      <h2 className="text-4xl font-black text-white mb-2 italic tracking-tighter">SONG LIBRARY 🎵</h2>
+                      <p className="text-gray-500 font-medium">Play along with classic riffs and songs.</p>
+                    </div>
+                    <SongLibrary songs={songs} onSelect={(song) => setCurrentSong(song)} />
+                  </>
+                ) : (
+                  <SongPlayer 
+                    song={currentSong} 
+                    currentPitch={currentPitch}
+                    notationStyle={notationStyle}
+                    formatNoteName={formatNoteName}
+                    onComplete={async (score, accuracy) => {
+                      try {
+                        await songsApi.submitScore(currentSong.id, {
+                          score,
+                          accuracy_percent: accuracy,
+                          xp_earned: currentSong.xp_reward
+                        });
+                        alert(`Song Complete! Score: ${score} - Accuracy: ${accuracy}%\nYou earned ${currentSong.xp_reward} XP!`);
+                        setCurrentSong(null);
+                        const res = await songsApi.getAll();
+                        if (res && res.data) {
+                          setSongs(res.data);
+                        }
+                      } catch(e) {
+                        console.error('Failed to submit song score', e);
+                      }
+                    }}
+                    onExit={() => setCurrentSong(null)}
+                  />
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -3305,7 +3616,7 @@ const Dashboard: React.FC = () => {
                       onClick={() => handleUpdateLefty(!isLefty)}
                       className={`w-14 h-8 rounded-full transition-all relative ${isLefty ? 'bg-primary-500' : 'bg-white/10'}`}
                     >
-                      <motion.div 
+                      <motion.div
                         animate={{ x: isLefty ? 24 : 0 }}
                         className="absolute top-1 left-1 w-6 h-6 rounded-full bg-white shadow-sm"
                       />
