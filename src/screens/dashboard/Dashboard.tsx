@@ -97,6 +97,29 @@ const BADGES = [
   { id: 'streak_3', name: '3-Day Flame', icon: '🔥', desc: 'Reach a 3-day streak', color: 'from-orange-400 to-red-500', category: 'Streak' },
   { id: 'streak_7', name: '7-Day Warrior', icon: '⚡', desc: 'Reach a 7-day streak', color: 'from-yellow-400 to-orange-500', category: 'Streak' },
   { id: 'streak_30', name: 'Unstoppable', icon: '💎', desc: 'Reach a 30-day streak', color: 'from-cyan-400 to-blue-600', category: 'Streak' },
+  { id: 'level_5', name: 'Intermediate', icon: '🚀', desc: 'Reach Level 5', color: 'from-green-400 to-teal-500', category: 'Levels' },
+];
+
+const SCI_TO_SYL: Record<string, string> = {
+  'C': 'Do', 'C#': 'Do#', 'Db': 'Reb',
+  'D': 'Re', 'D#': 'Re#', 'Eb': 'Mib',
+  'E': 'Mi',
+  'F': 'Fa', 'F#': 'Fa#', 'Gb': 'Solb',
+  'G': 'Sol', 'G#': 'Sol#', 'Ab': 'Lab',
+  'A': 'La', 'A#': 'La#', 'Bb': 'Sib',
+  'B': 'Si'
+};
+
+const formatNoteName = (note: string, style: 'scientific' | 'syllabic') => {
+  if (!note || style === 'scientific') return note;
+  // Handle notes like E2, G#3
+  const pitch = note.replace(/[0-9]/g, '');
+  const octave = note.replace(/[^0-9]/g, '');
+  const syllabic = SCI_TO_SYL[pitch] || pitch;
+  return `${syllabic}${octave}`;
+};
+
+const MASTERY_BADGES = [
   // Level mastery
   { id: 'lvl1_master', name: 'String Master', icon: '🎸', desc: 'Complete all Level 1 lessons', color: 'from-primary-400 to-primary-600', category: 'Mastery' },
   { id: 'lvl2_master', name: 'Fret Explorer', icon: '🗺️', desc: 'Complete all Level 2 lessons', color: 'from-emerald-400 to-teal-600', category: 'Mastery' },
@@ -106,7 +129,7 @@ const BADGES = [
 // --- Sub-Components ---
 
 // --- Guitar Tuner Component ---
-const GuitarTuner: React.FC<{ currentPitch: string; frequency: number }> = ({ frequency }) => {
+const GuitarTuner: React.FC<{ currentPitch: string; frequency: number; notationStyle: 'scientific' | 'syllabic' }> = ({ frequency, notationStyle }) => {
   const STANDARD_TUNING: Record<string, number> = {
     'E2': 82.41, 'A2': 110.00, 'D3': 146.83, 'G3': 196.00, 'B3': 246.94, 'E4': 329.63
   };
@@ -129,7 +152,7 @@ const GuitarTuner: React.FC<{ currentPitch: string; frequency: number }> = ({ fr
         <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-500 mb-2">Analog Precision</h4>
         <div className="flex items-center justify-center gap-3">
           <div className="text-5xl md:text-6xl font-black text-white tracking-tighter">
-            {closestNote.replace(/\d/, '')}
+            {formatNoteName(closestNote, notationStyle).replace(/\d/, '')}
             <span className="text-lg md:text-xl text-primary-500/50 ml-1 italic">{closestNote.match(/\d/)}</span>
           </div>
         </div>
@@ -1193,6 +1216,12 @@ const Dashboard: React.FC = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('fretflow_theme') === 'light' ? 'light' : 'dark'));
+  const [notationStyle, setNotationStyle] = useState<'scientific' | 'syllabic'>(
+    () => (localStorage.getItem('fretflow_notation') === 'syllabic' ? 'syllabic' : 'scientific')
+  );
+  const [isLefty, setIsLefty] = useState<boolean>(
+    () => localStorage.getItem('fretflow_is_lefty') === 'true'
+  );
   const [supportMessage, setSupportMessage] = useState('');
   const [supportSubmitted, setSupportSubmitted] = useState(false);
   const notificationsRef = useRef<HTMLDivElement | null>(null);
@@ -1219,6 +1248,40 @@ const Dashboard: React.FC = () => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
     localStorage.setItem('fretflow_theme', theme);
   }, [theme]);
+
+  // Sync state with user profile from DB
+  useEffect(() => {
+    if (user) {
+      if (user.notation_style) setNotationStyle(user.notation_style);
+      if (user.is_lefty !== undefined) setIsLefty(!!user.is_lefty);
+    }
+  }, [user]);
+
+  const handleUpdateNotation = async (style: 'scientific' | 'syllabic') => {
+    setNotationStyle(style);
+    localStorage.setItem('fretflow_notation', style);
+    if (isAuthenticated) {
+      try {
+        const updated = await usersApi.updateMe({ notation_style: style });
+        updateUser(updated);
+      } catch (err) {
+        console.error('Failed to save notation preference:', err);
+      }
+    }
+  };
+
+  const handleUpdateLefty = async (val: boolean) => {
+    setIsLefty(val);
+    localStorage.setItem('fretflow_is_lefty', val.toString());
+    if (isAuthenticated) {
+      try {
+        const updated = await usersApi.updateMe({ is_lefty: val });
+        updateUser(updated);
+      } catch (err) {
+        console.error('Failed to save lefty preference:', err);
+      }
+    }
+  };
 
   useEffect(() => {
     const welcomeSeen = localStorage.getItem('fretflow_welcome_seen') === 'true';
@@ -1776,39 +1839,43 @@ const Dashboard: React.FC = () => {
                 />
 
                 {/* Frets */}
-                {Array.from({ length: FRET_COUNT + 1 }).map((_, fIdx) => (
-                  <div
-                    key={fIdx}
-                    className={`h-full flex items-center justify-center relative border-r border-white/20 last:border-0 ${fIdx === 0 ? 'border-r-[6px] border-r-gray-300/20' : ''}`}
-                    style={{
-                      flex: Math.pow(0.94, fIdx) * 10,
-                    }}
-                  >
-                    {sIdx === 0 && (
-                      <span className="absolute -top-6 text-[10px] text-gray-500 font-mono font-bold">{fIdx}</span>
-                    )}
-
-                    {sIdx === 2 && [3, 5, 7, 9].includes(fIdx) && (
-                      <div className="absolute w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-white/10 -z-0" />
-                    )}
-                    {fIdx === 12 && (sIdx === 1 || sIdx === 4) && (
-                      <div className="absolute w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-white/10 -z-0" />
-                    )}
-
-                    <AnimatePresence>
-                      {activeLesson?.sequence[currentSequenceIndex] === getNoteAt(string, fIdx) && (
-                        <motion.div
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0, opacity: 0 }}
-                          className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-primary-500 shadow-[0_0_20px_rgba(57,255,20,0.8)] z-20 flex items-center justify-center text-[10px] font-black text-dark-900"
-                        >
-                          {getNoteAt(string, fIdx).replace(/\d/, '')}
-                        </motion.div>
+                <div className={`flex w-full h-full ${isLefty ? 'flex-row-reverse' : ''}`}>
+                  {Array.from({ length: FRET_COUNT + 1 }).map((_, fIdx) => (
+                    <div
+                      key={fIdx}
+                      className={`h-full flex items-center justify-center relative border-white/20 last:border-0 
+                        ${isLefty ? 'border-l' : 'border-r'} 
+                        ${fIdx === 0 ? (isLefty ? 'border-l-[6px] border-l-gray-300/20' : 'border-r-[6px] border-r-gray-300/20') : ''}`}
+                      style={{
+                        flex: Math.pow(0.94, fIdx) * 10,
+                      }}
+                    >
+                      {sIdx === 0 && (
+                        <span className="absolute -top-6 text-[10px] text-gray-500 font-mono font-bold">{fIdx}</span>
                       )}
-                    </AnimatePresence>
-                  </div>
-                ))}
+
+                      {sIdx === 2 && [3, 5, 7, 9].includes(fIdx) && (
+                        <div className="absolute w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-white/10 -z-0" />
+                      )}
+                      {fIdx === 12 && (sIdx === 1 || sIdx === 4) && (
+                        <div className="absolute w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-white/10 -z-0" />
+                      )}
+
+                      <AnimatePresence>
+                        {activeLesson?.sequence[currentSequenceIndex] === getNoteAt(string, fIdx) && (
+                          <motion.div
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0, opacity: 0 }}
+                            className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-primary-500 shadow-[0_0_20px_rgba(57,255,20,0.8)] z-20 flex items-center justify-center text-[10px] font-black text-dark-900"
+                          >
+                            {formatNoteName(getNoteAt(string, fIdx), notationStyle).replace(/\d/, '')}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
@@ -1829,7 +1896,7 @@ const Dashboard: React.FC = () => {
           <div className="text-center">
             <p className="text-gray-500 text-[10px] md:text-sm mb-1 md:mb-2 uppercase tracking-widest font-semibold">Target Note</p>
             <h2 className="text-4xl md:text-7xl font-black text-primary-500 drop-shadow-[0_0_20px_rgba(57,255,20,0.4)]">
-              {activeLesson?.sequence[currentSequenceIndex]}
+              {formatNoteName(activeLesson?.sequence[currentSequenceIndex] || '', notationStyle)}
             </h2>
           </div>
 
@@ -1851,7 +1918,7 @@ const Dashboard: React.FC = () => {
                 <><MicOff className="text-red-500 group-hover:text-primary-500 transition-colors" size={16} /> <span className="text-red-500/80 group-hover:text-primary-500 transition-colors">Microphone Off (Click to enable)</span></>
               )}
             </button>
-            <div className="text-2xl md:text-4xl font-mono font-bold text-white/50">{currentPitch}</div>
+            <div className="text-2xl md:text-4xl font-mono font-bold text-white/50">{formatNoteName(currentPitch, notationStyle)}</div>
           </div>
         </div>
       </div>
@@ -2004,7 +2071,7 @@ const Dashboard: React.FC = () => {
                     initial={{ opacity: 0, y: -10, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                    className="absolute right-0 top-full mt-3 w-80 max-w-xs rounded-3xl border border-white/10 bg-dark-950/95 shadow-2xl shadow-black/50 overflow-hidden z-[2000]"
+                    className="absolute right-0 top-full mt-3 w-80 max-w-xs rounded-3xl border border-white/10 bg-dark-950 shadow-2xl shadow-black/50 overflow-hidden z-[2000] backdrop-blur-none"
                   >
                     <div className="px-4 py-4 border-b border-white/10 flex items-center justify-between">
                       <p className="text-sm font-bold text-white">Notifications</p>
@@ -2020,7 +2087,7 @@ const Dashboard: React.FC = () => {
                         <div className="p-4 text-sm text-gray-400">No new notifications.</div>
                       ) : (
                         notifications.map((note) => (
-                          <div key={note.id} className={`px-4 py-3 border-b border-white/10 flex items-start justify-between gap-3 ${note.read ? 'bg-white/5' : 'bg-white/5/80'}`}>
+                          <div key={note.id} className={`px-4 py-3 border-b border-white/5 flex items-start justify-between gap-3 ${note.read ? 'bg-transparent' : 'bg-white/5'}`}>
                             <div className="flex-1">
                               <p className="text-xs uppercase tracking-[0.2em] text-gray-500 mb-1">{note.type === 'achievement' ? 'Achievement' : note.type === 'welcome' ? 'Welcome' : 'Info'}</p>
                               <p className="text-sm font-bold text-white">{note.title}</p>
@@ -2067,7 +2134,7 @@ const Dashboard: React.FC = () => {
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
             className="fixed top-24 right-6 z-[250] w-full max-w-sm"
           >
-            <GuitarTuner currentPitch={currentPitch} frequency={currentFrequency} />
+            <GuitarTuner currentPitch={currentPitch} frequency={currentFrequency} notationStyle={notationStyle} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -2212,7 +2279,7 @@ const Dashboard: React.FC = () => {
                   <h2 className="text-4xl font-black text-white mb-2 italic tracking-tighter">PRECISION TUNER 🎯</h2>
                   <p className="text-gray-500 font-medium">Get your strings perfectly in sync before you play.</p>
                 </div>
-                <GuitarTuner currentPitch={currentPitch} frequency={currentFrequency} />
+                <GuitarTuner currentPitch={currentPitch} frequency={currentFrequency} notationStyle={notationStyle} />
               </motion.div>
             )}
 
@@ -2285,7 +2352,7 @@ const Dashboard: React.FC = () => {
                           animate={{ scale: 1, opacity: 1 }}
                           className="w-48 h-48 bg-white/5 rounded-[2.5rem] border-2 border-primary-500/20 flex items-center justify-center"
                         >
-                          <span className="text-8xl font-black text-white">{gameTargetNote}</span>
+                          <span className="text-8xl font-black text-white">{formatNoteName(gameTargetNote, notationStyle)}</span>
                         </motion.div>
                         <div className="absolute -top-4 -right-4 w-12 h-12 bg-primary-500 text-dark-900 rounded-full flex items-center justify-center font-black text-xl shadow-lg">
                           !
@@ -2295,7 +2362,7 @@ const Dashboard: React.FC = () => {
                       <p className="text-gray-500 font-medium italic animate-bounce">Play this note now!</p>
 
                       <div className="mt-8 px-6 py-2 rounded-full bg-white/5 border border-white/10 text-xs text-gray-400 font-bold">
-                        Detecting: <span className="text-primary-500">{currentPitch || '--'}</span>
+                        Detecting: <span className="text-primary-500">{formatNoteName(currentPitch, notationStyle) || '--'}</span>
                       </div>
 
                       <button
@@ -2998,6 +3065,50 @@ const Dashboard: React.FC = () => {
                       className={`flex-1 py-3 rounded-2xl text-sm font-bold transition-all ${theme === 'light' ? 'bg-primary-500 text-dark-900' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}
                     >
                       <Sun size={16} className="inline-block mr-2" /> Light
+                    </button>
+                  </div>
+                </section>
+
+                <section className="bg-white/5 p-6 rounded-3xl border border-white/10">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Activity size={18} className="text-primary-500" />
+                    <h3 className="text-white font-bold">Notation Style</h3>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleUpdateNotation('scientific')}
+                      className={`flex-1 py-3 rounded-2xl text-[10px] md:text-xs font-bold transition-all ${notationStyle === 'scientific' ? 'bg-primary-500 text-dark-900 shadow-lg shadow-primary-500/20' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}
+                    >
+                      Scientific (C, D, E)
+                    </button>
+                    <button
+                      onClick={() => handleUpdateNotation('syllabic')}
+                      className={`flex-1 py-3 rounded-2xl text-[10px] md:text-xs font-bold transition-all ${notationStyle === 'syllabic' ? 'bg-primary-500 text-dark-900 shadow-lg shadow-primary-500/20' : 'bg-white/5 text-gray-300 hover:bg-white/10'}`}
+                    >
+                      Syllabic (Do, Re, Mi)
+                    </button>
+                  </div>
+                </section>
+
+                <section className="bg-white/5 p-6 rounded-3xl border border-white/10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-primary-500/10 flex items-center justify-center text-primary-500">
+                        <ArrowLeft size={20} className={isLefty ? 'rotate-180' : ''} />
+                      </div>
+                      <div>
+                        <h3 className="text-white font-bold">Left-Handed Mode</h3>
+                        <p className="text-xs text-gray-500">Flipping the fretboard UI</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleUpdateLefty(!isLefty)}
+                      className={`w-14 h-8 rounded-full transition-all relative ${isLefty ? 'bg-primary-500' : 'bg-white/10'}`}
+                    >
+                      <motion.div 
+                        animate={{ x: isLefty ? 24 : 0 }}
+                        className="absolute top-1 left-1 w-6 h-6 rounded-full bg-white shadow-sm"
+                      />
                     </button>
                   </div>
                 </section>

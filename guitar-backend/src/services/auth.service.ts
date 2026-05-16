@@ -12,6 +12,8 @@ interface User {
   xp_total: number;
   level: number;
   best_score: number;
+  notation_style: 'scientific' | 'syllabic';
+  is_lefty: boolean;
   role: 'ADMIN' | 'STUDENT';
 }
 
@@ -99,7 +101,7 @@ export async function register(
 
   // Get user
   const userResult = await db.execute({
-    sql: 'SELECT id, email, username, avatar_url, xp_total, level, best_score FROM users WHERE id = ?',
+    sql: 'SELECT id, email, username, avatar_url, xp_total, level, best_score, notation_style, is_lefty FROM users WHERE id = ?',
     args: [userId],
   });
 
@@ -123,7 +125,7 @@ export async function login(
   password: string
 ): Promise<AuthResult> {
   const result = await db.execute({
-    sql: 'SELECT id, email, username, avatar_url, xp_total, level, best_score, password_hash FROM users WHERE email = ?',
+    sql: 'SELECT id, email, username, avatar_url, xp_total, level, best_score, notation_style, is_lefty, password_hash FROM users WHERE email = ?',
     args: [email],
   });
 
@@ -194,7 +196,7 @@ export async function refreshTokens(refreshToken: string): Promise<{ accessToken
 
 export async function getUserById(userId: number): Promise<Omit<User, 'password_hash'> | null> {
   const result = await db.execute({
-    sql: 'SELECT id, email, username, avatar_url, xp_total, level, best_score FROM users WHERE id = ?',
+    sql: 'SELECT id, email, username, avatar_url, xp_total, level, best_score, notation_style, is_lefty FROM users WHERE id = ?',
     args: [userId],
   });
 
@@ -208,7 +210,7 @@ export async function getUserById(userId: number): Promise<Omit<User, 'password_
 
 export async function updateUser(
   userId: number,
-  updates: { username?: string; avatar_url?: string; password?: string }
+  updates: { username?: string; avatar_url?: string; password?: string; notation_style?: string; is_lefty?: boolean }
 ): Promise<Omit<User, 'password_hash'> | null> {
   const fields: string[] = [];
   const args: (string | number)[] = [];
@@ -225,6 +227,14 @@ export async function updateUser(
     const passwordHash = await hashPassword(updates.password);
     fields.push('password_hash = ?');
     args.push(passwordHash);
+  }
+  if (updates.notation_style) {
+    fields.push('notation_style = ?');
+    args.push(updates.notation_style);
+  }
+  if (updates.is_lefty !== undefined) {
+    fields.push('is_lefty = ?');
+    args.push(updates.is_lefty ? 1 : 0);
   }
 
   if (fields.length === 0) return getUserById(userId);

@@ -14,8 +14,14 @@ async function handler(req: Request, res: Response): Promise<void> {
       }
       res.json(user);
     } else if (req.method === 'PUT') {
-      const { username, avatar_url, password } = req.body;
-      const updatedUser = await authService.updateUser(userId, { username, avatar_url, password });
+      const { username, avatar_url, password, notation_style, is_lefty } = req.body;
+      const updatedUser = await authService.updateUser(userId, { 
+        username, 
+        avatar_url, 
+        password, 
+        notation_style, 
+        is_lefty 
+      });
       res.json(updatedUser);
     }
   } catch (_error) {

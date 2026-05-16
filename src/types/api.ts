@@ -6,6 +6,8 @@ export interface User {
   xp_total: number;
   level: number;
   best_score: number;
+  notation_style?: 'scientific' | 'syllabic';
+  is_lefty?: boolean;
   role?: 'ADMIN' | 'STUDENT';
 }
 
