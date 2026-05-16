@@ -25,6 +25,7 @@ import {
   Sun,
   Moon,
   Mail,
+  Copy,
   ChevronUp,
   ChevronDown,
   Minus,
@@ -32,12 +33,14 @@ import {
   Music
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import type { Duel } from '../../types/api';
 import { AudioProcessor } from '../../utils/PitchProcessor';
 import { lessonsApi } from '../../api/lessons';
 import { progressApi } from '../../api/progress';
 import { gamificationApi } from '../../api/gamification';
 import { statsApi } from '../../api/stats';
 import { scoresApi } from '../../api/scores';
+import { duelsApi } from '../../api/duels';
 import { adminApi } from '../../api/admin';
 import { usersApi } from '../../api/users';
 import { historyApi } from '../../api/history';
@@ -1775,6 +1778,7 @@ const Dashboard: React.FC = () => {
   const urlView = pathParts[1] || 'levels';
   const urlLevelId = pathParts[2] ? parseInt(pathParts[2]) : null;
   const urlLessonId = pathParts[2] ? parseInt(pathParts[2]) : null;
+  const urlInviteCode = pathParts[2] || '';
   const currentView = urlView;
   const [isTunerOpen] = useState(false);
 
@@ -1828,6 +1832,18 @@ const Dashboard: React.FC = () => {
   const [gameCountdown, setGameCountdown] = useState(3);
 
   const [leaderboard, setLeaderboard] = useState<LeaderboardItem[]>([]);
+  const [duel, setDuel] = useState<Duel | null>(null);
+  const [duelCodeInput, setDuelCodeInput] = useState('');
+  const [duelScore, setDuelScore] = useState(0);
+  const [duelAccuracy, setDuelAccuracy] = useState(0);
+  const [duelMessage, setDuelMessage] = useState<string | null>(null);
+  const [duelError, setDuelError] = useState<string | null>(null);
+  const [duelReadyInProgress, setDuelReadyInProgress] = useState(false);
+
+  const isDuelParticipant = Boolean(duel && user && (user.id === duel.host_user_id || user.id === duel.guest_user_id));
+  const isDuelHost = Boolean(duel && user?.id === duel.host_user_id);
+  const userIsReady = Boolean(duel && (isDuelHost ? duel.host_ready : duel?.guest_ready));
+  const opponentIsReady = Boolean(duel && (isDuelHost ? duel?.guest_ready : duel?.host_ready));
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -1916,6 +1932,101 @@ const Dashboard: React.FC = () => {
     });
   }, []);
 
+  const fetchDuel = async (inviteCode: string) => {
+    if (!inviteCode) return;
+    try {
+      const res = await duelsApi.getDuel(inviteCode);
+      setDuel(res.data);
+      setDuelError(null);
+    } catch (err: any) {
+      setDuelError('Could not load duel. Check the code or try again.');
+      console.error('Failed to load duel:', err);
+    }
+  };
+
+  const createDuel = async () => {
+    try {
+      const res = await duelsApi.createDuel();
+      setDuel(res.data);
+      navigate(`/dashboard/duel/${res.data.invite_code}`);
+      setDuelError(null);
+      setDuelMessage('Duel created! Share the link with a friend.');
+    } catch (err: any) {
+      console.error('Failed to create duel:', err);
+      setDuelError('Unable to create duel room right now.');
+    }
+  };
+
+  const joinDuel = async () => {
+    if (!urlInviteCode) {
+      setDuelError('Enter a duel code to join.');
+      return;
+    }
+    try {
+      const res = await duelsApi.joinDuel(urlInviteCode);
+      setDuel(res.data);
+      setDuelError(null);
+      setDuelMessage('You joined the duel! Click ready when you are set.');
+    } catch (err: any) {
+      console.error('Failed to join duel:', err);
+      setDuelError('Unable to join the duel. It may already be full or invalid.');
+    }
+  };
+
+  const readyDuel = async () => {
+    if (!urlInviteCode) {
+      setDuelError('No duel code available.');
+      return;
+    }
+
+    setDuelReadyInProgress(true);
+    try {
+      const res = await duelsApi.readyDuel(urlInviteCode);
+      setDuel(res.data);
+      setDuelError(null);
+      setDuelMessage('Ready! Waiting for your opponent...');
+    } catch (err: any) {
+      console.error('Failed to ready duel:', err);
+      setDuelError('Could not set ready state. Try again.');
+    } finally {
+      setDuelReadyInProgress(false);
+    }
+  };
+
+  const submitDuelResult = async () => {
+    if (!urlInviteCode) {
+      setDuelError('No duel code available.');
+      return;
+    }
+    try {
+      const res = await duelsApi.finishDuel(urlInviteCode, duelScore, duelAccuracy);
+      setDuel(res.data);
+      setDuelMessage('Your duel score is registered.');
+      setDuelError(null);
+    } catch (err: any) {
+      console.error('Failed to submit duel result:', err);
+      setDuelError('Failed to submit duel score. Make sure you are joined to the duel.');
+    }
+  };
+
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | undefined;
+    if (currentView === 'duel' && urlInviteCode) {
+      fetchDuel(urlInviteCode);
+      interval = setInterval(() => fetchDuel(urlInviteCode), 5000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [currentView, urlInviteCode]);
+
+  useEffect(() => {
+    if (currentView === 'duel' && duel?.status === 'started' && gamePhase === 'idle') {
+      setDuelMessage('Both players are ready. Your 30-second duel challenge begins now.');
+      startChallenge();
+    }
+  }, [currentView, duel?.status, gamePhase]);
 
   const [isVictory, setIsVictory] = useState(false);
   const [lastPlayedLessonId, setLastPlayedLessonId] = useState<number | null>(() => {
@@ -2195,33 +2306,42 @@ const Dashboard: React.FC = () => {
     if (gamePhase === 'playing' && gameTimeLeft === 0) {
       setGamePhase('result');
 
-      if (gameScore > gameHighScore) {
-        setGameHighScore(gameScore);
-        localStorage.setItem('fretflow_highscore', gameScore.toString());
-
-        // Sync to backend
-        scoresApi.submitChallengeScore(gameScore).catch(err => {
-          console.error('Failed to sync high score:', err);
+      if (currentView === 'duel' && duel?.status === 'started') {
+        setDuelScore(gameScore);
+        setDuelAccuracy(prev => (prev > 0 ? prev : 100));
+        submitDuelResult().catch(err => {
+          console.error('Failed to submit duel result:', err);
+          setDuelError('Unable to submit duel result automatically. Please try again.');
         });
-      }
+        setDuelMessage('Duel finished. Your score was submitted. Waiting for your opponent.');
+      } else {
+        if (gameScore > gameHighScore) {
+          setGameHighScore(gameScore);
+          localStorage.setItem('fretflow_highscore', gameScore.toString());
 
-      // Add to leaderboard visually
-      if (gameScore > 0) {
-        const currentUserIdentifier = user?.username || 'You';
-        const newItem: LeaderboardItem = {
-          id: Date.now(),
-          name: currentUserIdentifier,
-          score: gameScore,
-          date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-        };
-        setLeaderboard(prev => {
-          // Remove any existing entry for the current user to prevent duplicates
-          const filtered = prev.filter(item => item.name !== currentUserIdentifier && item.name !== 'You');
-          return [...filtered, newItem].sort((a, b) => b.score - a.score).slice(0, 50);
-        });
+          // Sync to backend
+          scoresApi.submitChallengeScore(gameScore).catch(err => {
+            console.error('Failed to sync high score:', err);
+          });
+        }
+
+        // Add to leaderboard visually
+        if (gameScore > 0) {
+          const currentUserIdentifier = user?.username || 'You';
+          const newItem: LeaderboardItem = {
+            id: Date.now(),
+            name: currentUserIdentifier,
+            score: gameScore,
+            date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+          };
+          setLeaderboard(prev => {
+            const filtered = prev.filter(item => item.name !== currentUserIdentifier && item.name !== 'You');
+            return [...filtered, newItem].sort((a, b) => b.score - a.score).slice(0, 50);
+          });
+        }
       }
     }
-  }, [gameTimeLeft, gamePhase, gameScore, gameHighScore, user?.username]);
+  }, [gameTimeLeft, gamePhase, gameScore, gameHighScore, user?.username, currentView, duel?.status]);
 
   // Game Note Detection
   useEffect(() => {
@@ -2233,7 +2353,8 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     const isUIBlocked = showAdminModal || showStreakModal || showHistoryDrawer || showHistoryClearModal;
-    const shouldListen = ((currentView === 'practice' && activeLesson) || currentView === 'tuner' || gamePhase === 'playing') && !isVictory && !isUIBlocked;
+    const isDuelListening = currentView === 'duel' && duel?.status === 'started' && gamePhase === 'playing';
+    const shouldListen = ((currentView === 'practice' && activeLesson) || currentView === 'tuner' || gamePhase === 'playing' || isDuelListening) && !isVictory && !isUIBlocked;
 
     if (shouldListen && processorRef.current) {
       processorRef.current.onNoteDetected = (freq, note) => {
@@ -2696,6 +2817,12 @@ const Dashboard: React.FC = () => {
                 Challenge
               </button>
               <button
+                onClick={() => navigate('/dashboard/duel')}
+                className={`text-sm font-semibold transition-colors ${urlView === 'duel' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
+              >
+                Duel
+              </button>
+              <button
                 onClick={() => navigate('/dashboard/tuner')}
                 className={`text-sm font-semibold transition-colors ${urlView === 'tuner' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
               >
@@ -3156,6 +3283,225 @@ const Dashboard: React.FC = () => {
               </motion.div>
             )}
 
+            {currentView === 'duel' && (
+              <motion.div
+                key="duel"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="max-w-3xl mx-auto"
+              >
+                <div className="text-center mb-12">
+                  <h2 className="text-4xl font-black mb-3 text-white">Duel Arena</h2>
+                  <p className="text-gray-400 text-lg">Create a duel room, share the code, and compete with a friend.</p>
+                </div>
+
+                <div className="glass-panel p-8 rounded-[3rem] bg-white/5 border border-white/10">
+                  <div className="grid gap-6 lg:grid-cols-2">
+                    <div className="space-y-4">
+                      <h3 className="text-xl font-bold text-white">Quick Start</h3>
+                      <p className="text-gray-400">Create a duel room and send the invite link to someone you want to race.</p>
+                      <button
+                        onClick={createDuel}
+                        className="w-full py-4 rounded-3xl bg-primary-500 text-dark-900 font-black hover:bg-primary-400 transition-all"
+                      >
+                        Create Duel Room
+                      </button>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h3 className="text-xl font-bold text-white">Join with a code</h3>
+                      <p className="text-gray-400">Enter the code your friend shared and jump into the duel.</p>
+                      <div className="flex gap-3">
+                        <input
+                          value={duelCodeInput}
+                          onChange={(event) => setDuelCodeInput(event.target.value.toUpperCase())}
+                          placeholder="ABC123"
+                          className="w-full rounded-3xl border border-white/10 bg-dark-950 px-4 py-3 text-white placeholder:text-gray-600 outline-none focus:border-primary-500"
+                        />
+                        <button
+                          onClick={() => {
+                            if (duelCodeInput.trim()) {
+                              navigate(`/dashboard/duel/${duelCodeInput.trim().toUpperCase()}`);
+                            }
+                          }}
+                          className="px-4 py-3 rounded-3xl bg-white/10 text-white font-bold hover:bg-white/15 transition-all"
+                        >
+                          Open
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {duelMessage && (
+                    <div className="mt-8 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 p-4 text-emerald-200">
+                      {duelMessage}
+                    </div>
+                  )}
+
+                  {duelError && (
+                    <div className="mt-8 rounded-3xl bg-rose-500/10 border border-rose-500/20 p-4 text-rose-200">
+                      {duelError}
+                    </div>
+                  )}
+
+                  {urlInviteCode && (
+                    <div className="mt-8 space-y-6">
+                      <div className="rounded-3xl bg-dark-950 border border-white/10 p-6">
+                        <div className="flex flex-col gap-4">
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                              <p className="text-sm uppercase tracking-[0.3em] text-gray-500">Invite Code</p>
+                              <p className="text-2xl font-black text-white">{urlInviteCode}</p>
+                            </div>
+                            <button
+                              onClick={() => {
+                                if (duel?.invite_url) {
+                                  const url = `${window.location.origin}${duel.invite_url}`;
+                                  navigator.clipboard.writeText(url);
+                                  setDuelMessage('Invite link copied to clipboard.');
+                                }
+                              }}
+                              className="inline-flex items-center gap-2 rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-white hover:bg-white/10 transition-all"
+                            >
+                              <Copy size={16} /> Copy Link
+                            </button>
+                          </div>
+
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="rounded-3xl bg-white/5 p-4">
+                              <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Host</p>
+                              <p className="mt-2 text-lg font-bold text-white">{duel?.host_username || 'Waiting...'}</p>
+                              <p className="text-sm text-gray-400">{duel?.host_score != null ? `Score: ${duel.host_score}` : 'No score yet'}</p>
+                            </div>
+                            <div className="rounded-3xl bg-white/5 p-4">
+                              <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Guest</p>
+                              <p className="mt-2 text-lg font-bold text-white">{duel?.guest_username || 'Waiting for guest'}</p>
+                              <p className="text-sm text-gray-400">{duel?.guest_score != null ? `Score: ${duel.guest_score}` : 'No score yet'}</p>
+                            </div>
+                          </div>
+
+                          <div className="rounded-3xl bg-white/5 p-4">
+                            <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Status</p>
+                            <p className="mt-2 text-lg font-bold text-white">{duel?.status || 'waiting'}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {duel?.status !== 'finished' && isDuelParticipant && (
+                        <div className="rounded-3xl bg-white/5 p-5 space-y-4">
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="rounded-3xl bg-dark-950 p-4">
+                              <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Your status</p>
+                              <p className="mt-2 text-lg font-bold text-white">{userIsReady ? 'Ready' : 'Not ready'}</p>
+                            </div>
+                            <div className="rounded-3xl bg-dark-950 p-4">
+                              <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Opponent status</p>
+                              <p className="mt-2 text-lg font-bold text-white">{opponentIsReady ? 'Ready' : 'Waiting'}</p>
+                            </div>
+                          </div>
+
+                          {duel?.status !== 'started' && (
+                            <button
+                              onClick={readyDuel}
+                              disabled={duelReadyInProgress || userIsReady}
+                              className="w-full rounded-3xl bg-primary-500 px-6 py-4 text-base font-black text-dark-900 hover:bg-primary-400 transition-all disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {userIsReady ? 'Waiting for opponent' : 'Ready to Duel'}
+                            </button>
+                          )}
+
+                          {duel?.status === 'started' && (
+                            <div className="rounded-3xl bg-dark-950 p-5 text-center border border-primary-500/20">
+                              <p className="text-sm uppercase tracking-[0.2em] text-gray-500">Duel challenge</p>
+                              <p className="mt-3 text-lg font-bold text-white">30-second match is live</p>
+                              <p className="text-gray-400 mt-2">Follow the note prompts and your result will be submitted automatically.</p>
+                              <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                                <div className="rounded-3xl bg-white/5 p-4">
+                                  <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Time</p>
+                                  <p className="mt-2 text-2xl font-black text-white">{gameTimeLeft}s</p>
+                                </div>
+                                <div className="rounded-3xl bg-white/5 p-4">
+                                  <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Score</p>
+                                  <p className="mt-2 text-2xl font-black text-white">{gameScore}</p>
+                                </div>
+                                <div className="rounded-3xl bg-white/5 p-4">
+                                  <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Current note</p>
+                                  <p className="mt-2 text-2xl font-black text-white">{gameTargetNote || '—'}</p>
+                                </div>
+                              </div>
+                              {gamePhase === 'countdown' && (
+                                <p className="mt-4 text-3xl font-black text-primary-400">Starts in {gameCountdown}</p>
+                              )}
+                              {gamePhase === 'result' && (
+                                <p className="mt-4 text-lg text-gray-300">Your duel result has been submitted.</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {duel && duel.status !== 'finished' && !duel.guest_user_id && user?.id !== duel.host_user_id && (
+                        <button
+                          onClick={joinDuel}
+                          className="w-full rounded-3xl bg-primary-500 px-6 py-4 text-base font-black text-dark-900 hover:bg-primary-400 transition-all"
+                        >
+                          Join Duel
+                        </button>
+                      )}
+
+                      {(duel && (user?.id === duel.host_user_id || user?.id === duel.guest_user_id)) && duel.status !== 'finished' && duel.status !== 'started' && (
+                        <div className="space-y-4">
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <label className="space-y-2">
+                              <span className="text-sm text-gray-400">Your Score</span>
+                              <input
+                                type="number"
+                                min={0}
+                                value={duelScore}
+                                onChange={(event) => setDuelScore(Number(event.target.value))}
+                                className="w-full rounded-3xl border border-white/10 bg-dark-950 px-4 py-3 text-white outline-none"
+                              />
+                            </label>
+                            <label className="space-y-2">
+                              <span className="text-sm text-gray-400">Accuracy %</span>
+                              <input
+                                type="number"
+                                min={0}
+                                max={100}
+                                value={duelAccuracy}
+                                onChange={(event) => setDuelAccuracy(Number(event.target.value))}
+                                className="w-full rounded-3xl border border-white/10 bg-dark-950 px-4 py-3 text-white outline-none"
+                              />
+                            </label>
+                          </div>
+                          <button
+                            onClick={submitDuelResult}
+                            className="w-full rounded-3xl bg-primary-500 px-6 py-4 text-base font-black text-dark-900 hover:bg-primary-400 transition-all"
+                          >
+                            Submit Duel Score
+                          </button>
+                        </div>
+                      )}
+
+                      {duel?.status === 'finished' && (
+                        <div className="rounded-3xl bg-white/5 p-6 border border-primary-500/20 text-center">
+                          <p className="text-sm uppercase tracking-[0.2em] text-gray-500">Result</p>
+                          <p className="mt-3 text-2xl font-black text-white">
+                            {duel.winner_user_id === user?.id
+                              ? 'You won the duel!'
+                              : duel.winner_user_id === null
+                                ? 'It’s a tie!'
+                                : `${duel.guest_user_id === user?.id ? duel.host_username : duel.guest_username} won`}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
             {currentView === 'metronome' && (
               <motion.div
                 key="metronome"
@@ -3266,6 +3612,13 @@ const Dashboard: React.FC = () => {
         >
           <Star size={20} />
           <span className="text-[10px] font-bold uppercase">Play</span>
+        </button>
+        <button
+          onClick={() => navigate('/dashboard/duel')}
+          className={`flex flex-col items-center gap-1 ${urlView === 'duel' ? 'text-primary-500' : 'text-gray-500'}`}
+        >
+          <Copy size={20} />
+          <span className="text-[10px] font-bold uppercase">Duel</span>
         </button>
         <button
           onClick={() => navigate('/dashboard/tuner')}

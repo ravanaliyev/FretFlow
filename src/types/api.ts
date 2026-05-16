@@ -147,6 +147,31 @@ export interface LeaderboardEntry {
   last_updated: string;
 }
 
+export interface DuelParticipant {
+  id: number;
+  username: string;
+}
+
+export interface Duel {
+  id: number;
+  invite_code: string;
+  invite_url: string;
+  status: 'waiting' | 'active' | 'started' | 'finished';
+  host_user_id: number;
+  host_username: string;
+  guest_user_id: number | null;
+  guest_username: string | null;
+  song_id: number | null;
+  host_score: number | null;
+  host_accuracy: number | null;
+  guest_score: number | null;
+  guest_accuracy: number | null;
+  winner_user_id: number | null;
+  host_ready?: boolean;
+  guest_ready?: boolean;
+  started_at?: string | null;
+}
+
 export interface Song {
   id: number;
   title: string;

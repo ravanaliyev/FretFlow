@@ -88,6 +88,30 @@ export async function initializeDatabase() {
         FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE
     );
 
+    -- Duels table
+    CREATE TABLE IF NOT EXISTS duels (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        host_user_id INTEGER NOT NULL,
+        guest_user_id INTEGER,
+        song_id INTEGER,
+        invite_code TEXT UNIQUE NOT NULL,
+        status TEXT DEFAULT 'waiting',
+        host_score INTEGER,
+        host_accuracy REAL,
+        guest_score INTEGER,
+        guest_accuracy REAL,
+        winner_user_id INTEGER,
+        host_ready BOOLEAN DEFAULT FALSE,
+        guest_ready BOOLEAN DEFAULT FALSE,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        started_at DATETIME,
+        finished_at DATETIME,
+        FOREIGN KEY (host_user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (guest_user_id) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY (winner_user_id) REFERENCES users(id) ON DELETE SET NULL,
+        FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE SET NULL
+    );
+
     -- Quests table
     CREATE TABLE IF NOT EXISTS quests (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -185,6 +209,24 @@ export async function initializeDatabase() {
   for (const statement of statements) {
     if (statement.trim()) {
       await db.execute(statement);
+    }
+  }
+
+  const duelsInfo = await db.execute("PRAGMA table_info('duels')");
+  const existingDuelColumns = new Set<string>((duelsInfo.rows || []).map((row: any) => row.name));
+
+  if (existingDuelColumns.size > 0) {
+    if (!existingDuelColumns.has('host_ready')) {
+      await db.execute('ALTER TABLE duels ADD COLUMN host_ready BOOLEAN DEFAULT FALSE');
+    }
+    if (!existingDuelColumns.has('guest_ready')) {
+      await db.execute('ALTER TABLE duels ADD COLUMN guest_ready BOOLEAN DEFAULT FALSE');
+    }
+    if (!existingDuelColumns.has('started_at')) {
+      await db.execute('ALTER TABLE duels ADD COLUMN started_at DATETIME');
+    }
+    if (!existingDuelColumns.has('finished_at')) {
+      await db.execute('ALTER TABLE duels ADD COLUMN finished_at DATETIME');
     }
   }
 
