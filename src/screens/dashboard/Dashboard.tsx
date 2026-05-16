@@ -444,8 +444,8 @@ const SongLibrary: React.FC<{
 
             <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest">
               <span className={`px-2 py-1 rounded-lg ${song.difficulty === 1 ? 'bg-green-500/10 text-green-500' :
-                  song.difficulty === 2 ? 'bg-yellow-500/10 text-yellow-500' :
-                    'bg-rose-500/10 text-rose-500'
+                song.difficulty === 2 ? 'bg-yellow-500/10 text-yellow-500' :
+                  'bg-rose-500/10 text-rose-500'
                 }`}>
                 {song.difficulty === 1 ? 'Easy' : song.difficulty === 2 ? 'Medium' : 'Hard'}
               </span>
@@ -586,8 +586,8 @@ const SongPlayer: React.FC<{
                 style={{ left: x }}
               >
                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl transition-all shadow-xl ${hits.has(idx) ? 'bg-primary-500 text-dark-900 scale-110' :
-                    misses.has(idx) ? 'bg-rose-500/20 text-rose-500 border border-rose-500/30' :
-                      'bg-white/10 text-white border border-white/20'
+                  misses.has(idx) ? 'bg-rose-500/20 text-rose-500 border border-rose-500/30' :
+                    'bg-white/10 text-white border border-white/20'
                   }`}>
                   {formatNoteName(note.n, notationStyle)}
                 </div>
@@ -1689,8 +1689,13 @@ const LessonGrid: React.FC<LessonGridProps> = ({
             show: { opacity: 1, y: 0 }
           }}
           layout
-          className={`glass-panel p-6 rounded-3xl flex flex-col group transition-all duration-300 ${lesson.status === 'locked' ? 'opacity-50 grayscale' : 'hover:border-primary-500/30 hover:shadow-2xl hover:shadow-primary-500/5'}`}
+          className={`glass-panel p-6 rounded-3xl flex flex-col group transition-all duration-300 relative overflow-hidden ${lesson.status === 'locked' ? 'opacity-50 grayscale' : 'hover:border-primary-500/30 hover:shadow-2xl hover:shadow-primary-500/5'}`}
         >
+          {lesson.level === 4 && (
+            <div className="absolute top-[43%] -translate-y-1/2 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
+              <Music size={80} />
+            </div>
+          )}
           <div className="flex justify-between items-start mb-4">
             <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md ${lesson.difficulty === 'easy' ? 'bg-green-500/20 text-green-500' :
               lesson.difficulty === 'medium' ? 'bg-yellow-500/20 text-yellow-500' : 'bg-red-500/20 text-red-500'
@@ -1728,7 +1733,10 @@ const LessonGrid: React.FC<LessonGridProps> = ({
               </div>
             </div>
           </div>
-          <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary-500 transition-colors">{lesson.title}</h3>
+          <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary-500 transition-colors flex items-center gap-2">
+            {lesson.level === 4 && <Music size={18} className="text-primary-500/70" />}
+            {lesson.title}
+          </h3>
           <p className="text-sm text-gray-400 mb-6 flex-1">{lesson.desc}</p>
           <button
             disabled={lesson.status === 'locked'}
@@ -1994,7 +2002,7 @@ const Dashboard: React.FC = () => {
       const res = await duelsApi.readyDuel(urlInviteCode);
       setDuel(res.data);
       setDuelMessage('You are ready! Waiting for your opponent...');
-      
+
       // If we're already started, ensure we're in idle to trigger the challenge
       if (res.data.status === 'started' && gamePhase !== 'idle') {
         setGamePhase('idle');
@@ -2837,12 +2845,6 @@ const Dashboard: React.FC = () => {
                 Activity
               </button>
               <button
-                onClick={() => navigate('/dashboard/songs')}
-                className={`text-sm font-semibold transition-colors ${urlView === 'songs' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
-              >
-                Songs
-              </button>
-              <button
                 onClick={() => navigate('/dashboard/challenge')}
                 className={`text-sm font-semibold transition-colors ${urlView === 'challenge' ? 'text-white border-b-2 border-primary-500 pb-1' : 'text-gray-400 hover:text-white'}`}
               >
@@ -3476,16 +3478,16 @@ const Dashboard: React.FC = () => {
                                 // Explicitly check user ID against host/guest to be sure
                                 const isHost = duel.host_user_id === user?.id;
                                 const isGuest = duel.guest_user_id === user?.id;
-                                
+
                                 // Cast to Number to avoid lexicographical string comparison issues
                                 const hScore = Number(duel.host_score || 0);
                                 const gScore = Number(duel.guest_score || 0);
 
                                 if (duel.winner_user_id === user?.id) return `You won the duel! (${hScore} vs ${gScore}) 🏆`;
-                                
+
                                 if (duel.winner_user_id !== null && duel.winner_user_id !== user?.id) {
-                                   const winnerName = duel.host_user_id === duel.winner_user_id ? duel.host_username : (duel.guest_username || 'Opponent');
-                                   return `${winnerName} won (${hScore} vs ${gScore}) 🎸`;
+                                  const winnerName = duel.host_user_id === duel.winner_user_id ? duel.host_username : (duel.guest_username || 'Opponent');
+                                  return `${winnerName} won (${hScore} vs ${gScore}) 🎸`;
                                 }
 
                                 // Fallback check if winner_user_id is null or backend logic failed
