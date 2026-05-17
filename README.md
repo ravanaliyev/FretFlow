@@ -31,12 +31,12 @@ By resolving key pain points of traditional guitar education—such as prohibiti
 
 Here is the structured learning path and interactive experience when a user interacts with FretFlow:
 
-1. **🎵 Real-Time Chromatic Tuner:**
-   * Calibrates the instrument immediately. Translates analog microphone samples into absolute frequency pitches, displaying deviations in "Cents" on a beautiful interactive gauge dial.
-2. **📚 Sequential Curricular Roadmap:**
+1. **📚 Sequential Curricular Roadmap:**
    * Organizes progression into distinct levels. Students begin with open strings (Level 1: Foundations), learn fretting techniques (Level 2: Fret Mastery), and play famous chords and melodies (Level 3: Melodies), unlocking subsequent levels with XP.
-3. **🎯 Interactive Fretboard Practice:**
+2. **🎯 Interactive Fretboard Practice:**
    * Users play scrolling guitar tabs on their physical instrument. The built-in pitch analyzer scans input 60 times a second to verify hits against specific timestamps, providing instant visual accuracy metrics.
+3. **🎵 Real-Time Chromatic Tuner:**
+   * Calibrates the instrument immediately. Translates analog microphone samples into absolute frequency pitches, displaying deviations in "Cents" on a beautiful interactive gauge dial.
 4. **👂 Gamified Ear Training:**
    * Synthesizes warm analog sounds using the Web Audio API to play reference tones, prompting users with multiple-choice ear quizzes to build absolute pitch recognition.
 5. **⏱️ High-Precision Metronome:**
