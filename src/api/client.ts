@@ -215,8 +215,8 @@ class ApiClient {
   }
 }
 
-// Export a single global instance of ApiClient
-export const apiClient = new ApiClient();
+// Export a single global instance of ApiClient with environment-based Base URL
+export const apiClient = new ApiClient(import.meta.env.VITE_API_URL || '');
 
 // Token persistence helpers
 export function clearTokens() {
