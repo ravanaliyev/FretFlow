@@ -17,7 +17,7 @@ const Footer: React.FC = () => {
           <div className="bg-primary-500/20 p-2 rounded-lg">
             <Flame className="w-5 h-5 text-primary-500" />
           </div>
-          <span className="text-xl font-bold text-white tracking-wide">Guitar<span className="text-primary-500">Legend</span></span>
+          <span className="text-xl font-bold text-white tracking-wide">Fret<span className="text-primary-500">Flow</span></span>
         </div>
         
         {/* Navigation Routing Links */}
@@ -29,7 +29,7 @@ const Footer: React.FC = () => {
         
         {/* Dynamic Copyright stamp */}
         <p className="text-sm text-gray-500">
-          © {new Date().getFullYear()} GuitarLegend. All rights reserved.
+          © {new Date().getFullYear()} FretFlow. All rights reserved.
         </p>
       </div>
     </footer>

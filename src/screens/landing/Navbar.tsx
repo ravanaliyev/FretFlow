@@ -13,7 +13,7 @@ const Navbar: React.FC = () => {
       {/* Brand Logotype linking back to home root */}
       <Link to="/" className="flex items-center gap-2">
         <Flame className="w-8 h-8 text-primary-500" />
-        <span className="text-2xl font-black text-white tracking-tighter uppercase">fretflow</span>
+        <span className="text-2xl font-black text-white tracking-tighter">Fret<span className="text-primary-500">Flow</span></span>
       </Link>
       
       {/* Navigation action buttons (Login vs Register signup modes) */}

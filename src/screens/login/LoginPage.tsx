@@ -21,11 +21,11 @@ function LoginPage() {
       <header className="relative z-20 w-full py-6 px-6 lg:px-12 flex justify-between items-center max-w-6xl mx-auto shrink-0">
         <Link to="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
           <Flame className="w-8 h-8 text-primary-500" />
-          <span className="text-2xl font-black text-white tracking-tighter uppercase font-sans">fretflow</span>
+          <span className="text-2xl font-black text-white tracking-tighter font-sans">Fret<span className="text-primary-500">Flow</span></span>
         </Link>
         <Link 
           to="/" 
-          className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-gray-400 hover:text-white transition-colors bg-white/5 border border-white/10 px-4 py-2 rounded-2xl backdrop-blur-md active:scale-95"
+          className="hidden sm:inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-gray-400 hover:text-white transition-colors bg-white/5 border border-white/10 px-4 py-2 rounded-2xl backdrop-blur-md active:scale-95"
         >
           <ArrowLeft size={16} className="text-primary-500" />
           <span>Back to Home</span>

@@ -1423,9 +1423,9 @@ const Dashboard: React.FC = () => {
       <header className={`sticky top-0 z-[1000] bg-dark-900/80 backdrop-blur-xl border-b border-white/5 ${currentView === 'practice' && !(activeLesson && activeLesson.id < 0) ? 'hidden' : ''}`}>
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4 md:gap-12">
-            <h1 className="text-xl md:text-2xl font-black tracking-tighter bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent shrink-0">
-              <span className="md:hidden">FF</span>
-              <span className="hidden md:inline">FRETFLOW</span>
+            <h1 className="text-xl md:text-2xl font-black tracking-tighter text-white shrink-0">
+              <span className="md:hidden text-primary-500">FF</span>
+              <span className="hidden md:inline">Fret<span className="text-primary-500">Flow</span></span>
             </h1>
             <nav className="hidden md:flex items-center gap-8">
               <button
