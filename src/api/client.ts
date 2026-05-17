@@ -66,7 +66,7 @@ async function getAccessToken(): Promise<string | null> {
     onTokenRefreshed(tokens.accessToken);
     return tokens.accessToken;
   } catch (err) {
-    // Catch-all
+    return null;
   } finally {
     isRefreshing = false;
   }
