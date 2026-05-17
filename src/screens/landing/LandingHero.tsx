@@ -45,13 +45,21 @@ const LandingHero: React.FC = () => {
         transition={{ duration: 0.6, delay: 0.2 }}
         className="w-full lg:w-[45%] flex justify-center lg:justify-end"
       >
-         <div className="relative w-[300px] h-[400px] md:w-[420px] md:h-[500px]">
+         <div className="relative w-[300px] md:w-[360px] aspect-[9/16] shrink-0 mx-auto lg:mx-0">
            {/* Main playful device card */}
-           <div className="absolute inset-0 bg-dark-800 rounded-[3rem] border-4 border-dark-700 border-b-8 flex flex-col items-center justify-center p-8 text-center shadow-xl">
-             <div className="w-48 h-48 bg-primary-500 rounded-full flex items-center justify-center mb-6 border-b-8 border-primary-600">
-                <span className="text-8xl transform -rotate-12">🎸</span>
-             </div>
-             <h3 className="text-2xl font-black text-white">Rock On!</h3>
+           <div className="absolute inset-0 bg-dark-900 rounded-[3rem] border-4 border-dark-700 border-b-8 overflow-hidden shadow-xl flex items-center justify-center">
+             <video 
+               autoPlay 
+               loop 
+               muted 
+               playsInline 
+               className="w-full h-full object-cover transform scale-[1.12]"
+             >
+               <source src="/videos/hero-guitar.mp4" type="video/mp4" />
+             </video>
+             
+             {/* Optional overlay gradient to make it look embedded */}
+             <div className="absolute inset-0 bg-gradient-to-t from-dark-900/60 to-transparent pointer-events-none"></div>
            </div>
            
            {/* Floating Badge A: Level Tracker (Oscillates vertically) */}
