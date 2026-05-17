@@ -59,8 +59,8 @@ const AboutPage: React.FC = () => {
               <h3 className="text-center text-xs uppercase tracking-[0.3em] text-gray-400 font-bold mb-10">Visionaries & Creators</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
                 {[
-                  { name: "Emirhan Alptekin", role: "Co-Founder", initial: "E", linkedin: "https://www.linkedin.com/in/emirhan-alptekin" },
                   { name: "Ravan Aliyev", role: "Co-Founder", initial: "R", linkedin: "https://www.linkedin.com/in/ravanaliyev01/" },
+                  { name: "Emirhan Alptekin", role: "Co-Founder", initial: "E", linkedin: "https://www.linkedin.com/in/emirhan-alptekin" },
                   { name: "Hüseyin Poyraz Küçükarslan", role: "Co-Founder", initial: "H", linkedin: "#" }
                 ].map((creator, i) => (
                   <motion.a 
