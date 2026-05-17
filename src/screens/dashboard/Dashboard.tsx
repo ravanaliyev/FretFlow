@@ -2,36 +2,24 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   History,
-  Search,
   ArrowLeft,
   Mic,
   MicOff,
   CheckCircle,
-  Lock,
   PlayCircle,
-  Plus,
   Trash2,
   X,
   Activity,
   User,
-  Edit2,
   Trophy,
   Star,
-  LogOut,
-  HelpCircle,
   Settings2,
-  Flag,
   Bell,
   Sun,
   Moon,
   Mail,
   Copy,
-  ChevronUp,
-  ChevronDown,
-  Minus,
-  Play,
-  RotateCcw,
-  Music
+  RotateCcw
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import type { Duel } from '../../types/api';
@@ -49,8 +37,23 @@ import { songsApi } from '../../api/songs';
 import { useAuth } from '../../hooks/useAuth';
 import confetti from 'canvas-confetti';
 
+// --- Imported Modular Components ---
+import GuitarTuner from './components/Tuner';
+import Metronome from './components/Metronome';
+import EarTrainingGame from './components/EarTraining';
+import { SongLibrary, SongPlayer } from './components/Songs';
+import LevelRoadmap from './components/LevelRoadmap';
+import LeaderboardComponent from './components/Leaderboard';
+import BadgesSection from './components/BadgesSection';
+import AnalyticsChart from './components/AnalyticsChart';
+import LevelMenu from './components/LevelMenu';
+import LessonGrid from './components/LessonGrid';
+import ProfileDropdown from './components/ProfileDropdown';
+import QuickResume from './components/QuickResume';
+import MotivationQuote from './components/MotivationQuote';
+
 // --- Types ---
-interface Lesson {
+export interface Lesson {
   id: number;
   title: string;
   level: number;
@@ -61,13 +64,13 @@ interface Lesson {
   order_index?: number;
 }
 
-interface HistoryItem {
+export interface HistoryItem {
   id: number;
   title: string;
   date: string;
 }
 
-interface NotificationItem {
+export interface NotificationItem {
   id: number;
   title: string;
   message: string;
@@ -76,14 +79,14 @@ interface NotificationItem {
   read: boolean;
 }
 
-interface LeaderboardItem {
+export interface LeaderboardItem {
   id: number;
   name: string;
   score: number;
   date: string;
 }
 
-interface Achievement {
+export interface Achievement {
   id: number;
   name: string;
   description: string;
@@ -93,7 +96,7 @@ interface Achievement {
   earned_at: string | null;
 }
 
-interface Song {
+export interface Song {
   id: number;
   title: string;
   artist: string;
@@ -103,22 +106,10 @@ interface Song {
   best_score?: number | null;
 }
 
-
-
-
 const STRINGS = ['E4', 'B3', 'G3', 'D3', 'A2', 'E2'];
 const FRET_COUNT = 12;
 
-const QUOTES = [
-  { text: "Music is the wine that fills the cup of silence.", author: "Robert Fripp" },
-  { text: "Sometimes you want to give up the guitar, you'll hate it. But if you stick with it, you'll be rewarded.", author: "Jimi Hendrix" },
-  { text: "Your talent is your art. It is your gift to yourself.", author: "Slash" },
-  { text: "I just play. I don't think. I just play.", author: "B.B. King" }
-];
-
-
-
-const SCI_TO_SYL: Record<string, string> = {
+export const SCI_TO_SYL: Record<string, string> = {
   'C': 'Do', 'C#': 'Do#', 'Db': 'Reb',
   'D': 'Re', 'D#': 'Re#', 'Eb': 'Mib',
   'E': 'Mi',
@@ -128,7 +119,7 @@ const SCI_TO_SYL: Record<string, string> = {
   'B': 'Si'
 };
 
-const formatNoteName = (note: string, style: 'scientific' | 'syllabic') => {
+export const formatNoteName = (note: string, style: 'scientific' | 'syllabic') => {
   if (!note || style === 'scientific') return note;
   // Handle notes like E2, G#3
   const pitch = note.replace(/[0-9]/g, '');
@@ -137,505 +128,13 @@ const formatNoteName = (note: string, style: 'scientific' | 'syllabic') => {
   return `${syllabic}${octave}`;
 };
 
+
 // --- Sub-Components ---
 
-// --- Guitar Tuner Component ---
-const GuitarTuner: React.FC<{ currentPitch: string; frequency: number; notationStyle: 'scientific' | 'syllabic' }> = ({ frequency, notationStyle }) => {
-  const STANDARD_TUNING: Record<string, number> = {
-    'E2': 82.41, 'A2': 110.00, 'D3': 146.83, 'G3': 196.00, 'B3': 246.94, 'E4': 329.63
-  };
 
-  const closestNote = Object.keys(STANDARD_TUNING).reduce((prev, curr) =>
-    Math.abs(STANDARD_TUNING[curr] - frequency) < Math.abs(STANDARD_TUNING[prev] - frequency) ? curr : prev
-    , 'E2');
-
-  const targetFreq = STANDARD_TUNING[closestNote];
-  const cents = frequency > 0 ? Math.round(1200 * Math.log2(frequency / targetFreq)) : 0;
-  const isPerfect = Math.abs(cents) < 3;
-
-  const rotation = Math.max(-70, Math.min(70, (cents / 50) * 60));
-
-  return (
-    <div className="glass-panel p-5 md:p-8 rounded-[32px] md:rounded-[40px] border-white/10 bg-dark-900/60 backdrop-blur-2xl mb-8 relative overflow-hidden shadow-2xl">
-      <div className="absolute inset-0 bg-gradient-to-b from-primary-500/5 to-transparent pointer-events-none" />
-
-      <div className="text-center mb-8 md:mb-10 relative z-10">
-        <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-500 mb-2">Analog Precision</h4>
-        <div className="flex items-center justify-center gap-3">
-          <div className="text-5xl md:text-6xl font-black text-white tracking-tighter">
-            {formatNoteName(closestNote, notationStyle).replace(/\d/, '')}
-            <span className="text-lg md:text-xl text-primary-500/50 ml-1 italic">{closestNote.match(/\d/)}</span>
-          </div>
-        </div>
-        <p className="text-[9px] md:text-[10px] font-mono text-gray-600 mt-2">{frequency.toFixed(2)} Hz</p>
-      </div>
-
-      {/* Gauge Container */}
-      <div className="relative h-40 md:h-48 flex items-end justify-center mb-4 overflow-hidden">
-        {/* The Arc */}
-        <div className="absolute bottom-0 w-full max-w-[240px] md:max-w-[280px] aspect-square border-t-2 border-x-2 border-white/5 rounded-full shadow-[inset_0_4px_20px_rgba(255,255,255,0.02)]" />
-
-        {/* Scale Markers (Circular) */}
-        {[-50, -25, 0, 25, 50].map(m => {
-          const mRotation = (m / 50) * 60;
-          return (
-            <div
-              key={m}
-              className="absolute bottom-4 origin-bottom h-28 md:h-32 flex flex-col items-center"
-              style={{ transform: `rotate(${mRotation}deg)` }}
-            >
-              <div className={`w-0.5 h-2 md:h-3 ${m === 0 ? 'bg-primary-500 w-1 h-4 md:h-5 shadow-[0_0_10px_rgba(57,255,20,0.5)]' : 'bg-white/20'}`} />
-              <span className={`text-[8px] md:text-[9px] mt-1 font-black ${m === 0 ? 'text-primary-500' : 'text-gray-600'}`}>
-                {m === 0 ? 'TUNE' : m > 0 ? `+${m}` : m}
-              </span>
-            </div>
-          );
-        })}
-
-        {/* The Needle */}
-        <motion.div
-          animate={{ rotate: rotation }}
-          transition={{ type: 'spring', stiffness: 50, damping: 12 }}
-          className="absolute bottom-4 w-1 h-28 md:h-32 origin-bottom z-20"
-        >
-          <div className={`w-full h-full rounded-full shadow-[0_0_20px_rgba(57,255,20,0.3)] transition-colors duration-300 ${isPerfect ? 'bg-primary-500' : 'bg-rose-500'}`} />
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 md:w-3 h-2 md:h-3 bg-white rounded-full shadow-lg" />
-        </motion.div>
-
-        {/* Pivot Point (The Screw) */}
-        <div className="absolute bottom-0 w-8 md:w-10 h-8 md:h-10 bg-dark-950 border-4 border-white/10 rounded-full z-30 flex items-center justify-center shadow-2xl">
-          <div className="w-1.5 md:w-2 h-1.5 md:h-2 bg-white/20 rounded-full" />
-        </div>
-      </div>
-
-      <div className="mt-6 md:mt-8 text-center relative z-10">
-        <div className={`inline-flex items-center gap-2 md:gap-3 px-4 md:px-6 py-2 rounded-full border transition-all duration-500 ${frequency === 0 ? 'bg-white/5 border-white/5 text-gray-600' :
-          isPerfect ? 'bg-primary-500/10 border-primary-500 text-primary-500 shadow-[0_0_20px_rgba(57,255,20,0.1)]' :
-            cents < 0 ? 'bg-amber-500/10 border-amber-500/50 text-amber-500' : 'bg-rose-500/10 border-rose-500/50 text-rose-500'
-          }`}>
-          {frequency === 0 ? (
-            <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">Waiting for input...</span>
-          ) : isPerfect ? (
-            <>
-              <CheckCircle size={12} />
-              <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">Perfect</span>
-            </>
-          ) : (
-            <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">
-              {cents < 0 ? 'Tighten String' : 'Loosen String'}
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// --- Metronome Component ---
-const Metronome: React.FC = () => {
-  const [bpm, setBpm] = useState(120);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [timeSignature, setTimeSignature] = useState(4);
-  const [currentBeat, setCurrentBeat] = useState(0);
-
-  const audioContext = useRef<AudioContext | null>(null);
-  const nextNoteTime = useRef(0);
-  const timerID = useRef<number | null>(null);
-  const beatRef = useRef(0);
-
-  const scheduleNote = (beatNumber: number, time: number) => {
-    if (!audioContext.current) return;
-
-    const osc = audioContext.current.createOscillator();
-    const envelope = audioContext.current.createGain();
-
-    // Higher pitch for the first beat
-    osc.frequency.value = beatNumber === 0 ? 1000 : 500;
-
-    envelope.gain.value = 1;
-    envelope.gain.exponentialRampToValueAtTime(1, time + 0.001);
-    envelope.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
-
-    osc.connect(envelope);
-    envelope.connect(audioContext.current.destination);
-
-    osc.start(time);
-    osc.stop(time + 0.05);
-
-    // Sync visual beat state with audio time
-    const diff = (time - audioContext.current.currentTime) * 1000;
-    setTimeout(() => {
-      setCurrentBeat(beatNumber);
-    }, Math.max(0, diff));
-  };
-
-  const scheduler = () => {
-    if (!audioContext.current) return;
-
-    while (nextNoteTime.current < audioContext.current.currentTime + 0.1) {
-      scheduleNote(beatRef.current, nextNoteTime.current);
-      const secondsPerBeat = 60.0 / bpm;
-      nextNoteTime.current += secondsPerBeat;
-      beatRef.current = (beatRef.current + 1) % timeSignature;
-    }
-    timerID.current = window.setTimeout(scheduler, 25);
-  };
-
-  const toggleMetronome = () => {
-    if (isPlaying) {
-      if (timerID.current) window.clearTimeout(timerID.current);
-      setIsPlaying(false);
-      setCurrentBeat(-1);
-    } else {
-      if (!audioContext.current) {
-        audioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      }
-      if (audioContext.current.state === 'suspended') {
-        audioContext.current.resume();
-      }
-      beatRef.current = 0;
-      nextNoteTime.current = audioContext.current.currentTime + 0.05;
-      setIsPlaying(true);
-      scheduler();
-    }
-  };
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (timerID.current) window.clearTimeout(timerID.current);
-    };
-  }, []);
-
-  return (
-    <div className="glass-panel w-full max-w-3xl p-5 sm:p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border-white/10 bg-dark-900/40 backdrop-blur-3xl relative overflow-hidden shadow-2xl flex flex-col items-center">
-      {/* Background Glow */}
-      <div className={`absolute inset-0 bg-primary-500/5 transition-opacity duration-500 ${isPlaying ? 'opacity-100' : 'opacity-0'}`} />
-
-      <div className="relative z-10 w-full flex flex-col items-center">
-        <h4 className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] text-gray-500 mb-6 sm:mb-8 md:mb-12">Rhythm Master</h4>
-
-        {/* Visual Beats Grid */}
-        <div className="flex flex-wrap justify-center gap-2 md:gap-4 mb-8 sm:mb-10 md:mb-16">
-          {Array.from({ length: timeSignature }).map((_, i) => (
-            <motion.div
-              key={i}
-              animate={{
-                scale: currentBeat === i ? 1.2 : 1,
-                backgroundColor: currentBeat === i ? 'var(--color-primary-500)' : 'rgba(255,255,255,0.05)',
-                boxShadow: currentBeat === i ? '0 0 20px var(--color-primary-500)' : 'none'
-              }}
-              className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 rounded-full border border-white/10"
-            />
-          ))}
-        </div>
-
-        {/* BPM Display */}
-        <div className="relative mb-10 sm:mb-12 w-full max-w-[18rem]">
-          <motion.div
-            animate={{ scale: isPlaying ? [1, 1.05, 1] : 1 }}
-            transition={{ duration: 60 / bpm, repeat: isPlaying ? Infinity : 0, ease: 'easeInOut' }}
-            className="w-full aspect-square rounded-full border-4 border-white/5 flex flex-col items-center justify-center relative bg-white/5 backdrop-blur-md shadow-2xl"
-          >
-            <span className="text-gray-500 text-[10px] sm:text-[11px] font-bold uppercase tracking-widest mb-1 sm:mb-2">BPM</span>
-            <span className="text-5xl sm:text-6xl md:text-7xl font-black text-white tracking-tighter leading-none">{bpm}</span>
-            <div className="absolute inset-0 rounded-full bg-primary-500/10 blur-3xl -z-10 opacity-50" />
-          </motion.div>
-        </div>
-
-        {/* Controls */}
-        <div className="w-full max-w-md space-y-6 sm:space-y-8 md:space-y-10">
-          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-            <button
-              onClick={() => setBpm(Math.max(40, bpm - 5))}
-              className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-all active:scale-90"
-            >
-              <Minus size={18} />
-            </button>
-            <input
-              type="range"
-              min="40"
-              max="240"
-              value={bpm}
-              onChange={(e) => setBpm(parseInt(e.target.value))}
-              className="flex-1 h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-primary-500"
-            />
-            <button
-              onClick={() => setBpm(Math.min(240, bpm + 5))}
-              className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-white transition-all active:scale-90"
-            >
-              <Plus size={18} />
-            </button>
-          </div>
-
-          <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
-            {[3, 4, 6].map(sig => (
-              <button
-                key={sig}
-                onClick={() => {
-                  setTimeSignature(sig);
-                  if (isPlaying) {
-                    beatRef.current = 0;
-                  }
-                }}
-                className={`px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-black transition-all ${timeSignature === sig ? 'bg-primary-500 text-dark-900 shadow-lg shadow-primary-500/20' : 'bg-white/5 text-gray-500 hover:text-white'}`}
-              >
-                {sig}/4
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={toggleMetronome}
-            className={`w-full py-3 sm:py-4 rounded-[1.5rem] font-black text-base sm:text-lg tracking-widest transition-all shadow-2xl flex items-center justify-center gap-3 ${isPlaying
-              ? 'bg-rose-500 text-white shadow-rose-500/20'
-              : 'bg-primary-500 text-dark-900 shadow-primary-500/20 hover:scale-[1.02]'
-              }`}
-          >
-            {isPlaying ? (
-              <><X size={22} /> STOP</>
-            ) : (
-              <><Play size={22} className="fill-current" /> START</>
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // --- Song Mode Components ---
 
-const SongLibrary: React.FC<{
-  songs: Song[],
-  onSelect: (song: Song) => void
-}> = ({ songs, onSelect }) => {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {songs && Array.isArray(songs) && songs.map(song => (
-        <motion.div
-          key={song.id}
-          whileHover={{ y: -5, scale: 1.02 }}
-          onClick={() => onSelect(song)}
-          className="glass-panel p-6 rounded-[2rem] cursor-pointer group relative overflow-hidden bg-white/[0.02] border-white/5"
-        >
-          <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
-            <Music size={80} />
-          </div>
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-primary-500/10 flex items-center justify-center text-primary-500">
-                <Music size={20} />
-              </div>
-              <div>
-                <h3 className="font-bold text-white group-hover:text-primary-500 transition-colors">{song.title}</h3>
-                <p className="text-xs text-gray-500 font-medium">{song.artist}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest">
-              <span className={`px-2 py-1 rounded-lg ${song.difficulty === 1 ? 'bg-green-500/10 text-green-500' :
-                song.difficulty === 2 ? 'bg-yellow-500/10 text-yellow-500' :
-                  'bg-rose-500/10 text-rose-500'
-                }`}>
-                {song.difficulty === 1 ? 'Easy' : song.difficulty === 2 ? 'Medium' : 'Hard'}
-              </span>
-              <span className="text-gray-500">{song.xp_reward} XP</span>
-            </div>
-
-            {song.best_score !== undefined && song.best_score !== null && (
-              <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
-                <span className="text-[10px] text-gray-600 font-bold uppercase">Best Score</span>
-                <span className="text-sm font-black text-primary-500">{song.best_score}</span>
-              </div>
-            )}
-          </div>
-        </motion.div>
-      ))}
-    </div>
-  );
-};
-const SongPlayer: React.FC<{
-  song: Song,
-  currentPitch: string,
-  notationStyle: 'scientific' | 'syllabic',
-  formatNoteName: (note: string, style: 'scientific' | 'syllabic') => string,
-  onComplete: (score: number, accuracy: number) => void,
-  onExit: () => void
-}> = ({ song, currentPitch, notationStyle, formatNoteName, onComplete, onExit }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [score, setScore] = useState(0);
-  const [hits, setHits] = useState<Set<number>>(new Set());
-  const [misses, setMisses] = useState<Set<number>>(new Set());
-  const [feedback, setFeedback] = useState<{ text: string, color: string } | null>(null);
-
-  const requestRef = useRef<number | null>(null);
-  const startTimeRef = useRef<number>(0);
-  const songData = useRef<any[]>([]);
-
-  useEffect(() => {
-    try {
-      songData.current = JSON.parse(song.notes);
-    } catch (e) {
-      console.error("Invalid song notes JSON", e);
-      songData.current = [];
-    }
-  }, [song]);
-
-  const PIXELS_PER_SECOND = 250;
-  const TARGET_X = 120;
-
-  const update = (time: number) => {
-    if (!isPlaying) return;
-
-    if (startTimeRef.current === 0) startTimeRef.current = time;
-    const elapsed = (time - startTimeRef.current) / 1000;
-    setCurrentTime(elapsed);
-
-    // Collision Detection
-    songData.current.forEach((note, idx) => {
-      if (hits.has(idx) || misses.has(idx)) return;
-
-      const diff = Math.abs(elapsed - note.t);
-      const isWindowOpen = diff < 0.25;
-
-      if (isWindowOpen) {
-        if (currentPitch === note.n) {
-          setHits(prev => new Set([...prev, idx]));
-          setScore(s => s + 100);
-          setFeedback({ text: 'PERFECT', color: 'text-primary-500' });
-          setTimeout(() => setFeedback(null), 500);
-        }
-      } else if (elapsed > note.t + 0.3) {
-        setMisses(prev => new Set([...prev, idx]));
-        setFeedback({ text: 'MISS', color: 'text-rose-500' });
-        setTimeout(() => setFeedback(null), 500);
-      }
-    });
-
-    const lastNote = songData.current[songData.current.length - 1];
-    if (lastNote && elapsed > lastNote.t + 2) {
-      const accuracy = Math.round((hits.size / songData.current.length) * 100);
-      onComplete(score, accuracy);
-      setIsPlaying(false);
-    }
-
-    requestRef.current = requestAnimationFrame(update);
-  };
-
-  useEffect(() => {
-    if (isPlaying) {
-      requestRef.current = requestAnimationFrame(update);
-    } else {
-      if (requestRef.current) cancelAnimationFrame(requestRef.current);
-    }
-    return () => {
-      if (requestRef.current) cancelAnimationFrame(requestRef.current);
-    };
-  }, [isPlaying, currentPitch]);
-
-  return (
-    <div className="w-full flex flex-col gap-8">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={onExit}
-            className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-gray-500 hover:text-white transition-colors"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <div>
-            <h2 className="text-2xl font-black text-white italic tracking-tighter">{song.title}</h2>
-            <p className="text-gray-500 font-bold uppercase tracking-widest text-[10px]">{song.artist}</p>
-          </div>
-        </div>
-        <div className="flex gap-4 items-center">
-          <div className="text-right">
-            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Score</p>
-            <p className="text-3xl font-black text-primary-500">{score.toLocaleString()}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="glass-panel h-64 rounded-[3rem] relative overflow-hidden bg-dark-950/50 border-white/5 shadow-inner">
-        {/* Playhead / Target Line */}
-        <div className="absolute top-0 bottom-0 w-1 bg-primary-500/30 z-20 shadow-[0_0_15px_rgba(57,255,20,0.4)]" style={{ left: TARGET_X }}>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full border-4 border-primary-500/50 bg-primary-500/10 animate-ping" />
-        </div>
-
-        {/* Scrolling Notes */}
-        <div className="absolute inset-0 z-10 pointer-events-none">
-          {songData.current.map((note, idx) => {
-            const x = (note.t - currentTime) * PIXELS_PER_SECOND + TARGET_X;
-            if (x < -100 || x > 1200) return null;
-
-            return (
-              <motion.div
-                key={idx}
-                className="absolute top-1/2 -translate-y-1/2 flex flex-col items-center gap-2"
-                style={{ left: x }}
-              >
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl transition-all shadow-xl ${hits.has(idx) ? 'bg-primary-500 text-dark-900 scale-110' :
-                  misses.has(idx) ? 'bg-rose-500/20 text-rose-500 border border-rose-500/30' :
-                    'bg-white/10 text-white border border-white/20'
-                  }`}>
-                  {formatNoteName(note.n, notationStyle)}
-                </div>
-                {!hits.has(idx) && !misses.has(idx) && (
-                  <div className="w-1.5 h-1.5 bg-white/20 rounded-full" />
-                )}
-              </motion.div>
-            );
-          })}
-        </div>
-
-        {/* Feedback Overlay */}
-        <AnimatePresence>
-          {feedback && (
-            <motion.div
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1.2, opacity: 1 }}
-              exit={{ scale: 1.5, opacity: 0 }}
-              className={`absolute top-12 left-[120px] -translate-x-1/2 font-black text-2xl italic tracking-tighter z-30 ${feedback.color}`}
-            >
-              {feedback.text}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      <div className="flex justify-center">
-        {!isPlaying ? (
-          <button
-            onClick={() => {
-              setIsPlaying(true);
-              startTimeRef.current = 0;
-              setHits(new Set());
-              setMisses(new Set());
-              setScore(0);
-            }}
-            className="bg-primary-500 text-dark-900 px-12 py-5 rounded-3xl font-black text-2xl hover:scale-105 transition-all shadow-2xl shadow-primary-500/30 flex items-center gap-4"
-          >
-            <Play size={24} fill="currentColor" /> START SONG
-          </button>
-        ) : (
-          <div className="flex flex-col items-center gap-4">
-            <div className="px-8 py-3 rounded-full bg-white/5 border border-white/10 text-xs font-bold text-gray-400 flex items-center gap-3">
-              <Mic className="text-primary-500 animate-pulse" size={16} />
-              Detecting: <span className="text-white font-black text-sm">{formatNoteName(currentPitch, notationStyle) || '--'}</span>
-            </div>
-            <button
-              onClick={() => setIsPlaying(false)}
-              className="text-gray-500 hover:text-white font-bold uppercase tracking-widest text-xs"
-            >
-              Stop Session
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
 
 // --- Victory Modal ---
 const VictoryModal: React.FC<{ lesson: Lesson; onHome: () => void; onNext?: () => void }> = ({ lesson, onHome, onNext }) => {
@@ -703,531 +202,6 @@ const VictoryModal: React.FC<{ lesson: Lesson; onHome: () => void; onNext?: () =
   );
 };
 
-const EarTrainingGame: React.FC<{ onComplete?: (score: number, total: number) => void }> = ({ onComplete }) => {
-  const strings = [
-    { name: 'E2', midi: 40 },
-    { name: 'A2', midi: 45 },
-    { name: 'D3', midi: 50 },
-    { name: 'G3', midi: 55 },
-    { name: 'B3', midi: 59 },
-    { name: 'E4', midi: 64 },
-  ];
-
-  const availableNotes = [
-    'E2', 'F2', 'F#2', 'G2', 'G#2', 'A2', 'A#2', 'B2',
-    'C3', 'C#3', 'D3', 'D#3', 'E3', 'F3', 'F#3', 'G3',
-    'G#3', 'A3', 'A#3', 'B3', 'C4', 'C#4', 'D4', 'D#4', 'E4'
-  ] as const;
-
-  const noteValues = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 } as const;
-
-  const noteToMidi = (note: string) => {
-    const match = note.match(/^([A-G])(#?)(\d)$/);
-    if (!match) return null;
-    const [, letter, sharp, octave] = match;
-    const base = noteValues[letter as keyof typeof noteValues];
-    return base + (sharp ? 1 : 0) + 12 * (Number(octave) + 1);
-  };
-
-  const midiToFrequency = (midi: number) => 440 * Math.pow(2, (midi - 69) / 12);
-
-  const playNote = (note: string) => {
-    const midi = noteToMidi(note);
-    if (midi === null) return;
-    const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(midiToFrequency(midi), audioCtx.currentTime);
-    gain.gain.setValueAtTime(0, audioCtx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 1);
-  };
-
-  const getPositions = (note: string) => {
-    const midi = noteToMidi(note);
-    if (midi === null) return [];
-    return strings
-      .map((string) => ({ string: string.name, fret: midi - string.midi }))
-      .filter((pos) => pos.fret >= 0 && pos.fret <= 12);
-  };
-
-  const shuffle = <T,>(array: T[]) => [...array].sort(() => Math.random() - 0.5);
-
-  const [currentNote, setCurrentNote] = useState<string>('E2');
-  const [correctPosition, setCorrectPosition] = useState<{ string: string; fret: number } | null>(null);
-  const [options, setOptions] = useState<Array<{ string: string; fret: number }>>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<string>('');
-  const [correctCount, setCorrectCount] = useState(0);
-  const [roundCount, setRoundCount] = useState(0);
-
-  const buildQuestion = () => {
-    const note = availableNotes[Math.floor(Math.random() * availableNotes.length)];
-    const positions = getPositions(note);
-    if (positions.length === 0) {
-      return buildQuestion();
-    }
-    const correct = positions[Math.floor(Math.random() * positions.length)];
-    const allPositions = strings.flatMap((string) =>
-      Array.from({ length: 13 }, (_, idx) => ({ string: string.name, fret: idx }))
-    );
-    const wrongOptions = shuffle(allPositions.filter((pos) => pos.string !== correct.string || pos.fret !== correct.fret)).slice(0, 3);
-
-    setCurrentNote(note);
-    setCorrectPosition(correct);
-    setOptions(shuffle([correct, ...wrongOptions]));
-    setSelectedId(null);
-    setFeedback('');
-    playNote(note);
-  };
-
-  useEffect(() => {
-    buildQuestion();
-  }, []);
-
-  const handleAnswer = (option: { string: string; fret: number }) => {
-    setSelectedId(`${option.string}-${option.fret}`);
-    const isCorrect = correctPosition && option.string === correctPosition.string && option.fret === correctPosition.fret;
-    if (isCorrect) {
-      setCorrectCount((count) => count + 1);
-      setFeedback('Correct!');
-    } else {
-      setFeedback(`Wrong — the right answer was ${correctPosition?.string} fret ${correctPosition?.fret}.`);
-    }
-    setRoundCount((count) => count + 1);
-
-    // Check for victory condition
-    if (isCorrect && correctCount + 1 >= 10) {
-      if (onComplete) {
-        onComplete(correctCount + 1, roundCount + 1);
-      }
-    } else {
-      setTimeout(buildQuestion, 1600);
-    }
-  };
-
-  return (
-    <div className="space-y-8">
-      <div className="glass-panel p-6 rounded-3xl border border-white/10 bg-dark-950/70 shadow-2xl shadow-black/40">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-1">Ear Training Practice</p>
-            <h3 className="text-lg font-black text-white">Hear the note. Match the fretboard.</h3>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500">Score</p>
-            <p className="text-lg font-black text-primary-500">{correctCount}/{Math.max(roundCount, 1)}</p>
-          </div>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-[1fr_auto] items-center">
-          <div className="rounded-3xl bg-white/5 p-4 border border-white/10">
-            <p className="text-[10px] text-gray-400 mb-2 leading-relaxed">A note is played without showing its name. Choose the correct string and fret.</p>
-            <div className="text-3xl font-black text-white mb-1">♪</div>
-          </div>
-          <button
-            onClick={() => currentNote && playNote(currentNote)}
-            className="py-3 px-5 rounded-2xl bg-primary-500 text-dark-900 font-black uppercase tracking-widest hover:bg-primary-400 transition-all text-sm"
-          >
-            Play Note Again
-          </button>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2 mt-8">
-          {options.map((option) => {
-            const optionId = `${option.string}-${option.fret}`;
-            return (
-              <button
-                key={optionId}
-                onClick={() => handleAnswer(option)}
-                disabled={!!selectedId}
-                className={`p-4 rounded-2xl text-left font-bold transition-all border ${selectedId === optionId ? 'border-primary-500 bg-primary-500/20 text-white' : 'bg-dark-900 border-white/10 hover:border-primary-500/30 hover:bg-dark-800 text-gray-200'} ${selectedId ? 'cursor-not-allowed opacity-90' : 'active:scale-95 shadow-lg shadow-black/20'}`}
-              >
-                <div className="flex items-center justify-around py-1">
-                  <div className="text-center min-w-[70px]">
-                    <span className="block text-[8px] text-gray-500 uppercase tracking-[0.2em] mb-1">String</span>
-                    <span className="text-lg font-black text-white leading-none">{option.string}</span>
-                  </div>
-                  <div className="w-px h-10 bg-white/10 mx-2" />
-                  <div className="text-center min-w-[70px]">
-                    <span className="block text-[8px] text-gray-500 uppercase tracking-[0.2em] mb-1">Fret</span>
-                    <span className="text-lg font-black text-white leading-none">{option.fret}</span>
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        {feedback && (
-          <div className="mt-6 rounded-3xl bg-white/5 p-4 border border-white/10 text-sm text-gray-200">
-            {feedback}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const MotivationQuote: React.FC = () => {
-  const [quote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)]);
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      className="mb-8 p-0 italic text-gray-400 text-sm md:text-base max-w-2xl"
-    >
-      "{quote.text}" — <span className="text-primary-500/70 font-bold not-italic">{quote.author}</span>
-    </motion.div>
-  );
-};
-
-const QuickResume: React.FC<{ lesson: Lesson | null; onResume: (l: Lesson) => void }> = ({ lesson, onResume }) => {
-  if (!lesson) return null;
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.002 }}
-      className="glass-panel p-5 rounded-2xl mb-10 bg-gradient-to-r from-primary-500/10 to-transparent border-primary-500/20 flex flex-col md:flex-row items-center justify-between gap-4 overflow-hidden relative"
-    >
-      <div className="absolute -left-10 -top-10 w-32 h-32 bg-primary-500/5 rounded-full blur-2xl" />
-      <div className="relative z-10 flex items-center gap-4">
-        <div className="w-10 h-10 rounded-full bg-primary-500/10 flex items-center justify-center text-primary-500">
-          <PlayCircle size={20} />
-        </div>
-        <div>
-          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary-500/70 mb-0.5 block">Quick Resume</span>
-          <h3 className="text-lg font-bold text-white leading-tight">{lesson.title}</h3>
-        </div>
-      </div>
-      <button
-        onClick={() => onResume(lesson)}
-        className="relative z-10 px-6 py-2.5 bg-primary-500 text-dark-900 text-sm font-black rounded-xl shadow-lg shadow-primary-500/10 hover:bg-primary-400 transition-all active:scale-95"
-      >
-        Resume Now
-      </button>
-    </motion.div>
-  );
-};
-
-const AnalyticsChart: React.FC<{ stats: Record<string, number> }> = ({ stats }) => {
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const data = days.map(day => stats[day] || 0);
-  const max = Math.max(...data, 60);
-  const hasData = data.some(v => v > 0);
-
-  // SVG dimensions
-  const width = 500;
-  const height = 160;
-  const padding = 20;
-
-  // Calculate points for the line
-  const points = data.map((val, i) => ({
-    x: padding + (i * (width - 2 * padding)) / (days.length - 1),
-    y: height - padding - (val / max) * (height - 2 * padding)
-  }));
-
-  // Generate path string (simple linear for now, could be curved)
-  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-  const areaPath = `${linePath} L ${points[points.length - 1].x} ${height - padding} L ${points[0].x} ${height - padding} Z`;
-  const activeDays = data.filter(v => v > 0).length;
-  const totalMins = Math.round(data.reduce((acc, v) => acc + v, 0));
-  const avgMins = activeDays > 0 ? Math.round(totalMins / activeDays) : 0;
-  const bestDayIdx = data.indexOf(Math.max(...data));
-  const bestDayName = data[bestDayIdx] > 0 ? days[bestDayIdx] : 'None';
-
-  return (
-    <div className="glass-panel p-6 rounded-3xl bg-white/[0.02] border-white/5 mb-8 relative overflow-hidden group/chart">
-      <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-        <Activity size={100} />
-      </div>
-
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-        <div>
-          <h4 className="text-sm font-bold text-white mb-1">Practice Momentum</h4>
-          <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Performance analytics curve</p>
-        </div>
-
-        {/* Quick Stats Grid */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="px-3 border-l border-white/10">
-            <p className="text-[9px] text-gray-600 font-black uppercase tracking-tighter">Avg/Day</p>
-            <p className="text-sm font-bold text-primary-400">{avgMins}m</p>
-          </div>
-          <div className="px-3 border-l border-white/10">
-            <p className="text-[9px] text-gray-600 font-black uppercase tracking-tighter">Weekly</p>
-            <p className="text-sm font-bold text-white">{totalMins}m</p>
-          </div>
-          <div className="px-3 border-l border-white/10">
-            <p className="text-[9px] text-gray-600 font-black uppercase tracking-tighter">Peak</p>
-            <p className="text-sm font-bold text-amber-500">{bestDayName}</p>
-          </div>
-        </div>
-      </div>
-
-      {!hasData ? (
-        <div className="flex flex-col items-center justify-center h-40 gap-2 border border-dashed border-white/5 rounded-2xl">
-          <p className="text-gray-600 font-bold text-sm italic">"The secret of getting ahead is getting started."</p>
-          <button className="text-[10px] text-primary-500/50 uppercase font-black tracking-widest mt-2 hover:text-primary-500 transition-colors">Begin Training</button>
-        </div>
-      ) : (
-        <div className="relative h-48 w-full">
-          {/* SVG Line Chart content remains same... */}
-          <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-10 py-5">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="w-full border-t border-white/20" />
-            ))}
-          </div>
-
-          <svg
-            viewBox={`0 0 ${width} ${height}`}
-            className="w-full h-40 drop-shadow-[0_0_15px_rgba(57,255,20,0.15)]"
-            preserveAspectRatio="none"
-          >
-            <defs>
-              <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#39FF14" stopOpacity="0.3" />
-                <stop offset="100%" stopColor="#39FF14" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-
-            <motion.path
-              initial={{ d: `M ${points[0].x} ${height - padding} L ${points[0].x} ${height - padding} Z` }}
-              animate={{ d: areaPath }}
-              fill="url(#areaGradient)"
-              transition={{ duration: 1, ease: "easeOut" }}
-            />
-
-            <motion.path
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              d={linePath}
-              fill="none"
-              stroke="#39FF14"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              transition={{ duration: 1.2, ease: "easeInOut" }}
-            />
-
-            {points.map((p, i) => (
-              <g key={i} className="cursor-pointer group/point">
-                <motion.circle
-                  initial={{ r: 0 }}
-                  animate={{ r: 4 }}
-                  cx={p.x}
-                  cy={p.y}
-                  fill="#39FF14"
-                  className="group-hover/point:r-6 transition-all"
-                />
-                <circle
-                  cx={p.x}
-                  cy={p.y}
-                  r="12"
-                  fill="transparent"
-                  className="pointer-events-auto"
-                />
-              </g>
-            ))}
-          </svg>
-
-          <div className="flex justify-between items-center mt-4 px-1">
-            {days.map((day, i) => (
-              <div key={day} className="flex flex-col items-center gap-1 group/label">
-                <span className={`text-[10px] font-black transition-all ${data[i] > 0 ? 'text-primary-500' : 'text-gray-700'}`}>
-                  {day}
-                </span>
-                {data[i] > 0 && (
-                  <motion.span
-                    initial={{ opacity: 0 }}
-                    whileHover={{ opacity: 1 }}
-                    className="text-[9px] text-gray-500 font-bold"
-                  >
-                    {Math.round(data[i])}m
-                  </motion.span>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-const LevelRoadmap: React.FC<{ currentXp: number }> = ({ currentXp }) => {
-  const [isExpanded, setIsExpanded] = React.useState(false);
-  const location = useLocation();
-  const shouldFlash = location.state?.flashRank;
-
-  useEffect(() => {
-    if (shouldFlash) {
-      window.history.replaceState({}, document.title);
-    }
-  }, [shouldFlash]);
-
-  const levels = [
-    { level: 1, xp: 0, title: 'Beginner' },
-    { level: 2, xp: 100, title: 'Novice' },
-    { level: 3, xp: 250, title: 'Apprentice' },
-    { level: 4, xp: 500, title: 'Intermediate' },
-    { level: 5, xp: 1000, title: 'Advanced' },
-    { level: 6, xp: 2000, title: 'Expert' },
-    { level: 7, xp: 4000, title: 'Master' },
-    { level: 8, xp: 7500, title: 'Grand Master' },
-    { level: 9, xp: 12000, title: 'Legendary' },
-    { level: 10, xp: 20000, title: 'Guitar Hero 🎸' },
-  ];
-
-  const currentLevelIndex = levels.findIndex(l => currentXp < l.xp) === -1
-    ? levels.length - 1
-    : levels.findIndex(l => currentXp < l.xp) - 1;
-
-  const displayLevels = isExpanded ? levels : [levels[currentLevelIndex]];
-
-  return (
-    <motion.div
-      animate={shouldFlash ? {
-        boxShadow: ['0 0 0px rgba(57,255,20,0)', '0 0 30px rgba(57,255,20,0.4)', '0 0 0px rgba(57,255,20,0)'],
-        borderColor: ['rgba(255,255,255,0.05)', 'rgba(57,255,20,0.5)', 'rgba(255,255,255,0.05)']
-      } : {}}
-      transition={{ duration: 1.5, ease: "easeInOut" }}
-      className="glass-panel p-6 rounded-3xl bg-white/[0.02] border border-white/5 mb-8"
-    >
-      <div
-        className="flex items-center justify-between mb-6 cursor-pointer group"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary-500/10 flex items-center justify-center text-primary-500">
-            <Star size={18} />
-          </div>
-          <div>
-            <h4 className="text-sm font-black uppercase tracking-[0.2em] text-gray-500 group-hover:text-primary-400 transition-colors">Rank Progression</h4>
-            <p className="text-[10px] text-gray-600 font-bold uppercase mt-1">Total XP: <span className="text-primary-500">{currentXp.toLocaleString()}</span></p>
-          </div>
-        </div>
-        <div className="text-[10px] font-bold text-gray-500 uppercase bg-white/5 px-3 py-1.5 rounded-full group-hover:bg-primary-500/10 transition-colors">
-          {isExpanded ? 'Collapse' : 'Show All Ranks'}
-        </div>
-      </div>
-      <motion.div layout className="flex flex-col">
-        <AnimatePresence initial={false}>
-          {displayLevels.map((l) => {
-            const globalIdx = levels.findIndex(lvl => lvl.level === l.level);
-            const isCurrent = globalIdx === currentLevelIndex;
-            const isUnlocked = globalIdx <= currentLevelIndex;
-            const isNext = globalIdx === currentLevelIndex + 1;
-            return (
-              <motion.div
-                layout
-                initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-                animate={{ opacity: 1, height: 'auto', marginBottom: 12 }}
-                exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
-                key={l.level}
-                className="overflow-hidden"
-              >
-                <div className={`flex items-center justify-between p-3 rounded-2xl border ${isCurrent ? 'bg-primary-500/10 border-primary-500/30 shadow-[0_0_15px_rgba(57,255,20,0.1)]' : isUnlocked ? 'bg-white/5 border-white/10' : 'bg-transparent border-white/5 opacity-40'} transition-all`}>
-                  <div className="flex items-center gap-4">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${isCurrent ? 'bg-primary-500 text-dark-900' : isUnlocked ? 'bg-white/10 text-white' : 'bg-white/5 text-gray-600'}`}>
-                      {l.level}
-                    </div>
-                    <div>
-                      <p className={`font-bold whitespace-nowrap ${isCurrent ? 'text-primary-400' : isUnlocked ? 'text-white' : 'text-gray-500'}`}>{l.title}</p>
-                      <p className="text-[10px] text-gray-500 uppercase font-black tracking-wider">{l.xp.toLocaleString()} XP</p>
-                    </div>
-                  </div>
-                  {isCurrent && (
-                    <span className="text-[10px] font-black uppercase tracking-widest text-primary-500 px-2 py-1 bg-primary-500/10 rounded-lg shrink-0">Current</span>
-                  )}
-                  {isNext && (
-                    <div className="text-right shrink-0">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-orange-400 block">Next Target</span>
-                      <span className="text-[9px] text-gray-500 font-bold">{l.xp - currentXp} XP to go</span>
-                    </div>
-                  )}
-                  {isUnlocked && !isCurrent && (
-                    <CheckCircle size={16} className="text-green-500/50 shrink-0" />
-                  )}
-                  {!isUnlocked && !isNext && (
-                    <Lock size={16} className="text-gray-600 shrink-0" />
-                  )}
-                </div>
-              </motion.div>
-            )
-          })}
-        </AnimatePresence>
-      </motion.div>
-    </motion.div>
-  )
-}
-
-const LeaderboardComponent: React.FC<{ data: LeaderboardItem[], currentUser?: string, userScore?: number }> = ({ data, currentUser, userScore = 0 }) => {
-  const sorted = [...data].sort((a, b) => b.score - a.score);
-  const top10 = sorted.slice(0, 10);
-
-  // To calculate rank, we need to know where the user's best score fits in the global list
-  // We'll treat the user's highscore as their entry
-  const userRank = sorted.findIndex(item => item.score <= userScore) + 1;
-
-  return (
-    <div className="w-full mt-16 pb-12 text-left">
-      <div className="flex items-center gap-3 mb-8">
-        <Trophy size={20} className="text-primary-500" />
-        <h3 className="text-sm font-black uppercase tracking-[0.3em] text-gray-500">Hall of Fame</h3>
-      </div>
-
-      <div className="space-y-3">
-        {top10.map((item, i) => (
-          <div
-            key={item.id}
-            className={`flex items-center justify-between p-5 rounded-2xl border transition-all ${item.name === currentUser ? 'bg-primary-500/20 border-primary-500 shadow-[0_0_15px_rgba(57,255,20,0.2)]' :
-              i === 0 ? 'bg-primary-500/10 border-primary-500/30' :
-                i === 1 ? 'bg-white/5 border-white/10' :
-                  i === 2 ? 'bg-white/[0.03] border-white/5' : 'bg-transparent border-white/5'
-              }`}
-          >
-            <div className="flex items-center gap-4">
-              <span className={`w-6 text-xs font-black ${i < 3 ? 'text-primary-500' : 'text-gray-600'}`}>
-                {i + 1}
-              </span>
-              <span className="font-bold text-sm text-white">{item.name}</span>
-            </div>
-            <div className="flex items-center gap-6">
-              <span className="text-[10px] text-gray-600 font-bold uppercase">{item.date}</span>
-              <span className="text-sm font-black text-primary-500">{item.score}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="pt-8 border-t border-white/5 mt-10">
-        <div className="flex items-center justify-between p-6 rounded-3xl bg-primary-500 text-dark-900 shadow-xl shadow-primary-500/20 transform transition-transform hover:scale-[1.02]">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-dark-900/10 flex items-center justify-center font-black text-lg">
-              #{userRank > 0 ? userRank : '??'}
-            </div>
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Your Standing</p>
-              <h4 className="font-bold">You (Personal Best)</h4>
-            </div>
-          </div>
-          <div className="text-right">
-            <span className="text-3xl font-black">{userScore}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error: any }> {
   constructor(props: any) {
     super(props);
@@ -1244,497 +218,11 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
   }
 }
 
-const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number; achievements?: Array<{ id: number; name: string; description: string; icon: string; earned: boolean }> }> = ({ lessons: _lessons, streak: _streak, achievements: apiAchievements }) => {
-  const [showAll, setShowAll] = React.useState(false);
 
-  // Use API achievements exclusively
-  const displayBadges = (apiAchievements || []).map(a => ({
-    id: String(a.id),
-    name: a.name,
-    icon: a.icon,
-    desc: a.description,
-    color: 'from-primary-400 to-primary-600',
-    category: 'Achievement',
-    earned: a.earned,
-  }));
 
-  const getProgress = (_id: string): { current: number; max: number } | null => {
-    return null; // API achievements are binary (earned or not)
-  };
 
-  const unlockedBadges = displayBadges.filter(b => b.earned);
-  const unlockedCount = unlockedBadges.length;
-  const categories = ['Lessons', 'Streak', 'Mastery', 'Achievement'];
 
-  return (
-    <>
-      {/* Compact unlocked-only view */}
-      <div>
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <h3 className="text-sm font-black uppercase tracking-[0.3em] text-gray-500">Achievements</h3>
-            <span className="text-[10px] font-bold bg-primary-500/10 text-primary-500 px-2 py-0.5 rounded-full">
-              {unlockedCount}/{displayBadges.length}
-            </span>
-          </div>
-          <button
-            onClick={() => setShowAll(true)}
-            className="text-[11px] font-bold text-gray-500 hover:text-primary-400 transition-colors uppercase tracking-wider"
-          >
-            View All →
-          </button>
-        </div>
 
-        {unlockedCount === 0 ? (
-          <div className="text-center py-10 bg-white/[0.02] rounded-2xl border border-dashed border-white/5">
-            <p className="text-gray-600 text-sm font-bold">No achievements yet.</p>
-            <p className="text-[11px] text-gray-700 mt-1">Complete your first lesson to earn one!</p>
-          </div>
-        ) : (
-          <div className="flex flex-wrap gap-3">
-            {unlockedBadges.map(badge => (
-              <motion.div
-                key={badge.id}
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                whileHover={{ y: -3 }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-2xl bg-gradient-to-r ${badge.color} bg-opacity-10 border border-white/10 group cursor-default`}
-                title={badge.name}
-              >
-                <span className="text-xl">{badge.icon}</span>
-                <span className="text-xs font-bold text-white">{badge.name}</span>
-              </motion.div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* All Achievements Modal */}
-      <AnimatePresence>
-        {showAll && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
-            {/* Plain overlay - no backdrop-blur for perf */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="absolute inset-0 bg-black/70"
-              onClick={() => setShowAll(false)}
-            />
-            {/* Modal - only this animates */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 16 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="glass-panel w-full max-w-2xl max-h-[80vh] overflow-y-auto rounded-3xl p-8 relative z-10 no-scrollbar"
-            >
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h2 className="text-2xl font-black text-white">All Achievements</h2>
-                  <p className="text-xs text-gray-500 mt-1">{unlockedCount} of {displayBadges.length} unlocked</p>
-                </div>
-                <button
-                  onClick={() => setShowAll(false)}
-                  className="w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-xl transition-all text-gray-400 hover:text-white"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              {/* Progress bar — CSS transition, no motion */}
-              <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden mb-10">
-                <div
-                  className="h-full bg-gradient-to-r from-primary-500 to-primary-400 transition-all duration-500"
-                  style={{ width: `${(unlockedCount / Math.max(displayBadges.length, 1)) * 100}%` }}
-                />
-              </div>
-
-              {categories.map(cat => {
-                const badgesInCategory = displayBadges.filter(b => b.category === cat);
-                if (badgesInCategory.length === 0) return null;
-                return (
-                  <div key={cat} className="mb-8">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-600 mb-4">{cat}</p>
-                    <div className="grid grid-cols-1 gap-3">
-                      {badgesInCategory.map(badge => {
-                        const unlocked = badge.earned;
-                        const progress = getProgress(badge.id);
-                        return (
-                          <div
-                            key={badge.id}
-                            className={`flex items-center gap-4 p-4 rounded-2xl border border-white/5 relative overflow-hidden ${unlocked ? 'bg-white/[0.04]' : 'opacity-50'
-                              }`}
-                          >
-                            {unlocked && <div className={`absolute inset-0 bg-gradient-to-r ${badge.color} opacity-5`} />}
-                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0 ${unlocked ? `bg-gradient-to-br ${badge.color}` : 'bg-white/5 grayscale'
-                              }`}>
-                              {badge.icon}
-                            </div>
-                            <div className="flex-1 min-w-0 relative z-10">
-                              <div className="flex items-center gap-2">
-                                <h4 className={`font-bold text-sm ${unlocked ? 'text-white' : 'text-gray-500'}`}>{badge.name}</h4>
-                                {unlocked && <span className="text-[9px] font-black text-primary-500 uppercase bg-primary-500/10 px-2 py-0.5 rounded-full">✓ Unlocked</span>}
-                              </div>
-                              <p className="text-[11px] text-gray-600 mt-0.5">{badge.desc}</p>
-                              {!unlocked && progress && (
-                                <div className="mt-2 flex items-center gap-2">
-                                  <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
-                                    <div
-                                      className="h-full bg-primary-500/40 transition-all duration-500"
-                                      style={{ width: `${(progress.current / progress.max) * 100}%` }}
-                                    />
-                                  </div>
-                                  <span className="text-[9px] text-gray-700 font-bold shrink-0">{progress.current}/{progress.max}</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-    </>
-  );
-};
-
-const ProfileDropdown: React.FC<{
-  user: any;
-  onClose: () => void;
-  onLogout: () => void;
-  onOpenHelp: () => void;
-  onOpenSettings: () => void;
-  onOpenSupport: () => void;
-  onUpdate: (data: { username?: string; avatar_url?: string; password?: string }) => Promise<void>;
-}> = ({ user, onClose, onLogout, onOpenHelp, onOpenSettings, onOpenSupport, onUpdate }) => {
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [view, setView] = useState<'main' | 'edit'>('main');
-  const [username, setUsername] = useState(user?.username || '');
-  const [password, setPassword] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [onClose]);
-
-  return (
-    <>
-      <motion.div
-        ref={dropdownRef}
-        initial={{ scale: 0.95, opacity: 0, y: 10 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        className="fixed top-20 right-6 z-[2001] glass-panel p-6 rounded-3xl w-72 border-white/10 shadow-2xl shadow-black/50"
-      >
-        <AnimatePresence mode="wait">
-          {view === 'main' ? (
-            <motion.div
-              key="main"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 10 }}
-              className="space-y-4"
-            >
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 rounded-full bg-primary-500/10 border-2 border-primary-500/30 flex items-center justify-center text-primary-500 overflow-hidden">
-                  <User size={24} />
-                </div>
-                <div>
-                  <h2 className="text-sm font-bold text-white leading-none mb-1">{user?.username}</h2>
-                  <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest">Lv.{user?.level} Student</p>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => setView('edit')}
-                  className="w-full py-3 bg-primary-500 text-dark-900 text-xs font-black rounded-xl hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
-                >
-                  <Edit2 size={14} /> Edit Profile
-                </button>
-                <button
-                  onClick={() => { onClose(); onOpenSettings(); }}
-                  className="w-full py-3 bg-white/5 text-gray-300 text-xs font-bold rounded-xl hover:bg-white/10 transition-all flex items-center justify-center gap-2"
-                >
-                  <Settings2 size={14} /> Settings
-                </button>
-                <button
-                  onClick={() => { onClose(); onOpenSupport(); }}
-                  className="w-full py-3 bg-white/5 text-gray-300 text-xs font-bold rounded-xl hover:bg-white/10 transition-all flex items-center justify-center gap-2"
-                >
-                  <Flag size={14} /> Support / Report Bug
-                </button>
-                <button
-                  onClick={() => { onClose(); onOpenHelp(); }}
-                  className="w-full py-3 bg-white/5 text-gray-300 text-xs font-bold rounded-xl hover:bg-white/10 transition-all flex items-center justify-center gap-2"
-                >
-                  <HelpCircle size={14} /> Help Center
-                </button>
-                <button
-                  onClick={onLogout}
-                  className="w-full py-3 text-rose-500 text-xs font-bold rounded-xl hover:bg-rose-500/10 transition-all flex items-center justify-center gap-2 mt-2"
-                >
-                  <LogOut size={14} /> Sign Out
-                </button>
-              </div>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="edit"
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              className="space-y-4"
-            >
-              <div className="flex items-center gap-2 mb-4">
-                <button onClick={() => setView('main')} className="text-gray-500 hover:text-white transition-colors">
-                  <ArrowLeft size={16} />
-                </button>
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Edit Profile</h3>
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 block ml-1">Username</label>
-                <input
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="glass-input w-full px-4 py-3 rounded-xl text-sm text-white font-medium focus:border-primary-500/50 transition-all outline-none"
-                  placeholder="Your username"
-                />
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 block ml-1">New Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="glass-input w-full px-4 py-3 rounded-xl text-sm text-white font-medium focus:border-primary-500/50 transition-all outline-none"
-                  placeholder="Leave blank to keep current"
-                />
-              </div>
-
-              <button
-                onClick={async () => {
-                  setIsSaving(true);
-                  await onUpdate({ username, ...(password ? { password } : {}) });
-                  setIsSaving(false);
-                  setPassword('');
-                  setView('main');
-                }}
-                disabled={isSaving}
-                className="w-full py-3 bg-primary-500 text-dark-900 text-sm font-black rounded-xl hover:scale-[1.02] transition-all active:scale-95 disabled:opacity-50 mt-2"
-              >
-                {isSaving ? 'Saving...' : 'Save Changes'}
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-    </>
-  );
-};
-
-const LevelMenu: React.FC<{ navigate: any }> = ({ navigate }) => (
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
-    {[
-      { id: 1, name: "The Foundations", desc: "Learn the strings and open notes.", path: '/dashboard/lessons/1' },
-      { id: 2, name: "Fret Mastery", desc: "Navigate the first 3 frets with ease.", path: '/dashboard/lessons/2' },
-      { id: 3, name: "Melodies", desc: "Play your first riffs and songs.", path: '/dashboard/lessons/3' },
-      { id: 4, name: "Songs", desc: "Complete a full song as a lesson, just like the earlier levels.", path: '/dashboard/lessons/4' },
-      { id: 5, name: "Ear Training", desc: "Identify notes by ear and match them to the fretboard.", path: '/dashboard/ear-training' }
-    ].map(level => (
-      <motion.div
-        key={level.id}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        onClick={() => navigate(level.path)}
-        className="glass-panel p-8 rounded-3xl cursor-pointer hover:border-primary-500/50 transition-colors group flex flex-col items-center text-center"
-      >
-        <span className="text-xs font-bold text-primary-500 bg-primary-500/10 px-3 py-1 rounded-full mb-4 uppercase tracking-wider">Level {level.id}</span>
-        <h2 className="text-2xl font-bold text-white mb-2 group-hover:text-primary-500 transition-colors">{level.name}</h2>
-        <p className="text-gray-400 text-sm">{level.desc}</p>
-      </motion.div>
-    ))}
-  </div>
-);
-
-interface LessonGridProps {
-  navigate: any;
-  searchTerm: string;
-  setSearchTerm: (val: string) => void;
-  difficultyFilter: string;
-  setDifficultyFilter: (val: string) => void;
-  filteredLessons: Lesson[];
-  startPractice: (lesson: Lesson) => void;
-  userRole: string;
-  onAdd: () => void;
-  onEdit: (lesson: Lesson) => void;
-  onReorder: (lessonId: number, direction: 'up' | 'down') => void;
-  lessons: Lesson[];
-}
-
-const LessonGrid: React.FC<LessonGridProps> = ({
-  navigate,
-  searchTerm,
-  setSearchTerm,
-  difficultyFilter,
-  setDifficultyFilter,
-  filteredLessons,
-  startPractice,
-  userRole,
-  onAdd,
-  onEdit,
-  onReorder,
-  lessons
-}) => (
-  <div className="p-6 space-y-6">
-    <div className="flex items-center gap-2 mb-8 relative z-20">
-      <button
-        onClick={() => navigate('/dashboard')}
-        className="glass-panel flex items-center justify-center w-12 h-12 md:w-auto md:px-6 rounded-2xl text-gray-400 hover:text-white transition-colors shrink-0"
-        title="Back to Levels"
-      >
-        <ArrowLeft size={18} /> <span className="hidden md:inline ml-2">Back</span>
-      </button>
-
-      <div className="flex-1 relative min-w-0">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
-        <input
-          type="text"
-          placeholder="Search..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="glass-input w-full pl-11 pr-4 h-12 rounded-2xl text-xs md:text-sm"
-        />
-      </div>
-
-      <div className="shrink-0 flex gap-2">
-        <select
-          value={difficultyFilter}
-          onChange={(e) => setDifficultyFilter(e.target.value)}
-          className="glass-panel h-12 px-3 md:px-4 rounded-2xl text-[10px] md:text-sm text-white outline-none cursor-pointer border-white/5 bg-dark-800/50"
-        >
-          <option value="all" disabled hidden>Difficulty</option>
-          <option value="all">All</option>
-          <option value="easy">Easy</option>
-          <option value="medium">Medium</option>
-          <option value="hard">Hard</option>
-        </select>
-      </div>
-    </div>
-
-    <motion.div
-      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-      initial="hidden"
-      animate="show"
-      variants={{
-        hidden: { opacity: 0 },
-        show: {
-          opacity: 1,
-          transition: {
-            staggerChildren: 0.1
-          }
-        }
-      }}
-    >
-      {filteredLessons.map(lesson => (
-        <motion.div
-          key={lesson.id}
-          variants={{
-            hidden: { opacity: 0, y: 20 },
-            show: { opacity: 1, y: 0 }
-          }}
-          layout
-          className={`glass-panel p-6 rounded-3xl flex flex-col group transition-all duration-300 relative overflow-hidden ${lesson.status === 'locked' ? 'opacity-50 grayscale' : 'hover:border-primary-500/30 hover:shadow-2xl hover:shadow-primary-500/5'}`}
-        >
-          {lesson.level === 4 && (
-            <div className="absolute top-[43%] -translate-y-1/2 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
-              <Music size={80} />
-            </div>
-          )}
-          <div className="flex justify-between items-start mb-4">
-            <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md ${lesson.difficulty === 'easy' ? 'bg-green-500/20 text-green-500' :
-              lesson.difficulty === 'medium' ? 'bg-yellow-500/20 text-yellow-500' : 'bg-red-500/20 text-red-500'
-              }`}>
-              {lesson.difficulty}
-            </span>
-            <div className="flex items-center gap-2">
-              {userRole === 'ADMIN' && (
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onReorder(lesson.id, 'up'); }}
-                    disabled={lessons.findIndex(l => l.id === lesson.id) === 0}
-                    className="w-8 h-8 rounded-lg bg-white/5 text-gray-400 hover:text-primary-500 hover:bg-primary-500/10 transition-all flex items-center justify-center disabled:opacity-20 disabled:cursor-not-allowed"
-                  >
-                    <ChevronUp size={14} />
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onReorder(lesson.id, 'down'); }}
-                    disabled={lessons.findIndex(l => l.id === lesson.id) === lessons.length - 1}
-                    className="w-8 h-8 rounded-lg bg-white/5 text-gray-400 hover:text-primary-500 hover:bg-primary-500/10 transition-all flex items-center justify-center disabled:opacity-20 disabled:cursor-not-allowed"
-                  >
-                    <ChevronDown size={14} />
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onEdit(lesson); }}
-                    className="w-8 h-8 rounded-lg bg-white/5 text-gray-400 hover:text-primary-500 hover:bg-primary-500/10 transition-all flex items-center justify-center"
-                  >
-                    <Edit2 size={14} />
-                  </button>
-                </div>
-              )}
-              <div className="text-primary-500">
-                {lesson.status === 'completed' ? <CheckCircle size={20} className="drop-shadow-[0_0_8px_rgba(57,255,20,0.4)]" /> :
-                  lesson.status === 'locked' ? <Lock size={20} className="text-gray-500" /> : <PlayCircle size={20} className="group-hover:scale-110 transition-transform" />}
-              </div>
-            </div>
-          </div>
-          <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary-500 transition-colors flex items-center gap-2">
-            {lesson.level === 4 && <Music size={18} className="text-primary-500/70" />}
-            {lesson.title}
-          </h3>
-          <p className="text-sm text-gray-400 mb-6 flex-1">{lesson.desc}</p>
-          <button
-            disabled={lesson.status === 'locked'}
-            onClick={() => startPractice(lesson)}
-            className={`w-full py-3 rounded-xl font-bold transition-all duration-300 transform active:scale-95 ${lesson.status === 'locked' ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-primary-500 text-dark-900 hover:bg-primary-600 shadow-lg shadow-primary-500/20'
-              }`}
-          >
-            {lesson.status === 'completed' ? 'Review Lesson' : 'Start Lesson'}
-          </button>
-        </motion.div>
-      ))}
-      {userRole === 'ADMIN' && (
-        <motion.div
-          variants={{
-            hidden: { opacity: 0, y: 20 },
-            show: { opacity: 1, y: 0 }
-          }}
-          onClick={onAdd}
-          className="glass-panel p-6 rounded-3xl flex flex-col items-center justify-center border-dashed border-2 border-white/10 hover:border-primary-500/50 hover:bg-primary-500/5 transition-all cursor-pointer group min-h-[200px]"
-        >
-          <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-gray-500 group-hover:text-primary-500 group-hover:bg-primary-500/10 transition-all mb-4">
-            <Plus size={24} />
-          </div>
-          <p className="font-bold text-gray-500 group-hover:text-primary-500 transition-colors uppercase tracking-widest text-xs">Add New Lesson</p>
-        </motion.div>
-      )}
-    </motion.div>
-  </div>
-);
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -1985,13 +473,15 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const submitDuelResult = async () => {
+  const submitDuelResult = async (scoreToSubmit?: number, accuracyToSubmit?: number) => {
     if (!urlInviteCode) {
       setDuelError('No duel code available.');
       return;
     }
+    const finalScore = typeof scoreToSubmit === 'number' ? scoreToSubmit : duelScore;
+    const finalAccuracy = typeof accuracyToSubmit === 'number' ? accuracyToSubmit : duelAccuracy;
     try {
-      const res = await duelsApi.finishDuel(urlInviteCode, duelScore, duelAccuracy);
+      const res = await duelsApi.finishDuel(urlInviteCode, finalScore, finalAccuracy);
       setDuel(res.data);
       // setDuelMessage('Your duel score is registered.');
       setDuelError(null);
@@ -2015,6 +505,19 @@ const Dashboard: React.FC = () => {
       setGameTimeLeft(30); // Reset timer for new duel
     }
   }, [urlInviteCode, currentView]);
+
+  // Automatically close all modals and drawers when the URL or view changes
+  useEffect(() => {
+    setShowStreakModal(false);
+    setShowAdminModal(false);
+    setShowProfileModal(false);
+    setShowHelpModal(false);
+    setShowSettingsModal(false);
+    setShowSupportModal(false);
+    setShowHistoryDrawer(false);
+    setShowHistoryClearModal(false);
+    setShowNotifications(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
@@ -2358,15 +861,22 @@ const Dashboard: React.FC = () => {
     setGameTimeLeft(30);
   };
 
-  // Game Timers
+  // Game Timers (Strictly single-interval per active phase)
   useEffect(() => {
+    if (gamePhase === 'idle' || gamePhase === 'result') return;
+
     let timer: any;
     if (gamePhase === 'countdown') {
       timer = setInterval(() => {
         setGameCountdown(prev => {
           if (prev <= 1) {
-            setGamePhase('playing');
-            pickRandomNote();
+            clearInterval(timer);
+            // Safely schedule the gameplay transition on the next tick to prevent stale state issues
+            setTimeout(() => {
+              setGamePhase('playing');
+              setGameTimeLeft(30);
+              pickRandomNote();
+            }, 0);
             return 0;
           }
           return prev - 1;
@@ -2374,10 +884,19 @@ const Dashboard: React.FC = () => {
       }, 1000);
     } else if (gamePhase === 'playing') {
       timer = setInterval(() => {
-        setGameTimeLeft(prev => prev <= 1 ? 0 : prev - 1);
+        setGameTimeLeft(prev => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
       }, 1000);
     }
-    return () => clearInterval(timer);
+
+    return () => {
+      if (timer) clearInterval(timer);
+    };
   }, [gamePhase]);
 
   // Handle Game End Logic Safely (Avoid Stale Closures)
@@ -2386,9 +905,10 @@ const Dashboard: React.FC = () => {
       setGamePhase('result');
 
       if (currentView === 'duel' && duel?.status === 'started') {
+        const finalAccuracy = duelAccuracy > 0 ? duelAccuracy : 100;
         setDuelScore(gameScore);
-        setDuelAccuracy(prev => (prev > 0 ? prev : 100));
-        submitDuelResult().catch(err => {
+        setDuelAccuracy(finalAccuracy);
+        submitDuelResult(gameScore, finalAccuracy).catch(err => {
           console.error('Failed to submit duel result:', err);
           setDuelError('Unable to submit duel result automatically. Please try again.');
         });
@@ -2445,11 +965,15 @@ const Dashboard: React.FC = () => {
         }
       };
 
-      if (!isListening) {
-        processorRef.current.start().then(() => setIsListening(true));
+      if (!processorRef.current.isRunning) {
+        setIsListening(true);
+        processorRef.current.start().catch(err => {
+          console.error("Failed to start pitch processor:", err);
+          setIsListening(false);
+        });
       }
     } else {
-      if (processorRef.current && isListening) {
+      if (processorRef.current && processorRef.current.isRunning) {
         processorRef.current.stop();
       }
       setIsListening(false);
@@ -2458,9 +982,10 @@ const Dashboard: React.FC = () => {
     }
 
     return () => {
-      if (processorRef.current && isListening) {
+      if (processorRef.current) {
         processorRef.current.stop();
       }
+      setIsListening(false);
       updatePracticeTime();
     };
   }, [currentView, activeLesson, isVictory, showAdminModal, showStreakModal, showHistoryDrawer, showHistoryClearModal, gamePhase, currentSequenceIndex]);
@@ -3280,7 +1805,7 @@ const Dashboard: React.FC = () => {
                       <div className="flex justify-between w-full mb-12">
                         <div className="text-left">
                           <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Time Left</p>
-                          <h4 className={`text-3xl font-black ${gameTimeLeft <= 10 ? 'text-rose-500 animate-pulse' : 'text-white'}`}>{gameTimeLeft}s</h4>
+                          <h4 key={gameTimeLeft} className={`text-3xl font-black ${gameTimeLeft <= 10 ? 'text-rose-500 animate-pulse' : 'text-white'}`}>{gameTimeLeft}s</h4>
                         </div>
                         <div className="text-right">
                           <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Score</p>
@@ -3320,6 +1845,44 @@ const Dashboard: React.FC = () => {
                           className="text-gray-500 hover:text-rose-500 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2 justify-center"
                         >
                           <X size={14} /> Stop Challenge
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {gamePhase === 'result' && (
+                    <div className="text-center w-full flex flex-col items-center">
+                      <div className="w-24 h-24 bg-primary-500/10 text-primary-500 rounded-full flex items-center justify-center mx-auto mb-8 animate-bounce">
+                        <Trophy size={48} />
+                      </div>
+                      <p className="text-gray-500 font-bold uppercase tracking-widest text-xs mb-2">Challenge Finished!</p>
+                      
+                      {gameScore > gameHighScore ? (
+                        <div className="mb-8">
+                          <span className="bg-primary-500/20 text-primary-500 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest animate-pulse">
+                            🎉 NEW HIGH SCORE!
+                          </span>
+                          <h4 className="text-7xl font-black text-white mt-4">{gameScore}</h4>
+                        </div>
+                      ) : (
+                        <div className="mb-8">
+                          <h4 className="text-7xl font-black text-white mb-2">{gameScore}</h4>
+                          <p className="text-xs text-gray-500 font-bold uppercase">Your High Score: {gameHighScore}</p>
+                        </div>
+                      )}
+
+                      <div className="flex flex-col sm:flex-row gap-4 w-full justify-center mt-6">
+                        <button
+                          onClick={startChallenge}
+                          className="bg-primary-500 text-dark-900 px-8 py-4 rounded-2xl font-black text-base hover:scale-105 transition-all shadow-xl shadow-primary-500/20 shrink-0"
+                        >
+                          PLAY AGAIN
+                        </button>
+                        <button
+                          onClick={() => setGamePhase('idle')}
+                          className="bg-white/5 border border-white/10 text-white px-8 py-4 rounded-2xl font-black text-base hover:bg-white/10 transition-all shrink-0"
+                        >
+                          LEADERBOARD
                         </button>
                       </div>
                     </div>

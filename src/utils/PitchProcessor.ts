@@ -56,7 +56,7 @@ export class AudioProcessor {
     private analyser: AnalyserNode | null = null;
     private microphone: MediaStreamAudioSourceNode | null = null;
     private filter: BiquadFilterNode | null = null;
-    private isRunning = false;
+    public isRunning = false;
     private animationId: number | null = null;
     public onNoteDetected: (frequency: number, note: string) => void = () => {}; 
     private recentNotes: string[] = [];
@@ -75,7 +75,7 @@ export class AudioProcessor {
             this.filter.frequency.setValueAtTime(1000, this.audioContext.currentTime);
 
             this.analyser = this.audioContext.createAnalyser();
-            this.analyser.fftSize = 2048;
+            this.analyser.fftSize = 4096;
 
             this.microphone.connect(this.filter);
             this.filter.connect(this.analyser);
@@ -105,7 +105,7 @@ export class AudioProcessor {
         const rms = Math.sqrt(sum / bufferLength);
         const volume = rms * 100;
 
-        if (volume > 3) { 
+        if (volume > 0.8) { 
             const frequency = yinDetector(dataArray, this.audioContext.sampleRate);
             if (frequency > 0 && frequency < 2000) {
                 const rawNote = this.frequencyToNote(frequency);
