@@ -28,7 +28,10 @@ function onTokenRefreshed(token: string) {
  * Sends a physical HTTP call to backend services requesting new access and refresh tokens.
  */
 async function doRefresh(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
-  const res = await fetch(REFRESH_ENDPOINT, {
+  const baseUrl = import.meta.env.VITE_API_URL || '';
+  const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  
+  const res = await fetch(`${cleanBaseUrl}${REFRESH_ENDPOINT}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refreshToken }),
@@ -98,7 +101,8 @@ class ApiClient {
   private accessToken: string | null = null;
 
   constructor(baseUrl: string = '') {
-    this.baseUrl = baseUrl;
+    // Strip trailing slashes to prevent double-slash (e.g. //api/...) routing bugs on backend
+    this.baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
   }
 
   /**
