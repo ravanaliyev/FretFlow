@@ -1592,6 +1592,7 @@ const Dashboard: React.FC = () => {
             <div className="relative">
               <button
                 onClick={() => setShowProfileModal(!showProfileModal)}
+                data-profile-button
                 className="w-10 h-10 rounded-full bg-primary-500/10 border-2 border-primary-500/30 flex items-center justify-center text-primary-500 overflow-hidden hover:border-primary-500/60 transition-all active:scale-95"
               >
                 <User size={20} />
@@ -1646,11 +1647,11 @@ const Dashboard: React.FC = () => {
       </AnimatePresence>
 
 
-      <div className={`container mx-auto py-12 px-6 max-w-5xl ${currentView === 'practice' && !(activeLesson && activeLesson.id < 0) ? 'hidden' : ''}`}>
+      <div className={`container mx-auto pt-6 pb-12 md:py-12 px-6 max-w-5xl ${currentView === 'practice' && !(activeLesson && activeLesson.id < 0) ? 'hidden' : ''}`}>
         {/* Main Content - Full Width */}
         <main className="w-full">
           {(currentView === 'levels' || currentView === 'lessons') && (
-            <div className="mb-6 md:mb-12">
+            <div className="mb-4 md:mb-12 -mt-4 md:mt-0">
               <h2 className="text-2xl md:text-4xl font-bold mb-1.5 md:mb-3 text-white">
                 {isAllCompleted ? "Master of the Strings! 🏆" : "Welcome back, Rock Star! 🎸"}
               </h2>
@@ -1732,7 +1733,7 @@ const Dashboard: React.FC = () => {
                 exit={{ opacity: 0, y: -20 }}
                 className="space-y-12 pb-20"
               >
-                <div className="mb-6 md:mb-12">
+                <div className="mb-4 md:mb-12 -mt-4 md:mt-0">
                   <h2 className="text-2xl md:text-4xl font-bold mb-1.5 md:mb-2 text-white">Your Activity</h2>
                   <p className="text-gray-400 text-sm md:text-base">Track your progress, badges, and practice history.</p>
                 </div>
@@ -1801,7 +1802,7 @@ const Dashboard: React.FC = () => {
                 exit={{ opacity: 0, y: -20 }}
                 className="max-w-xl mx-auto"
               >
-                <div className="text-center mb-6 md:mb-12">
+                <div className="text-center mb-4 md:mb-12 -mt-4 md:mt-0">
                   <h2 className="text-2xl md:text-4xl font-black mb-1.5 md:mb-3 text-white">Precision Tuner 🎯</h2>
                   <p className="text-gray-400 text-sm md:text-lg">Get your strings perfectly in sync before you play.</p>
                 </div>
@@ -1817,7 +1818,7 @@ const Dashboard: React.FC = () => {
                 exit={{ opacity: 0, y: -20 }}
                 className="max-w-2xl mx-auto"
               >
-                <div className="text-center mb-6 md:mb-12">
+                <div className="text-center mb-4 md:mb-12 -mt-4 md:mt-0">
                   <h2 className="text-2xl md:text-4xl font-bold mb-1.5 md:mb-3 text-white">Speed Challenge</h2>
                   <p className="text-gray-400 text-sm md:text-lg">Play as many notes as you can in 30 seconds!</p>
                 </div>
@@ -1961,7 +1962,7 @@ const Dashboard: React.FC = () => {
                 exit={{ opacity: 0, y: -20 }}
                 className="max-w-3xl mx-auto"
               >
-                <div className="text-center mb-6 md:mb-12">
+                <div className="text-center mb-4 md:mb-12 -mt-4 md:mt-0">
                   <h2 className="text-2xl md:text-4xl font-black mb-1.5 md:mb-3 text-white">Duel Arena</h2>
                   <p className="text-gray-400 text-sm md:text-lg">Create a duel room, share the code, and compete with a friend.</p>
                 </div>
@@ -2184,7 +2185,7 @@ const Dashboard: React.FC = () => {
                 exit={{ opacity: 0, y: -20 }}
                 className="max-w-xl mx-auto"
               >
-                <div className="text-center mb-6 md:mb-12">
+                <div className="text-center mb-4 md:mb-12 -mt-4 md:mt-0">
                   <h2 className="text-2xl md:text-4xl font-black mb-1.5 md:mb-3 text-white">Metronome ⏱️</h2>
                   <p className="text-gray-400 text-sm md:text-lg">Keep your rhythm tight and your timing perfect.</p>
                 </div>
@@ -2202,7 +2203,7 @@ const Dashboard: React.FC = () => {
               >
                 {!currentSong ? (
                   <>
-                    <div className="text-center mb-6 md:mb-12">
+                    <div className="text-center mb-4 md:mb-12 -mt-4 md:mt-0">
                       <h2 className="text-2xl md:text-4xl font-black mb-1.5 md:mb-3 text-white">Song Library 🎵</h2>
                       <p className="text-gray-400 text-sm md:text-lg">Play along with classic riffs and songs.</p>
                     </div>

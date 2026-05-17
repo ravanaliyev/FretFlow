@@ -66,6 +66,10 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
   // Close the dropdown when clicking anywhere outside the menu panel area
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (target && typeof target.closest === 'function' && target.closest('[data-profile-button]')) {
+        return;
+      }
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         onClose();
       }
