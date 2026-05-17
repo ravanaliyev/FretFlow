@@ -1,10 +1,24 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
+/**
+ * Properties for the LevelMenu component.
+ * @property navigate - Navigation callback function to redirect the user to specific paths in the application.
+ */
 export interface LevelMenuProps {
   navigate: (path: string) => void;
 }
 
+/**
+ * LevelMenu Component
+ * Renders the dashboard landing menu featuring standard game levels from Level 1 to Level 5.
+ * It presents cards for:
+ * - Level 1: The Foundations (Basic open strings)
+ * - Level 2: Fret Mastery (First three frets)
+ * - Level 3: Melodies (First guitar riffs and tunes)
+ * - Level 4: Songs (Whole playable songs)
+ * - Level 5: Ear Training (Aural skills practice)
+ */
 const LevelMenu: React.FC<LevelMenuProps> = ({ navigate }) => (
   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
     {[
@@ -21,9 +35,18 @@ const LevelMenu: React.FC<LevelMenuProps> = ({ navigate }) => (
         onClick={() => navigate(level.path)}
         className="glass-panel p-8 rounded-3xl cursor-pointer hover:border-primary-500/50 transition-colors group flex flex-col items-center text-center"
       >
-        <span className="text-xs font-bold text-primary-500 bg-primary-500/10 px-3 py-1 rounded-full mb-4 uppercase tracking-wider">Level {level.id}</span>
-        <h2 className="text-2xl font-bold text-white mb-2 group-hover:text-primary-500 transition-colors">{level.name}</h2>
-        <p className="text-gray-400 text-sm">{level.desc}</p>
+        {/* Level indicator pill */}
+        <span className="text-xs font-bold text-primary-500 bg-primary-500/10 px-3 py-1 rounded-full mb-4 uppercase tracking-wider">
+          Level {level.id}
+        </span>
+        {/* Level Name */}
+        <h2 className="text-2xl font-bold text-white mb-2 group-hover:text-primary-500 transition-colors">
+          {level.name}
+        </h2>
+        {/* Level Description */}
+        <p className="text-gray-400 text-sm">
+          {level.desc}
+        </p>
       </motion.div>
     ))}
   </div>

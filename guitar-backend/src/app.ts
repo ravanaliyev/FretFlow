@@ -5,18 +5,22 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { validateBody } from './middleware/validate.js';
 import { registerSchema, loginSchema, submitScoreSchema } from './validation/schemas.js';
 
+// Instantiate Express app
 const app = express();
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+// Global Middlewares
+app.use(cors());             // Cross-Origin Resource Sharing middleware
+app.use(express.json());     // JSON body-parsing middleware
 
-// Health check
+/**
+ * Health check endpoint.
+ * Quick connection validation probe for uptime monitors.
+ */
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// API Routes
+// Import API Routing Modules
 import { register } from '../api/auth/register';
 import { login } from '../api/auth/login';
 import { refresh } from '../api/auth/refresh';
@@ -46,6 +50,7 @@ import history from '../api/history';
 import practiceSessions from '../api/practice-sessions';
 import adminReorder from '../api/admin/reorder';
 
+// Mount Route Handlers
 app.use('/api/auth/register', validateBody(registerSchema), register);
 app.use('/api/auth/login', validateBody(loginSchema), login);
 app.use('/api/auth/refresh', refresh);
@@ -75,11 +80,11 @@ app.use('/api/history', history);
 app.use('/api/practice-sessions', practiceSessions);
 app.use('/api/admin/lessons/reorder', adminReorder);
 
-// Error handling
-app.use(notFoundHandler);
-app.use(errorHandler);
+// Custom Fallback Handlers
+app.use(notFoundHandler);    // Returns 404 for unmapped endpoints
+app.use(errorHandler);       // Universal express error middleware catches unhandled exceptions
 
-// Initialize database and start server
+// Initialize SQLite database schema and boot Express server
 const PORT = process.env.PORT || 3000;
 
 initializeDatabase().then(() => {

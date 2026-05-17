@@ -1,3 +1,34 @@
+/**
+ * ==========================================================================================
+ *                                    FRETFLOW DASHBOARD ORCHESTRATOR
+ * ==========================================================================================
+ * 
+ * CORE PURPOSE:
+ * This is the central hub/dashboard of the FretFlow platform. It acts as a major orchestrator
+ * coordinating the gamified learning path, live guitar audio processing, real-time multiplayer
+ * duels, and user profile management.
+ * 
+ * MAIN STATE DOMAINS:
+ * 1. USER AUTH & STATS: Exposes authentication data (XP, Levels) and tracks rolling 7-day practice streaks.
+ * 2. CURRICULUM PATHWAYS: Handles Standard Levels (1 to 5) including foundational lessons, fret mastery, 
+ *    interactive song libraries, and ear training, fetched dynamically from backend APIs.
+ * 3. REAL-TIME AUDIO SYNCHRONIZATION: Instantiates the browser pitch detection system (via AudioProcessor)
+ *    to analyze microphone frequencies and match them to target guitar notes on the fretboard.
+ * 4. MULTIPLAYER DUEL SYSTEM: Manages real-time 30-second challenges against other students with shared
+ *    invite codes, live ready states, and automated high-score submissions.
+ * 5. PROFILE & PREFERENCES: Allows personalization of settings like Light/Dark theme, Left-Handed mode, 
+ *    and Scientific (C, D, E) vs. Syllabic (Do, Re, Mi) musical notation.
+ * 
+ * NAVIGATION & VIEWS Structure:
+ * Subviews are derived dynamically from the URL route segments (e.g. `/dashboard/<view>/<param>`):
+ * - "levels": Main roadmap containing level cards (Level 1-5).
+ * - "lessons": Displays the specific grid of lessons for the chosen level ID.
+ * - "practice": Interactive pitch-matching guitar practice board.
+ * - "ear-training": Interactive game to guess played notes by ear.
+ * - "duel": Real-time user vs. user note matching competition arena.
+ * ==========================================================================================
+ */
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -1856,7 +1887,7 @@ const Dashboard: React.FC = () => {
                         <Trophy size={48} />
                       </div>
                       <p className="text-gray-500 font-bold uppercase tracking-widest text-xs mb-2">Challenge Finished!</p>
-                      
+
                       {gameScore > gameHighScore ? (
                         <div className="mb-8">
                           <span className="bg-primary-500/20 text-primary-500 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest animate-pulse">

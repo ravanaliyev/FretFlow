@@ -2,8 +2,15 @@
 import { useRef } from 'react';
 import { motion } from 'framer-motion';
 
+/**
+ * AnimatedBackground Component (Login Screen Variation)
+ * Renders the beautiful ambient background for the login and registration screen.
+ * Implements a strict `useRef` cache for all randomly generated background particles.
+ * This guarantees consistent particle coordinates across username/password typing cycles,
+ * preventing layout thrashing and pure-render hydrations issues.
+ */
 const AnimatedBackground: React.FC = () => {
-  // Generate random particles for the music vibe
+  // Reference cache to hold randomized drift parameters persistently
   const particlesRef = useRef<Array<{
     duration: number;
     delay: number;
@@ -12,11 +19,12 @@ const AnimatedBackground: React.FC = () => {
     offset: number;
   }> | null>(null);
 
+  // Initialize particles strictly once on first component load
   if (!particlesRef.current) {
     particlesRef.current = Array.from({ length: 20 }, () => ({
       duration: 10 + Math.random() * 10,
       delay: Math.random() * 10,
-      x: Math.random() * window.innerWidth,
+      x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1200),
       opacity: Math.random() * 0.5 + 0.2,
       offset: Math.random() * 100 - 50
     }));
@@ -26,10 +34,10 @@ const AnimatedBackground: React.FC = () => {
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-      {/* Dark Base */}
+      {/* Base backing */}
       <div className="absolute inset-0 bg-dark-900" />
       
-      {/* Ambient Gradients */}
+      {/* Neon glowing ambient circles */}
       <motion.div 
         className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-ambient-500/20 blur-[120px]"
         animate={{ 
@@ -47,12 +55,12 @@ const AnimatedBackground: React.FC = () => {
         transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
       />
 
-      {/* Abstract Neon Guitar Strings */}
+      {/* Abstract vibrating neon guitar strings */}
       <div className="absolute inset-0 flex items-center justify-center opacity-30 transform -rotate-12 scale-150">
         {[1, 2, 3, 4, 5, 6].map((string) => (
           <motion.div
             key={string}
-            className={`w-full h-[1px] bg-white/20 mx-4 shadow-[0_0_15px_rgba(255,255,255,0.5)]`}
+            className="w-full h-[1px] bg-white/20 mx-4 shadow-[0_0_15px_rgba(255,255,255,0.5)]"
             animate={{
               boxShadow: ['0 0 10px rgba(57,255,20,0)', '0 0 20px rgba(57,255,20,0.5)', '0 0 10px rgba(57,255,20,0)']
             }}
@@ -65,14 +73,14 @@ const AnimatedBackground: React.FC = () => {
         ))}
       </div>
 
-      {/* Floating Music Particles */}
+      {/* Floating particles (Rendered persistently from the cached reference) */}
       {particles.map((particle, i) => (
         <motion.div
           key={i}
           className="absolute w-2 h-2 rounded-full bg-white/40"
           initial={{
             x: particle.x,
-            y: window.innerHeight + 100,
+            y: (typeof window !== 'undefined' ? window.innerHeight : 800) + 100,
             opacity: particle.opacity
           }}
           animate={{

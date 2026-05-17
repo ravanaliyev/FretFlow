@@ -2,14 +2,20 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 import { apiClient, clearTokens, setRefreshToken } from '../api/client';
 import type { User, AuthResponse } from '../types/api';
 
+/**
+ * Interface representing the volatile core authentication state.
+ */
 interface AuthState {
-  user: User | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  accessToken: string | null;
-  authError: string | null;
+  user: User | null;          // Currently authenticated user object
+  isAuthenticated: boolean;   // Quick boolean accessor for auth status
+  isLoading: boolean;         // Initial loading state while restoring session from localStorage
+  accessToken: string | null; // Volatile JWT access token in memory
+  authError: string | null;   // Active authentication error messages
 }
 
+/**
+ * Interface representing the exported context actions and states.
+ */
 interface AuthContextValue extends AuthState {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, username: string) => Promise<void>;
@@ -18,22 +24,32 @@ interface AuthContextValue extends AuthState {
   clearAuthError: () => void;
 }
 
+// Instantiate React Context
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+/**
+ * AuthProvider Component
+ * The top-level global authentication state wrapper.
+ * - Restores user session automatically on boot by querying `/api/auth/me`.
+ * - Exposes callbacks for logging in, signing up new accounts, logging out, and updating profile settings.
+ */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
 
+  // Clears active authentication errors from state
   const clearAuthError = useCallback(() => {
     setAuthError(null);
   }, []);
 
+  // Updates current user metadata (e.g. on XP rewards or username changes)
   const updateUser = useCallback((newUser: User) => {
     setUser(newUser);
   }, []);
 
+  // Signs out the user, invalidating tokens and informing the backend service
   const logout = useCallback(() => {
     const refreshToken = localStorage.getItem('fretflow_refresh_token');
     setUser(null);
@@ -44,18 +60,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Auto-restore session from localStorage on application boot
   useEffect(() => {
     const refreshToken = localStorage.getItem('fretflow_refresh_token');
     if (refreshToken) {
-      // Use /api/auth/me instead of /api/auth/refresh manually.
-      // apiClient will automatically handle the refresh if needed.
+      // apiClient automatically rotates the access token internally if expired
       apiClient.get<User>('/api/auth/me')
         .then(userData => {
           setUser(userData);
-          // Access token is handled internally by apiClient's closure/localStorage
         })
         .catch(() => {
-          // If even the refresh fails, logout
+          // Invalidate and sign out if the session is fully expired
           clearTokens();
           setUser(null);
         })
@@ -67,6 +82,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  /**
+   * Logs in a user.
+   */
   const login = async (email: string, password: string) => {
     const data = await apiClient.post<AuthResponse>('/api/auth/login', { email, password });
     setRefreshToken(data.refreshToken);
@@ -75,6 +93,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user);
   };
 
+  /**
+   * Registers a new user.
+   */
   const register = async (email: string, password: string, username: string) => {
     const data = await apiClient.post<AuthResponse>('/api/auth/register', { email, password, username });
     setRefreshToken(data.refreshToken);
@@ -103,6 +124,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * Custom hook to easily consume authentication contexts.
+ */
 export function useAuth(): AuthContextValue {
   const context = useContext(AuthContext);
   if (!context) {

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 
+// Hardcoded array of inspiring quotes by legendary guitarists
 const QUOTES = [
   { text: "Music is the wine that fills the cup of silence.", author: "Robert Fripp" },
   { text: "Sometimes you want to give up the guitar, you'll hate it. But if you stick with it, you'll be rewarded.", author: "Jimi Hendrix" },
@@ -8,8 +9,14 @@ const QUOTES = [
   { text: "I just play. I don't think. I just play.", author: "B.B. King" }
 ];
 
+/**
+ * MotivationQuote Component
+ * Renders a simple, elegant animated text card displaying a randomized, inspiring guitar quote on component mount.
+ */
 const MotivationQuote: React.FC = () => {
+  // Use lazy state initialization to choose a random quote exactly once during component mount
   const [quote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)]);
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -10 }}

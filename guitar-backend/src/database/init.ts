@@ -1,8 +1,14 @@
 import db from '../config/database.js';
 
+/**
+ * Initializes the SQLite Database Schema and Seed Data
+ * - Creates all operational database tables if they do not exist.
+ * - Handles simple ALTER TABLE migrations to append multiplayer duel column updates.
+ * - Seeds default achievements (badges), lessons, and playable songs catalogs to guarantee a fully populated environment on first boot.
+ */
 export async function initializeDatabase() {
   const schema = `
-    -- Users table
+    -- Users table: Holds core credentials, aggregate levels, total XP, and visual lefty/notation preferences
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT UNIQUE NOT NULL,
@@ -17,7 +23,7 @@ export async function initializeDatabase() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Admin users (separate table)
+    -- Admin users table: Identifies administrative permissions
     CREATE TABLE IF NOT EXISTS admin_users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER UNIQUE NOT NULL,
@@ -26,7 +32,7 @@ export async function initializeDatabase() {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
-    -- Streaks table
+    -- Streaks table: Manages daily streaks data
     CREATE TABLE IF NOT EXISTS streaks (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER UNIQUE NOT NULL,
@@ -37,7 +43,7 @@ export async function initializeDatabase() {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
-    -- Lessons table
+    -- Lessons table: Houses primary curriculum levels and notes metadata
     CREATE TABLE IF NOT EXISTS lessons (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
@@ -49,7 +55,7 @@ export async function initializeDatabase() {
         order_index INTEGER DEFAULT 0
     );
 
-    -- Lesson progress table
+    -- Lesson progress table: Maps finished notes accuracy rates per user
     CREATE TABLE IF NOT EXISTS lesson_progress (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
@@ -65,7 +71,7 @@ export async function initializeDatabase() {
         UNIQUE(user_id, lesson_id)
     );
 
-    -- Songs table
+    -- Songs table: Contains playable songs metadata in Level 4
     CREATE TABLE IF NOT EXISTS songs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
@@ -75,7 +81,7 @@ export async function initializeDatabase() {
         xp_reward INTEGER DEFAULT 50
     );
 
-    -- Song scores table
+    -- Song scores table: Saves song high scores records per user
     CREATE TABLE IF NOT EXISTS song_scores (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
@@ -88,7 +94,7 @@ export async function initializeDatabase() {
         FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE
     );
 
-    -- Duels table
+    -- Duels table: Matchmaking challenge logs and game readiness tags
     CREATE TABLE IF NOT EXISTS duels (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         host_user_id INTEGER NOT NULL,
@@ -112,7 +118,7 @@ export async function initializeDatabase() {
         FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE SET NULL
     );
 
-    -- Quests table
+    -- Quests table: Active gamified challenges
     CREATE TABLE IF NOT EXISTS quests (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
@@ -129,7 +135,7 @@ export async function initializeDatabase() {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
-    -- Achievements table
+    -- Achievements table: System badge catalogs
     CREATE TABLE IF NOT EXISTS achievements (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT UNIQUE NOT NULL,
@@ -149,7 +155,7 @@ export async function initializeDatabase() {
         UNIQUE(user_id, achievement_id)
     );
 
-    -- Sessions table (for refresh token tracking)
+    -- Sessions table: Manages persistent refresh JWT tokens
     CREATE TABLE IF NOT EXISTS sessions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
@@ -159,7 +165,7 @@ export async function initializeDatabase() {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
-    -- Practice sessions table
+    -- Practice sessions table: Captures specific note logs during practice
     CREATE TABLE IF NOT EXISTS practice_sessions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
@@ -175,7 +181,7 @@ export async function initializeDatabase() {
         FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE SET NULL
     );
 
-    -- Daily stats table
+    -- Daily stats table: Aggregates daily learning volumes for tracking
     CREATE TABLE IF NOT EXISTS daily_stats (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
@@ -191,7 +197,7 @@ export async function initializeDatabase() {
         UNIQUE(user_id, date)
     );
 
-    -- Practice history table (synced from frontend)
+    -- Practice history table: Synchronized learning logs
     CREATE TABLE IF NOT EXISTS practice_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
@@ -204,6 +210,7 @@ export async function initializeDatabase() {
     );
   `;
 
+  // Parse SQL statements and execute sequentially
   const statements = schema.split(';').filter(s => s.trim());
 
   for (const statement of statements) {
@@ -212,6 +219,7 @@ export async function initializeDatabase() {
     }
   }
 
+  // Database Schema Migration Checks: Dynamic Alterations to older schemas
   const duelsInfo = await db.execute("PRAGMA table_info('duels')");
   const existingDuelColumns = new Set<string>((duelsInfo.rows || []).map((row: any) => row.name));
 
@@ -230,25 +238,24 @@ export async function initializeDatabase() {
     }
   }
 
-  // Seed default achievements if not exists
-  const achievements = await db.execute('SELECT COUNT(*) as count FROM achievements');
-    await db.execute(`
-      INSERT OR IGNORE INTO achievements (name, description, icon, xp_reward) VALUES
-        ('First Note', 'Complete your first lesson', '🎵', 20),
-        ('Perfect Pitch', '100% accuracy on a lesson', '⭐', 25),
-        ('Streak Starter', '3 day practice streak', '🔥', 30),
-        ('Week Warrior', '7 day practice streak', '⚡', 50),
-        ('Song Master', 'Complete 10 songs', '🏆', 75),
-        ('Lesson Legend', 'Complete 25 lessons', '🏅', 100),
-        ('Level 1 Graduate', 'Complete all lessons in Level 1', '🎓', 50),
-        ('Duelist', 'Play your first duel', '⚔️', 30),
-        ('Champion', 'Win your first duel', '🏆', 100),
-        ('Speed Demon', 'Reach a score of 50 in Speed Challenge', '🏎️', 50),
-        ('Night Owl', 'Practice between 10 PM and 4 AM', '🦉', 25),
-        ('Early Bird', 'Practice between 5 AM and 9 AM', '🐦', 25)
-    `);
+  // Seed Default System Achievements (Badges catalog)
+  await db.execute(`
+    INSERT OR IGNORE INTO achievements (name, description, icon, xp_reward) VALUES
+      ('First Note', 'Complete your first lesson', '🎵', 20),
+      ('Perfect Pitch', '100% accuracy on a lesson', '⭐', 25),
+      ('Streak Starter', '3 day practice streak', '🔥', 30),
+      ('Week Warrior', '7 day practice streak', '⚡', 50),
+      ('Song Master', 'Complete 10 songs', '🏆', 75),
+      ('Lesson Legend', 'Complete 25 lessons', '🏅', 100),
+      ('Level 1 Graduate', 'Complete all lessons in Level 1', '🎓', 50),
+      ('Duelist', 'Play your first duel', '⚔️', 30),
+      ('Champion', 'Win your first duel', '🏆', 100),
+      ('Speed Demon', 'Reach a score of 50 in Speed Challenge', '🏎️', 50),
+      ('Night Owl', 'Practice between 10 PM and 4 AM', '🦉', 25),
+      ('Early Bird', 'Practice between 5 AM and 9 AM', '🐦', 25)
+  `);
 
-  // Seed default lessons if not exists
+  // Seed Default Lessons Curriculum
   const lessons = await db.execute('SELECT COUNT(*) as count FROM lessons');
   if (lessons.rows[0].count === 0) {
     await db.execute(`
@@ -275,7 +282,7 @@ export async function initializeDatabase() {
     `);
   }
 
-  // Seed default songs if not exists
+  // Seed Default Playable Rhythm Songs
   const songsCount = await db.execute('SELECT COUNT(*) as count FROM songs');
   if (songsCount.rows[0].count === 0) {
     await db.execute(`

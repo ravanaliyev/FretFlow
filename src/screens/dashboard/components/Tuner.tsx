@@ -3,30 +3,51 @@ import { motion } from 'framer-motion';
 import { CheckCircle } from 'lucide-react';
 import { formatNoteName } from '../Dashboard';
 
+/**
+ * Properties for the GuitarTuner component.
+ * @property currentPitch - The current detected pitch note name (e.g. "E2").
+ * @property frequency - The current detected frequency in Hertz (Hz) from the microphone.
+ * @property notationStyle - Style of notation, 'scientific' (E2, A2) or 'syllabic' (Mi2, La2).
+ */
 export interface GuitarTunerProps {
   currentPitch: string;
   frequency: number;
   notationStyle: 'scientific' | 'syllabic';
 }
 
+/**
+ * GuitarTuner Component
+ * An interactive and highly visual analog-style guitar tuner.
+ * Uses real-time pitch detection frequency input to calculate pitch alignment (cents),
+ * renders a responsive dial/gauge with standard scale markers, and dynamically displays
+ * feedback indicating whether the string needs to be tightened, loosened, or is perfectly in tune.
+ */
 const GuitarTuner: React.FC<GuitarTunerProps> = ({ frequency, notationStyle }) => {
+  // Standard fundamental frequencies for standard guitar tuning (6 strings, low to high)
   const STANDARD_TUNING: Record<string, number> = {
-    'E2': 82.41,
-    'A2': 110.00,
-    'D3': 146.83,
-    'G3': 196.00,
-    'B3': 246.94,
-    'E4': 329.63
+    'E2': 82.41,  // 6th string
+    'A2': 110.00, // 5th string
+    'D3': 146.83, // 4th string
+    'G3': 196.00, // 3rd string
+    'B3': 246.94, // 2nd string
+    'E4': 329.63  // 1st string
   };
 
+  // Find the target string closest to the user's current pitch frequency
   const closestNote = Object.keys(STANDARD_TUNING).reduce((prev, curr) =>
     Math.abs(STANDARD_TUNING[curr] - frequency) < Math.abs(STANDARD_TUNING[prev] - frequency) ? curr : prev
     , 'E2');
 
   const targetFreq = STANDARD_TUNING[closestNote];
+  
+  // Calculate cents difference (logarithmic unit of pitch ratio).
+  // 1200 cents make up a full octave. Formula: 1200 * log2(f_actual / f_target)
   const cents = frequency > 0 ? Math.round(1200 * Math.log2(frequency / targetFreq)) : 0;
+  
+  // Perfect tuning tolerance threshold is within ±3 cents
   const isPerfect = Math.abs(cents) < 3;
 
+  // Convert the cents calculation (-50 to +50 cents) to degrees (-60 to +60 deg) for gauge needle rotation
   const rotation = Math.max(-70, Math.min(70, (cents / 50) * 60));
 
   return (
@@ -40,21 +61,24 @@ const GuitarTuner: React.FC<GuitarTunerProps> = ({ frequency, notationStyle }) =
           cents < 0 ? 'bg-amber-500/10' : 'bg-rose-500/10'
         }`} 
       />
+      {/* Subtle overlay gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
 
-      {/* Note Header Details */}
+      {/* Note Header Details displaying targeted note name, octave, and exact frequency */}
       <div className="text-center mb-6 md:mb-8 relative z-10 w-full">
         <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-500 mb-2">Analog Precision</h4>
         <div className="flex items-center justify-center gap-3">
           <div className="text-5.5xl md:text-6.5xl font-black text-white tracking-tighter leading-none">
+            {/* Format note string to selected notation style, separating the name and octave number */}
             {formatNoteName(closestNote, notationStyle).replace(/\d/, '')}
             <span className="text-lg md:text-xl text-primary-500/60 ml-0.5 italic">{closestNote.match(/\d/)}</span>
           </div>
         </div>
+        {/* Real-time frequency tracker */}
         <p className="text-[9px] font-mono text-gray-600 mt-2">{frequency > 0 ? `${frequency.toFixed(2)} Hz` : '--- Hz'}</p>
       </div>
 
-      {/* Gauge Container */}
+      {/* Dial/Gauge Container */}
       <div className="relative w-full max-w-[280px] h-40 md:h-44 flex items-end justify-center mb-2 overflow-hidden">
         {/* Pivot Radiating Ripples (Fires when note is perfectly in tune) */}
         {isPerfect && frequency > 0 && (
@@ -66,10 +90,10 @@ const GuitarTuner: React.FC<GuitarTunerProps> = ({ frequency, notationStyle }) =
           />
         )}
 
-        {/* The Arc */}
+        {/* The Arc Border representing the tuner limits */}
         <div className="absolute bottom-0 w-full aspect-square border-t-2 border-x-2 border-white/5 rounded-full shadow-[inset_0_4px_20px_rgba(255,255,255,0.02)]" />
 
-        {/* Scale Markers (Circular) */}
+        {/* Scale Markers (Generates -50, -25, 0, 25, 50 cents indicators) */}
         {[-50, -25, 0, 25, 50].map(m => {
           const mRotation = (m / 50) * 60;
           return (
@@ -78,6 +102,7 @@ const GuitarTuner: React.FC<GuitarTunerProps> = ({ frequency, notationStyle }) =
               className="absolute bottom-4 origin-bottom h-28 md:h-30 flex flex-col items-center"
               style={{ transform: `rotate(${mRotation}deg)` }}
             >
+              {/* Highlight perfect center (0) with neon green, secondary markers with white/20 */}
               <div className={`w-0.5 h-2 md:h-3 ${m === 0 ? 'bg-primary-500 w-1 h-3.5 md:h-4 shadow-[0_0_10px_rgba(57,255,20,0.5)]' : 'bg-white/20'}`} />
               <span className={`text-[8px] mt-1 font-black ${m === 0 ? 'text-primary-500' : 'text-gray-600'}`}>
                 {m === 0 ? 'TUNE' : m > 0 ? `+${m}` : m}
@@ -86,7 +111,7 @@ const GuitarTuner: React.FC<GuitarTunerProps> = ({ frequency, notationStyle }) =
           );
         })}
 
-        {/* The Needle */}
+        {/* The Animated Physical Needle */}
         <motion.div
           animate={{ rotate: rotation }}
           transition={{ type: 'spring', stiffness: 60, damping: 14 }}
@@ -99,13 +124,13 @@ const GuitarTuner: React.FC<GuitarTunerProps> = ({ frequency, notationStyle }) =
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-white rounded-full shadow-lg" />
         </motion.div>
 
-        {/* Pivot Point (The Screw) */}
+        {/* Pivot Point (The physical screw at the bottom center of the arc) */}
         <div className="absolute bottom-0 w-8 h-8 bg-dark-950 border-4 border-white/10 rounded-full z-30 flex items-center justify-center shadow-2xl">
           <div className={`w-1.5 h-1.5 rounded-full transition-colors duration-500 ${isPerfect && frequency > 0 ? 'bg-primary-500' : 'bg-white/20'}`} />
         </div>
       </div>
 
-      {/* Helper Notification Banner */}
+      {/* Helper Notification Banner with explicit instructional feedback */}
       <div className="mt-6 text-center relative z-10 w-full">
         <div className={`inline-flex items-center gap-2 md:gap-2.5 px-4 md:px-5 py-2.5 rounded-full border transition-all duration-500 ${
           frequency === 0 ? 'bg-white/5 border-white/5 text-gray-500' :
@@ -121,6 +146,7 @@ const GuitarTuner: React.FC<GuitarTunerProps> = ({ frequency, notationStyle }) =
             </>
           ) : (
             <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">
+              {/* If frequency is flat (cents < 0), tell user to tighten. If sharp, tell user to loosen. */}
               {cents < 0 ? 'Tighten String ⬆️' : 'Loosen String ⬇️'}
             </span>
           )}

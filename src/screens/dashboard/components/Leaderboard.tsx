@@ -3,37 +3,53 @@ import { motion } from 'framer-motion';
 import { Trophy } from 'lucide-react';
 import type { LeaderboardItem } from '../Dashboard';
 
+/**
+ * Properties for the LeaderboardComponent.
+ * @property data - List of all scores recorded in the system.
+ * @property currentUser - Username of the currently authenticated active user.
+ * @property userScore - Personal best score/XP of the currently authenticated active user.
+ */
 export interface LeaderboardComponentProps {
   data: LeaderboardItem[];
   currentUser?: string;
   userScore?: number;
 }
 
+/**
+ * LeaderboardComponent
+ * Renders a highly polished high-scores board containing:
+ * - A premium 3D Olympic-style podium for the Top 3 players with staggered entrance animations.
+ * - Flat glassmorphic rows for rankings 4 through 10.
+ * - An exclusive sticky banner at the bottom highlighting the active user's current standing/rank.
+ */
 const LeaderboardComponent: React.FC<LeaderboardComponentProps> = ({ data, currentUser, userScore = 0 }) => {
+  // Sort list descending by score and select top 10 players
   const sorted = [...data].sort((a, b) => b.score - a.score);
   const top10 = sorted.slice(0, 10);
 
-  // Extract Top 3 for the 3D Podium
+  // Extract Top 3 players to position on the 3D Podium
   const first = top10[0];
   const second = top10[1];
   const third = top10[2];
+  
+  // Players ranked 4th and below
   const remainder = top10.slice(3);
 
-  // Calculate user rank
+  // Find the exact global rank index of the active user (1-indexed)
   const userRank = sorted.findIndex(item => item.score <= userScore) + 1;
 
   return (
     <div className="w-full mt-12 pb-12 text-left">
-      {/* Title */}
+      {/* Title / Section Header */}
       <div className="flex items-center gap-2.5 mb-8">
         <Trophy size={18} className="text-primary-500" />
         <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">Hall of Fame</h3>
       </div>
 
-      {/* 3D Olympic-Style Podium with Seamless Stepped Base Pedestal & Clean Shadowless Aesthetics */}
+      {/* 3D Olympic-Style Podium with Seamless Stepped Base Pedestal */}
       <div className="grid grid-cols-3 gap-0 items-end mb-8 mt-8 w-full relative">
         
-        {/* Second Place Column */}
+        {/* Second Place Column (Left Side of Podium) */}
         {second ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -51,7 +67,7 @@ const LeaderboardComponent: React.FC<LeaderboardComponentProps> = ({ data, curre
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{second.score} pts</span>
             </div>
             
-            {/* Seamless Pedestal Step (Left - bg-white/[0.04], outer-only borders, shadowless) */}
+            {/* Seamless Pedestal Step (Left - bg-white/[0.04]) */}
             <div className="w-full h-11 bg-white/[0.04] border-t border-b border-l border-white/10 rounded-l-[1.5rem] flex items-center justify-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
               2nd
             </div>
@@ -68,7 +84,7 @@ const LeaderboardComponent: React.FC<LeaderboardComponentProps> = ({ data, curre
             transition={{ type: 'spring', stiffness: 100 }}
             className="flex flex-col items-center w-full"
           >
-            {/* Floating Player Card */}
+            {/* Floating Player Card with continuous hovering bounce animation */}
             <motion.div
               animate={{ y: [0, -5, 0] }}
               transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
@@ -82,7 +98,7 @@ const LeaderboardComponent: React.FC<LeaderboardComponentProps> = ({ data, curre
               <span className="text-[10px] font-black text-primary-500 uppercase tracking-widest">{first.score} pts</span>
             </motion.div>
             
-            {/* Seamless Pedestal Step (Center - bg-white/[0.04] matching background, no vertical borders, shadowless) */}
+            {/* Seamless Pedestal Step (Center - Taller block) */}
             <div className="w-full h-16 bg-white/[0.04] border-t border-b border-white/10 rounded-t-[1.25rem] flex items-center justify-center text-xs font-black text-white/90 uppercase tracking-widest relative">
               <div className="absolute inset-0 bg-gradient-to-t from-white/[0.01] to-transparent pointer-events-none rounded-t-[1.25rem]" />
               1st
@@ -92,7 +108,7 @@ const LeaderboardComponent: React.FC<LeaderboardComponentProps> = ({ data, curre
           <div />
         )}
 
-        {/* Third Place Column */}
+        {/* Third Place Column (Right Side of Podium) */}
         {third ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -110,7 +126,7 @@ const LeaderboardComponent: React.FC<LeaderboardComponentProps> = ({ data, curre
               <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest">{third.score} pts</span>
             </div>
             
-            {/* Seamless Pedestal Step (Right - bg-white/[0.04], outer-only borders, shadowless) */}
+            {/* Seamless Pedestal Step (Right - bg-white/[0.04]) */}
             <div className="w-full h-8 bg-white/[0.04] border-t border-b border-r border-white/10 rounded-r-[1.5rem] flex items-center justify-center text-[9px] font-black text-amber-500 uppercase tracking-widest">
               3rd
             </div>
@@ -120,7 +136,7 @@ const LeaderboardComponent: React.FC<LeaderboardComponentProps> = ({ data, curre
         )}
       </div>
 
-      {/* Ranks 4 to 10 (Sleek horizontal rows) */}
+      {/* Ranks 4 to 10 list (Sleek horizontal grid rows) */}
       <div className="space-y-2.5 mt-6">
         {remainder.map((item, i) => {
           const rankIndex = i + 4;
@@ -134,16 +150,21 @@ const LeaderboardComponent: React.FC<LeaderboardComponentProps> = ({ data, curre
               }`}
             >
               <div className="flex items-center gap-3">
+                {/* Ranking Position Badge */}
                 <span className="w-6 text-center text-xs font-black text-gray-500">
                   {rankIndex}
                 </span>
+                {/* Avatar Initials Placeholder */}
                 <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-xs font-black text-gray-300">
                   {item.name.charAt(0).toUpperCase()}
                 </div>
+                {/* Username */}
                 <span className="font-bold text-xs text-white">{item.name}</span>
               </div>
               <div className="flex items-center gap-4">
+                {/* Date Achieved */}
                 <span className="text-[9px] text-gray-500 font-bold uppercase">{item.date}</span>
+                {/* Final Score */}
                 <span className="text-xs font-black text-primary-500">{item.score}</span>
               </div>
             </div>
@@ -151,10 +172,11 @@ const LeaderboardComponent: React.FC<LeaderboardComponentProps> = ({ data, curre
         })}
       </div>
 
-      {/* User's Standing Highlight Banner */}
+      {/* User's Standings Highlight Sticky Card */}
       <div className="pt-8 border-t border-white/5 mt-10">
         <div className="flex items-center justify-between p-5 rounded-[2rem] bg-primary-500 text-dark-900 shadow-xl shadow-primary-500/20 transform transition-all hover:scale-[1.01] cursor-default">
           <div className="flex items-center gap-4">
+            {/* Global Rank Display */}
             <div className="w-12 h-12 rounded-full bg-dark-900/10 flex items-center justify-center font-black text-lg border border-dark-900/10">
               #{userRank > 0 ? userRank : '??'}
             </div>
