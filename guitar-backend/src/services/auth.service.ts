@@ -99,6 +99,14 @@ export async function register(
     args: [userId],
   });
 
+  // Automatically promote user to admin role if registering with username 'admin' (case-insensitive)
+  if (username.toLowerCase() === 'admin') {
+    await db.execute({
+      sql: 'INSERT OR IGNORE INTO admin_users (user_id) VALUES (?)',
+      args: [userId],
+    });
+  }
+
   // Get user
   const userResult = await db.execute({
     sql: 'SELECT id, email, username, avatar_url, xp_total, level, best_score, notation_style, is_lefty FROM users WHERE id = ?',

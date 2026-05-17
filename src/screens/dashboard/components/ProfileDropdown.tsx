@@ -88,7 +88,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
         initial={{ scale: 0.95, opacity: 0, y: 10 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.95, opacity: 0, y: 10 }}
-        className="fixed top-20 right-6 z-[2001] glass-panel p-5 rounded-[2rem] w-80 border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-3xl overflow-hidden"
+        className="absolute right-0 top-full mt-3 z-[2001] glass-panel p-5 rounded-[2rem] w-80 border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-3xl overflow-hidden"
       >
         <AnimatePresence mode="popLayout">
           

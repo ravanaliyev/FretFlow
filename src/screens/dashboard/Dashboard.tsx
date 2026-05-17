@@ -1596,8 +1596,34 @@ const Dashboard: React.FC = () => {
                 <User size={20} />
               </button>
 
-
-
+              <AnimatePresence>
+                {showProfileModal && (
+                  <ProfileDropdown
+                    user={user}
+                    onClose={() => setShowProfileModal(false)}
+                    onLogout={() => {
+                      logout();
+                      navigate('/login');
+                    }}
+                    onOpenHelp={() => setShowHelpModal(true)}
+                    onOpenSupport={() => setShowSupportModal(true)}
+                    onUpdate={async (data) => {
+                      try {
+                        const updatedUser = await usersApi.updateMe(data);
+                        updateUser(updatedUser);
+                      } catch (err) {
+                        console.error('Failed to update profile:', err);
+                      }
+                    }}
+                    theme={theme}
+                    setTheme={setTheme}
+                    notationStyle={notationStyle}
+                    onUpdateNotation={handleUpdateNotation}
+                    isLefty={isLefty}
+                    onUpdateLefty={handleUpdateLefty}
+                  />
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>
@@ -1775,8 +1801,8 @@ const Dashboard: React.FC = () => {
                 className="max-w-xl mx-auto"
               >
                 <div className="text-center mb-12">
-                  <h2 className="text-4xl font-black text-white mb-2 italic tracking-tighter">PRECISION TUNER 🎯</h2>
-                  <p className="text-gray-500 font-medium">Get your strings perfectly in sync before you play.</p>
+                  <h2 className="text-4xl font-black mb-3 text-white">Precision Tuner 🎯</h2>
+                  <p className="text-gray-400 text-lg">Get your strings perfectly in sync before you play.</p>
                 </div>
                 <GuitarTuner currentPitch={currentPitch} frequency={currentFrequency} notationStyle={notationStyle} />
               </motion.div>
@@ -2158,8 +2184,8 @@ const Dashboard: React.FC = () => {
                 className="max-w-xl mx-auto"
               >
                 <div className="text-center mb-12">
-                  <h2 className="text-4xl font-black text-white mb-2 italic tracking-tighter">METRONOME ⏱️</h2>
-                  <p className="text-gray-500 font-medium">Keep your rhythm tight and your timing perfect.</p>
+                  <h2 className="text-4xl font-black mb-3 text-white">Metronome ⏱️</h2>
+                  <p className="text-gray-400 text-lg">Keep your rhythm tight and your timing perfect.</p>
                 </div>
                 <Metronome />
               </motion.div>
@@ -2176,8 +2202,8 @@ const Dashboard: React.FC = () => {
                 {!currentSong ? (
                   <>
                     <div className="text-center mb-12">
-                      <h2 className="text-4xl font-black text-white mb-2 italic tracking-tighter">SONG LIBRARY 🎵</h2>
-                      <p className="text-gray-500 font-medium">Play along with classic riffs and songs.</p>
+                      <h2 className="text-4xl font-black mb-3 text-white">Song Library 🎵</h2>
+                      <p className="text-gray-400 text-lg">Play along with classic riffs and songs.</p>
                     </div>
                     <SongLibrary songs={songs} onSelect={(song) => setCurrentSong(song)} />
                   </>
@@ -2378,35 +2404,7 @@ const Dashboard: React.FC = () => {
 
 
 
-      {/* Profile Dropdown (Fixed at root to avoid stacking issues) */}
-      <AnimatePresence>
-        {showProfileModal && (
-          <ProfileDropdown
-            user={user}
-            onClose={() => setShowProfileModal(false)}
-            onLogout={() => {
-              logout();
-              navigate('/login');
-            }}
-            onOpenHelp={() => setShowHelpModal(true)}
-            onOpenSupport={() => setShowSupportModal(true)}
-            onUpdate={async (data) => {
-              try {
-                const updatedUser = await usersApi.updateMe(data);
-                updateUser(updatedUser);
-              } catch (err) {
-                console.error('Failed to update profile:', err);
-              }
-            }}
-            theme={theme}
-            setTheme={setTheme}
-            notationStyle={notationStyle}
-            onUpdateNotation={handleUpdateNotation}
-            isLefty={isLefty}
-            onUpdateLefty={handleUpdateLefty}
-          />
-        )}
-      </AnimatePresence>
+
 
       {/* Admin Modal */}
       <AnimatePresence>

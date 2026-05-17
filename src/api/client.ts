@@ -169,11 +169,11 @@ class ApiClient {
         }
       }
       localStorage.removeItem(REFRESH_TOKEN_KEY);
-      
+
       if (typeof window !== 'undefined' && window.location.pathname !== '/login' && window.location.pathname !== '/register') {
         window.location.href = '/login';
       }
-      
+
       throw new Error('Unauthorized');
     }
 
