@@ -679,7 +679,8 @@ const Dashboard: React.FC = () => {
         } else if (idx > 0) {
           const prevProgress = progressMap.get(lessonsRes.data[idx - 1]?.id);
           if (!prevProgress?.is_completed) {
-            status = 'locked';
+            // Admin users bypass all progress locking mechanisms!
+            status = user?.role === 'ADMIN' ? 'available' : 'locked';
           }
         }
 
@@ -765,7 +766,7 @@ const Dashboard: React.FC = () => {
           const prevSong = songs[idx - 1];
           const isPrevCompleted = (prevSong.best_score || 0) > 0;
           if (!isPrevCompleted) {
-            status = 'locked';
+            status = user?.role === 'ADMIN' ? 'available' : 'locked';
           }
         } else {
           // First song of Level 4 - check if previous level (Level 3) is completed
@@ -773,7 +774,7 @@ const Dashboard: React.FC = () => {
           if (level3Lessons.length > 0) {
             const allLevel3Completed = level3Lessons.every(l => l.status === 'completed');
             if (!allLevel3Completed) {
-              status = 'locked';
+              status = user?.role === 'ADMIN' ? 'available' : 'locked';
             }
           }
         }
