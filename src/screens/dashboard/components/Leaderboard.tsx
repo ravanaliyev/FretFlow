@@ -22,7 +22,7 @@ export interface LeaderboardComponentProps {
  * - Flat glassmorphic rows for rankings 4 through 10.
  * - An exclusive sticky banner at the bottom highlighting the active user's current standing/rank.
  */
-const LeaderboardComponent: React.FC<LeaderboardComponentProps> = ({ data, currentUser, userScore = 0 }) => {
+const LeaderboardComponent: React.FC<LeaderboardComponentProps> = ({ data, currentUser }) => {
   // Sort list descending by score and select top 10 players
   const sorted = [...data].sort((a, b) => b.score - a.score);
   const top10 = sorted.slice(0, 10);
@@ -34,9 +34,6 @@ const LeaderboardComponent: React.FC<LeaderboardComponentProps> = ({ data, curre
   
   // Players ranked 4th and below
   const remainder = top10.slice(3);
-
-  // Find the exact global rank index of the active user (1-indexed)
-  const userRank = sorted.findIndex(item => item.score <= userScore) + 1;
 
   return (
     <div className="w-full mt-12 pb-12 text-left">
@@ -170,25 +167,6 @@ const LeaderboardComponent: React.FC<LeaderboardComponentProps> = ({ data, curre
             </div>
           );
         })}
-      </div>
-
-      {/* User's Standings Highlight Sticky Card */}
-      <div className="pt-8 border-t border-white/5 mt-10">
-        <div className="flex items-center justify-between p-5 rounded-[2rem] bg-primary-500 text-dark-900 shadow-xl shadow-primary-500/20 transform transition-all hover:scale-[1.01] cursor-default">
-          <div className="flex items-center gap-4">
-            {/* Global Rank Display */}
-            <div className="w-12 h-12 rounded-full bg-dark-900/10 flex items-center justify-center font-black text-lg border border-dark-900/10">
-              #{userRank > 0 ? userRank : '??'}
-            </div>
-            <div>
-              <p className="text-[9px] font-black uppercase tracking-widest opacity-60 leading-none mb-1">Your Standing</p>
-              <h4 className="font-extrabold text-sm leading-none">You (Personal Best)</h4>
-            </div>
-          </div>
-          <div className="text-right">
-            <span className="text-2xl font-black">{userScore}</span>
-          </div>
-        </div>
       </div>
     </div>
   );
