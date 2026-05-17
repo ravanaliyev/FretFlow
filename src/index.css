@@ -12,30 +12,33 @@
   --color-accent-500: #ff8c00;
   --color-ambient-500: #8a2be2;
   --font-sans: 'Inter', sans-serif;
+  --color-idle-beat: rgba(255, 255, 255, 0.05);
 }
 
 html.light {
-  /* Backgrounds: invert dark to light */
-  --color-dark-950: #f3f4f6;
-  --color-dark-900: #ffffff;
-  --color-dark-800: #f9fafb;
-  --color-dark-700: #e5e7eb;
+  /* Backgrounds: page is soft light-gray, panels are crisp pure white! */
+  --color-dark-950: #e5e7eb;
+  --color-dark-900: #f5f6f8;
+  --color-dark-800: #ffffff;
+  --color-dark-700: #f3f4f6;
   
-  /* Text & Elements: invert white/gray to dark */
+  /* Text & Elements: charcoal for high contrast, clean reading */
   --color-white: #111827;
-  --color-gray-300: #374151;
-  --color-gray-400: #4b5563;
-  --color-gray-500: #6b7280;
-  --color-gray-600: #9ca3af;
-  --color-gray-800: #e5e7eb;
+  --color-gray-300: #1f2937;
+  --color-gray-400: #374151;
+  --color-gray-500: #4b5563;
+  --color-gray-600: #6b7280;
+  --color-gray-800: #d1d5db;
   
-  /* Primary colors: darken for contrast on light backgrounds */
+  /* Primary colors: premium grass green for contrast on light backgrounds */
   --color-primary-400: #22c55e;
   --color-primary-500: #16a34a;
   --color-primary-600: #15803d;
   
   --color-accent-500: #ea580c;
   --color-ambient-500: #7e22ce;
+  
+  --color-idle-beat: rgba(0, 0, 0, 0.05);
 }
 
 @layer base {
@@ -49,8 +52,43 @@ html.light {
     @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)];
   }
   
+  html.light .glass-panel {
+    background-color: rgba(255, 255, 255, 0.7) !important;
+    border-color: rgba(0, 0, 0, 0.06) !important;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.06) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+  }
+  
   .glass-input {
     @apply bg-white/5 border border-white/10 text-white placeholder-white/40 focus:bg-white/15 focus:border-primary-500/80 transition-all duration-300 outline-none ring-0 shadow-none;
+  }
+  
+  html.light .glass-input {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+    color: #111827 !important;
+  }
+  
+  html.light .glass-input::placeholder {
+    color: rgba(0, 0, 0, 0.4) !important;
+  }
+  
+  html.light .glass-input:focus {
+    border-color: var(--color-primary-500) !important;
+    background-color: #ffffff !important;
+  }
+
+  .text-pure-white {
+    color: #ffffff !important;
+  }
+  
+  .bg-pure-white {
+    background-color: #ffffff !important;
+  }
+
+  .border-pure-white {
+    border-color: #ffffff !important;
   }
   
   .neon-text-green {

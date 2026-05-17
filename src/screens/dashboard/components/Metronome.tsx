@@ -112,7 +112,7 @@ const Metronome: React.FC = () => {
               key={i}
               animate={{
                 scale: currentBeat === i ? 1.2 : 1,
-                backgroundColor: currentBeat === i ? '#58cc02' : 'rgba(255,255,255,0.05)',
+                backgroundColor: currentBeat === i ? '#58cc02' : 'var(--color-idle-beat)',
                 boxShadow: currentBeat === i ? '0 0 20px #58cc02' : 'none'
               }}
               className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 rounded-full border border-white/10"
@@ -177,7 +177,7 @@ const Metronome: React.FC = () => {
           <button
             onClick={toggleMetronome}
             className={`w-full py-3 sm:py-4 rounded-[1.5rem] font-black text-base sm:text-lg tracking-widest transition-all shadow-2xl flex items-center justify-center gap-3 ${isPlaying
-              ? 'bg-rose-500 text-white shadow-rose-500/20'
+              ? 'bg-rose-500 text-pure-white shadow-rose-500/20'
               : 'bg-primary-500 text-dark-900 shadow-primary-500/20 hover:scale-[1.02]'
               }`}
           >

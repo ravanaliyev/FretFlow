@@ -1507,7 +1507,7 @@ const Dashboard: React.FC = () => {
               >
                 <Bell size={20} className="group-hover:text-primary-400 transition-colors" />
                 {notifications.some((n) => !n.read) && (
-                  <span className="absolute -top-1 -right-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-black text-white px-[6px]">
+                  <span className="absolute -top-1 -right-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-black text-pure-white px-[6px]">
                     {notifications.filter((n) => !n.read).length}
                   </span>
                 )}
@@ -2324,7 +2324,7 @@ const Dashboard: React.FC = () => {
                     setHistory([]);
                     setShowHistoryClearModal(false);
                   }}
-                  className="w-full py-4 bg-rose-500 text-white font-bold rounded-2xl hover:bg-rose-600 transition-all active:scale-95 shadow-lg shadow-rose-500/20"
+                  className="w-full py-4 bg-rose-500 text-pure-white font-bold rounded-2xl hover:bg-rose-600 transition-all active:scale-95 shadow-lg shadow-rose-500/20"
                 >
                   Yes, Clear Everything
                 </button>
@@ -2512,7 +2512,7 @@ const Dashboard: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setShowDeleteConfirm(true)}
-                        className="px-6 bg-rose-500/10 text-rose-500 font-bold rounded-xl hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center"
+                        className="px-6 bg-rose-500/10 text-rose-500 font-bold rounded-xl hover:bg-rose-500 hover:text-pure-white transition-all flex items-center justify-center"
                         title="Delete Lesson"
                       >
                         <Trash2 size={20} />
@@ -2573,7 +2573,7 @@ const Dashboard: React.FC = () => {
                     setShowAdminModal(false);
                     setEditingLesson(null);
                   }}
-                  className="py-4 rounded-2xl bg-rose-500 text-white font-bold hover:bg-rose-600 shadow-lg shadow-rose-500/20 transition-all"
+                  className="py-4 rounded-2xl bg-rose-500 text-pure-white font-bold hover:bg-rose-600 shadow-lg shadow-rose-500/20 transition-all"
                 >
                   Delete
                 </button>
