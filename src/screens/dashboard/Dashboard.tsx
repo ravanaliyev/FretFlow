@@ -2358,7 +2358,6 @@ const Dashboard: React.FC = () => {
               navigate('/login');
             }}
             onOpenHelp={() => setShowHelpModal(true)}
-            onOpenSettings={() => setShowSettingsModal(true)}
             onOpenSupport={() => setShowSupportModal(true)}
             onUpdate={async (data) => {
               try {
@@ -2368,6 +2367,12 @@ const Dashboard: React.FC = () => {
                 console.error('Failed to update profile:', err);
               }
             }}
+            theme={theme}
+            setTheme={setTheme}
+            notationStyle={notationStyle}
+            onUpdateNotation={handleUpdateNotation}
+            isLefty={isLefty}
+            onUpdateLefty={handleUpdateLefty}
           />
         )}
       </AnimatePresence>
