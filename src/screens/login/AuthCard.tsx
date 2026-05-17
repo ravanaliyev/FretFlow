@@ -5,7 +5,7 @@ import { Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
 const AuthCard: React.FC = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const initialMode = searchParams.get('mode');
   const [isLogin, setIsLogin] = useState(initialMode !== 'signup');
 

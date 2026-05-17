@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Flame, Trophy, Star } from 'lucide-react';
+
 
 const HeroSection: React.FC = () => {
   return (

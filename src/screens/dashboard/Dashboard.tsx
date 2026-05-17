@@ -800,7 +800,7 @@ const EarTrainingGame: React.FC<{ onComplete?: (score: number, total: number) =>
       setFeedback(`Wrong — the right answer was ${correctPosition?.string} fret ${correctPosition?.fret}.`);
     }
     setRoundCount((count) => count + 1);
-    
+
     // Check for victory condition
     if (isCorrect && correctCount + 1 >= 10) {
       if (onComplete) {
@@ -846,16 +846,16 @@ const EarTrainingGame: React.FC<{ onComplete?: (score: number, total: number) =>
                 key={optionId}
                 onClick={() => handleAnswer(option)}
                 disabled={!!selectedId}
-                className={`glass-panel p-3 rounded-2xl text-left text-xs font-bold transition-all ${selectedId === optionId ? 'border-primary-500 bg-primary-500/10 text-white' : 'bg-white/5 hover:border-primary-500/30 hover:bg-white/10 text-gray-200'} ${selectedId ? 'cursor-not-allowed opacity-90' : ''}`}
+                className={`p-4 rounded-2xl text-left font-bold transition-all border ${selectedId === optionId ? 'border-primary-500 bg-primary-500/20 text-white' : 'bg-dark-900 border-white/10 hover:border-primary-500/30 hover:bg-dark-800 text-gray-200'} ${selectedId ? 'cursor-not-allowed opacity-90' : 'active:scale-95 shadow-lg shadow-black/20'}`}
               >
                 <div className="flex items-center justify-around py-1">
-                  <div className="text-center">
-                    <span className="block text-[8px] text-gray-500 uppercase tracking-[0.2em] mb-0.5">String</span>
+                  <div className="text-center min-w-[70px]">
+                    <span className="block text-[8px] text-gray-500 uppercase tracking-[0.2em] mb-1">String</span>
                     <span className="text-lg font-black text-white leading-none">{option.string}</span>
                   </div>
-                  <div className="w-px h-8 bg-white/10" />
-                  <div className="text-center">
-                    <span className="block text-[8px] text-gray-500 uppercase tracking-[0.2em] mb-0.5">Fret</span>
+                  <div className="w-px h-10 bg-white/10 mx-2" />
+                  <div className="text-center min-w-[70px]">
+                    <span className="block text-[8px] text-gray-500 uppercase tracking-[0.2em] mb-1">Fret</span>
                     <span className="text-lg font-black text-white leading-none">{option.fret}</span>
                   </div>
                 </div>
@@ -1244,7 +1244,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
   }
 }
 
-const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number; achievements?: Array<{ id: number; name: string; description: string; icon: string; earned: boolean }> }> = ({ lessons, streak, achievements: apiAchievements }) => {
+const BadgesSection: React.FC<{ lessons: Lesson[]; streak: number; achievements?: Array<{ id: number; name: string; description: string; icon: string; earned: boolean }> }> = ({ lessons: _lessons, streak: _streak, achievements: apiAchievements }) => {
   const [showAll, setShowAll] = React.useState(false);
 
   // Use API achievements exclusively
@@ -2086,15 +2086,27 @@ const Dashboard: React.FC = () => {
     return result;
   };
 
+  const generateStreakHistory = (count: number): ('completed' | 'frozen' | 'empty')[] => {
+    const hist: ('completed' | 'frozen' | 'empty')[] = Array(7).fill('empty');
+    const completedDays = Math.min(count, 7);
+    for (let i = 0; i < completedDays; i++) {
+      hist[6 - i] = 'completed';
+    }
+    return hist;
+  };
+
   const rollingDays = getLastSevenDays();
   const [streakData, setStreakData] = useState(() => {
     const saved = localStorage.getItem('fretflow_streak');
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return { ...parsed, history: generateStreakHistory(parsed.count) };
+    }
     return {
-      count: 12,
-      isFrozen: true,
+      count: 0,
+      isFrozen: false,
       lastUpdated: new Date().toDateString(),
-      history: ['completed', 'completed', 'completed', 'completed', 'completed', 'frozen', 'empty'] as ('completed' | 'frozen' | 'empty')[]
+      history: generateStreakHistory(0)
     };
   });
 
@@ -2157,7 +2169,7 @@ const Dashboard: React.FC = () => {
       setLessons(mapped);
       // De-duplicate achievements by name before setting state
       const rawAchievements = achievementsRes.data || [];
-      const uniqueAchievements = rawAchievements.filter((v: any, i: number, a: any[]) => 
+      const uniqueAchievements = rawAchievements.filter((v: any, i: number, a: any[]) =>
         a.findIndex(t => t.name === v.name) === i
       );
       setAchievements(uniqueAchievements);
@@ -2167,11 +2179,13 @@ const Dashboard: React.FC = () => {
 
       // Update streak data from API profile
       if (profileRes && profileRes.streak) {
+        const count = profileRes.streak.current || 0;
         setStreakData((prev: any) => ({
           ...prev,
-          count: profileRes.streak.current || 0,
+          count: count,
           isFrozen: false,
           lastUpdated: profileRes.streak.last_practice || new Date().toDateString(),
+          history: generateStreakHistory(count)
         }));
       }
 
@@ -2301,17 +2315,17 @@ const Dashboard: React.FC = () => {
   // --- Audio Logic Sync with Route ---
   const activeLesson = useMemo(() => {
     if (currentView !== 'practice' && currentView !== 'victory') return null;
-    
+
     // 1. Try regular lessons
     let lesson = lessons.find(l => l.id === urlLessonId);
     if (lesson) return lesson;
-    
+
     // 2. Try Level 4 songs (they have negative IDs)
     const songLesson = songsAsLessons.find(l => l.id === urlLessonId);
     if (songLesson) return songLesson;
 
     // 3. Special case for Level 5 Ear Training
-    if (urlLessonId === 5 || currentView === 'ear-training') {
+    if (urlLessonId === 5 || (currentView as string) === 'ear-training') {
       return {
         id: 5,
         title: "Ear Training",
@@ -2322,7 +2336,7 @@ const Dashboard: React.FC = () => {
         desc: "Note identification"
       } as Lesson;
     }
-    
+
     return null;
   }, [currentView, lessons, urlLessonId, songsAsLessons]);
 
@@ -3619,7 +3633,7 @@ const Dashboard: React.FC = () => {
                   </button>
 
                 </div>
-                <EarTrainingGame 
+                <EarTrainingGame
                   onComplete={() => {
                     playSuccessSound();
                     const duration = 3 * 1000;
