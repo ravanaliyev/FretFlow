@@ -17,11 +17,11 @@ const Navbar: React.FC = () => {
       </Link>
       
       {/* Navigation action buttons (Login vs Register signup modes) */}
-      <div className="flex items-center gap-2 sm:gap-4">
-        <Link to="/login?mode=login" className="btn-duo btn-duo-secondary py-2 px-4 sm:py-3 sm:px-6 text-xs sm:text-sm hidden sm:flex">
+      <div className="hidden sm:flex items-center gap-4">
+        <Link to="/login?mode=login" className="btn-duo btn-duo-secondary py-3 px-6 text-sm">
           LOG IN
         </Link>
-        <Link to="/login?mode=signup" className="btn-duo btn-duo-primary py-2 px-4 sm:py-3 sm:px-6 text-xs sm:text-sm">
+        <Link to="/login?mode=signup" className="btn-duo btn-duo-primary py-3 px-6 text-sm">
           GET STARTED
         </Link>
       </div>

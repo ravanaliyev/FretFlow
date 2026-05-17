@@ -72,7 +72,7 @@ const AboutPage: React.FC = () => {
                     className="p-6 rounded-2xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-300 group flex items-center gap-4 cursor-pointer block"
                   >
                     {/* Circle avatar badge */}
-                    <div className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center text-lg font-medium text-gray-400 group-hover:border-primary-500/30 group-hover:text-primary-400 transition-all">
+                    <div className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center text-lg font-medium text-gray-400 group-hover:border-primary-500/30 group-hover:text-primary-400 transition-all shrink-0">
                       {creator.initial}
                     </div>
                     {/* Creators Profile info */}

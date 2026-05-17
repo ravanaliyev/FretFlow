@@ -1551,7 +1551,7 @@ const Dashboard: React.FC = () => {
                     initial={{ opacity: 0, y: -10, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                    className="absolute right-0 top-full mt-3 w-80 max-w-xs rounded-3xl border border-white/10 bg-dark-950 shadow-2xl shadow-black/50 overflow-hidden z-[2000] backdrop-blur-none"
+                    className="absolute right-[-48px] sm:right-0 top-full mt-3 w-80 max-w-xs rounded-3xl border border-white/10 bg-dark-950 shadow-2xl shadow-black/50 overflow-hidden z-[2000] backdrop-blur-none"
                   >
                     <div className="px-4 py-4 border-b border-white/10 flex items-center justify-between">
                       <p className="text-sm font-bold text-white">Notifications</p>
@@ -2632,44 +2632,44 @@ const Dashboard: React.FC = () => {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="glass-panel w-full max-w-sm p-8 rounded-[2.5rem] relative z-10 text-center overflow-hidden"
+              className="glass-panel w-full max-w-[22rem] sm:max-w-sm p-5 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] relative z-10 text-center overflow-hidden"
             >
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary-500 to-transparent opacity-50" />
 
-              <div className="mb-6 inline-flex p-4 rounded-3xl bg-primary-500/10 border border-primary-500/20">
-                <svg viewBox="0 0 26 31" className={`w-12 h-12 ${streakData.isFrozen ? 'text-cyan-400' : 'text-primary-500'}`} fill="currentColor">
+              <div className="mb-4 sm:mb-6 inline-flex p-3 sm:p-4 rounded-3xl bg-primary-500/10 border border-primary-500/20">
+                <svg viewBox="0 0 26 31" className={`w-10 h-10 sm:w-12 sm:h-12 ${streakData.isFrozen ? 'text-cyan-400' : 'text-primary-500'}`} fill="currentColor">
                   <path d="M13 1C6 1 1 6 1 12C1 19 8 30 13 30C18 30 25 19 25 12C25 6 20 1 13 1Z" />
                 </svg>
               </div>
 
-              <h2 className="text-3xl font-black mb-2">{streakData.count} Day Streak!</h2>
-              <p className="text-gray-400 text-sm mb-8">You're doing great. Keep the rhythm going!</p>
+              <h2 className="text-2xl sm:text-3xl font-black mb-1.5 sm:mb-2">{streakData.count} Day Streak!</h2>
+              <p className="text-gray-400 text-xs sm:text-sm mb-6 sm:mb-8">You're doing great. Keep the rhythm going!</p>
 
-              <div className="grid grid-cols-7 gap-2 mb-8">
+              <div className="grid grid-cols-7 gap-1.5 sm:gap-2 mb-6 sm:mb-8">
                 {DAYS.map((day, i) => (
-                  <div key={day} className="flex flex-col items-center gap-2">
-                    <span className="text-[10px] font-bold text-gray-500 uppercase">{day}</span>
-                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${streakData.history[i] === 'completed' ? 'bg-primary-500 text-dark-900 shadow-[0_0_15px_rgba(57,255,20,0.3)]' :
+                  <div key={day} className="flex flex-col items-center gap-1.5">
+                    <span className="text-[9px] sm:text-[10px] font-bold text-gray-500 uppercase">{day}</span>
+                    <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center transition-all ${streakData.history[i] === 'completed' ? 'bg-primary-500 text-dark-900 shadow-[0_0_15px_rgba(57,255,20,0.3)]' :
                       streakData.history[i] === 'frozen' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 shadow-[0_0_15px_rgba(34,211,238,0.2)]' :
                         'bg-white/5 border border-white/10 text-gray-700'
                       }`}>
-                      {streakData.history[i] === 'completed' ? <CheckCircle size={16} strokeWidth={3} /> :
-                        streakData.history[i] === 'frozen' ? <span className="text-sm">❄️</span> :
+                      {streakData.history[i] === 'completed' ? <CheckCircle size={14} strokeWidth={3} /> :
+                        streakData.history[i] === 'frozen' ? <span className="text-xs">❄️</span> :
                           <div className="w-1 h-1 rounded-full bg-current" />}
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div className="bg-white/5 rounded-2xl p-4 border border-white/10 mb-6">
-                <p className="text-sm font-bold text-white/90">
+              <div className="bg-white/5 rounded-xl sm:rounded-2xl p-3.5 sm:p-4 border border-white/10 mb-5 sm:mb-6">
+                <p className="text-xs sm:text-sm font-bold text-white/90">
                   {streakData.isFrozen ? "❄️ Your streak is frozen! Practice today to keep it alive." : "🔥 Come back tomorrow to continue your streak!"}
                 </p>
               </div>
 
               <button
                 onClick={() => setShowStreakModal(false)}
-                className="w-full py-4 bg-dark-800 hover:bg-dark-700 text-white font-bold rounded-2xl transition-all active:scale-95 border border-white/5"
+                className="w-full py-3 sm:py-4 bg-dark-800 hover:bg-dark-700 text-white font-bold rounded-xl sm:rounded-2xl transition-all active:scale-95 border border-white/5 text-sm sm:text-base"
               >
                 Rock On!
               </button>
