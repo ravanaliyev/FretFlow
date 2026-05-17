@@ -1001,13 +1001,14 @@ async function handleLeaderboard(req: VercelRequest, res: VercelResponse) {
                  COUNT(ss.id) as songs_completed
           FROM users u
           LEFT JOIN song_scores ss ON u.id = ss.user_id
+          WHERE u.id NOT IN (SELECT user_id FROM admin_users)
           GROUP BY u.id
           ORDER BY u.xp_total DESC
           LIMIT ? OFFSET ?`,
     args: [String(limit), String(offset)],
   });
 
-  const totalResult = await db.execute('SELECT COUNT(*) as count FROM users');
+  const totalResult = await db.execute('SELECT COUNT(*) as count FROM users WHERE id NOT IN (SELECT user_id FROM admin_users)');
   const total = totalResult.rows[0].count as number;
 
   return res.json({
