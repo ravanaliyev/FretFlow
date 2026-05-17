@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+import { Flame, ArrowLeft } from 'lucide-react';
 import AnimatedBackground from './AnimatedBackground';
 import HeroSection from './HeroSection';
 import AuthCard from './AuthCard';
@@ -11,12 +13,27 @@ import AuthCard from './AuthCard';
  */
 function LoginPage() {
   return (
-    <div className="min-h-screen bg-dark-900 flex items-center justify-center overflow-hidden relative font-sans">
+    <div className="min-h-screen bg-dark-900 flex flex-col justify-between overflow-x-hidden relative font-sans">
       {/* Visual background dynamics */}
       <AnimatedBackground />
+
+      {/* Lightweight Navigation Header */}
+      <header className="relative z-20 w-full py-6 px-6 lg:px-12 flex justify-between items-center max-w-6xl mx-auto shrink-0">
+        <Link to="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
+          <Flame className="w-8 h-8 text-primary-500" />
+          <span className="text-2xl font-black text-white tracking-tighter uppercase font-sans">fretflow</span>
+        </Link>
+        <Link 
+          to="/" 
+          className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-gray-400 hover:text-white transition-colors bg-white/5 border border-white/10 px-4 py-2 rounded-2xl backdrop-blur-md active:scale-95"
+        >
+          <ArrowLeft size={16} className="text-primary-500" />
+          <span>Back to Home</span>
+        </Link>
+      </header>
       
       {/* Split Pane container */}
-      <div className="container mx-auto px-4 min-h-screen max-w-screen-xl flex flex-col lg:flex-row relative z-10 py-10 lg:py-0 gap-8 lg:gap-0">
+      <div className="container mx-auto px-4 flex-grow max-w-screen-xl flex flex-col lg:flex-row relative z-10 py-10 lg:py-0 gap-8 lg:gap-0 items-center justify-center">
         
         {/* Left Pane: Motivational Banner */}
         <div className="w-full lg:w-1/2 flex items-center justify-center lg:justify-start pt-12 lg:pt-0">
@@ -28,6 +45,11 @@ function LoginPage() {
           <AuthCard />
         </div>
       </div>
+
+      {/* Lightweight Footer to balance height */}
+      <footer className="relative z-20 w-full py-6 text-center text-[10px] sm:text-xs text-gray-500 tracking-wider uppercase font-bold shrink-0">
+        &copy; 2026 FretFlow. All rights reserved.
+      </footer>
     </div>
   );
 }
