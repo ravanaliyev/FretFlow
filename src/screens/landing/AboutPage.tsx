@@ -57,10 +57,11 @@ const AboutPage: React.FC = () => {
             {/* Co-Founders Team deck */}
             <div className="mt-16 pt-10 border-t border-white/5">
               <h3 className="text-center text-xs uppercase tracking-[0.3em] text-gray-400 font-bold mb-10">Visionaries & Creators</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
                 {[
                   { name: "Emirhan Alptekin", role: "Co-Founder", initial: "E", linkedin: "https://www.linkedin.com/in/emirhan-alptekin" },
-                  { name: "Ravan Aliyev", role: "Co-Founder", initial: "R", linkedin: "https://www.linkedin.com/in/ravanaliyev01/" }
+                  { name: "Ravan Aliyev", role: "Co-Founder", initial: "R", linkedin: "https://www.linkedin.com/in/ravanaliyev01/" },
+                  { name: "Hüseyin Poyraz Küçükarslan", role: "Co-Founder", initial: "H", linkedin: "#" }
                 ].map((creator, i) => (
                   <motion.a 
                     key={i}

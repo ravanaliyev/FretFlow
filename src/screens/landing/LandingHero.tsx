@@ -28,11 +28,11 @@ const LandingHero: React.FC = () => {
         </p>
 
         {/* Call to Actions linking directly to signup or sign-in modes */}
-        <div className="hidden lg:flex flex-col w-full sm:w-auto gap-4">
-          <Link to="/login?mode=signup" className="btn-duo btn-duo-primary w-full lg:w-80 h-16 text-xl flex items-center justify-center text-center">
+        <div className="flex flex-col w-full sm:w-80 gap-3.5 mt-4">
+          <Link to="/login?mode=signup" className="btn-duo btn-duo-primary w-full h-12 sm:h-14 lg:h-16 text-base sm:text-lg lg:text-xl flex items-center justify-center text-center">
             GET STARTED
           </Link>
-          <Link to="/login?mode=login" className="btn-duo btn-duo-secondary w-full lg:w-80 h-16 text-xl uppercase flex items-center justify-center text-center px-4 leading-tight">
+          <Link to="/login?mode=login" className="btn-duo btn-duo-secondary w-full h-12 sm:h-14 lg:h-16 text-sm sm:text-base lg:text-lg uppercase flex items-center justify-center text-center px-4 leading-tight">
             I ALREADY HAVE AN ACCOUNT
           </Link>
         </div>
