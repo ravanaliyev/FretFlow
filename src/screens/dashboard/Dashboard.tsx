@@ -1439,17 +1439,17 @@ const Dashboard: React.FC = () => {
             {/* Streak Component */}
             <div
               onClick={() => setShowStreakModal(true)}
-              className="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 md:py-1.5 rounded-full bg-white/5 border border-white/10 hover:bg-primary-500/10 hover:border-primary-500/30 transition-all cursor-pointer group"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/5 border border-white/10 hover:bg-primary-500/10 hover:border-primary-500/30 transition-all cursor-pointer group"
             >
               <div className="relative">
                 <svg
                   viewBox="0 0 26 31"
                   fill="none"
-                  className={`w-6 h-6 transition-all duration-500 drop-shadow-[0_0_8px_rgba(var(--streak-color),0.5)] ${streakData.isFrozen ? 'text-cyan-400' :
+                  className={`w-[18px] h-[18px] transition-all duration-500 drop-shadow-[0_0_6px_rgba(var(--streak-color),0.5)] ${streakData.isFrozen ? 'text-cyan-400' :
                     streakData.count > 0 ? 'text-primary-500' : 'text-gray-600'
                     }`}
                   style={{
-                    filter: streakData.count > 0 ? 'drop-shadow(0 0 8px currentColor)' : 'none',
+                    filter: streakData.count > 0 ? 'drop-shadow(0 0 6px currentColor)' : 'none',
                     '--streak-color': streakData.isFrozen ? '34, 211, 238' : '57, 255, 20'
                   } as any}
                 >
@@ -1469,7 +1469,7 @@ const Dashboard: React.FC = () => {
                   )}
                 </svg>
               </div>
-              <span className={`text-sm font-black transition-colors ${streakData.isFrozen ? 'text-cyan-400 group-hover:text-cyan-300' :
+              <span className={`text-xs font-black transition-colors ${streakData.isFrozen ? 'text-cyan-400 group-hover:text-cyan-300' :
                 streakData.count > 0 ? 'text-primary-500 group-hover:text-primary-300' : 'text-gray-500 group-hover:text-primary-400'
                 }`}>
                 {streakData.count}
