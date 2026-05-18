@@ -14,17 +14,17 @@
 
 /* Karanlık Tema (Dark Mode) Renk Belirteçleri */
 @theme {
-  --color-dark-950: #050505;                 // En koyu arka plan rengi
-  --color-dark-900: #0a0a0a;                 // Standart sayfa arka plan rengi
-  --color-dark-800: #141414;                 // Kart ve panel arka plan rengi
-  --color-dark-700: #1e1e1e;                 // Girdi kutuları ve hafif açık paneller
-  --color-primary-400: #66ff4d;               // Parlak neon yeşili (vurgu)
-  --color-primary-500: #39ff14;               // FretFlow kurumsal yeşili (ana renk)
-  --color-primary-600: #32cc11;               // Koyu yeşil kenarlık rengi
-  --color-accent-500: #ff8c00;               // Canlı turuncu vurgu (Seviyeler için)
-  --color-ambient-500: #8a2be2;              // Mor aura rengi
-  --font-sans: 'Inter', sans-serif;          // Modern ve temiz Google Fonts yazı tipi ailesi
-  --color-idle-beat: rgba(255, 255, 255, 0.05); // Ritim oyununda boşluk ritim rengi
+  --color-dark-950: #050505;                 /* En koyu arka plan rengi */
+  --color-dark-900: #0a0a0a;                 /* Standart sayfa arka plan rengi */
+  --color-dark-800: #141414;                 /* Kart ve panel arka plan rengi */
+  --color-dark-700: #1e1e1e;                 /* Girdi kutuları ve hafif açık paneller */
+  --color-primary-400: #66ff4d;               /* Parlak neon yeşili (vurgu) */
+  --color-primary-500: #39ff14;               /* FretFlow kurumsal yeşili (ana renk) */
+  --color-primary-600: #32cc11;               /* Koyu yeşil kenarlık rengi */
+  --color-accent-500: #ff8c00;               /* Canlı turuncu vurgu (Seviyeler için) */
+  --color-ambient-500: #8a2be2;              /* Mor aura rengi */
+  --font-sans: 'Inter', sans-serif;          /* Modern ve temiz Google Fonts yazı tipi ailesi */
+  --color-idle-beat: rgba(255, 255, 255, 0.05); /* Ritim oyununda boşluk ritim rengi */
 }
 
 /* Aydınlık Tema (Light Mode) Ayarları ve Renk Dönüşüm Kuralları */
