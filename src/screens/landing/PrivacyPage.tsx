@@ -3,83 +3,88 @@ import Navbar from './Navbar';
 import Footer from './Footer';
 
 /**
- * PrivacyPage Component
- * Renders a static glassmorphic document card containing FretFlow's official privacy policies and data regulations.
+ * PrivacyPage (Gizlilik Politikası Sayfası) Bileşeni
+ * 
+ * Bu sayfa, FretFlow platformunun kullanıcı verilerini nasıl topladığını, sakladığını, 
+ * işlediğini ve koruduğunu belirten, kişisel veri koruma (KVKK/GDPR uyumlu) esaslarını 
+ * açıklayan glassmorphism tasarımlı statik bir dokümantasyon ekranıdır.
  */
 const PrivacyPage: React.FC = () => {
   return (
+    // Sayfanın genel yerleşimi ve arka planı
     <div className="min-h-screen bg-dark-900 overflow-x-hidden font-sans text-white relative flex flex-col">
-      {/* Decorative backdrop graphics */}
+      {/* Animasyonlu parlayan gökyüzü arka planı */}
       <AnimatedBackground />
       
-      {/* Global Landing Navbar */}
+      {/* Üst navigasyon barı */}
       <Navbar />
 
+      {/* Ana yasal metin alanı */}
       <main className="relative z-10 max-w-4xl mx-auto px-6 pt-32 pb-20 flex-grow w-full">
-        {/* Document Card panel */}
+        {/* Belge Kartı Paneli */}
         <div className="bg-dark-800/50 backdrop-blur-xl border border-white/10 rounded-3xl p-8 md:p-14 shadow-2xl relative overflow-hidden group hover:border-primary-500/30 transition-all duration-500">
           
-          {/* Radiant auroral glow overlay */}
+          {/* Hover edildiğinde parlayan yeşil/turuncu arka plan aurası */}
           <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-primary-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-700"></div>
 
-          {/* Page Heading */}
+          {/* Sayfa Ana Başlığı */}
           <h1 className="text-4xl md:text-5xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-primary-600">
-            Privacy Policy
+            Gizlilik Politikası
           </h1>
 
-          {/* Privacy statement content */}
+          {/* Gizlilik Politikası Maddeleri */}
           <div className="space-y-6 text-base text-gray-300 leading-relaxed relative z-10">
-            <p className="text-gray-400 text-xs">Last updated: May 18, 2026</p>
+            <p className="text-gray-400 text-xs">Son güncelleme: 18 Mayıs 2026</p>
 
             <p>
-              At FretFlow, we are committed to protecting your privacy. This Privacy Policy describes how we collect, use, store, and share your personal information when you utilize our interactive guitar learning platform.
+              FretFlow olarak gizliliğinizi korumaya kararlıyız. Bu Gizlilik Politikası, interaktif gitar eğitimi platformumuzu kullandığınızda kişisel bilgilerinizi nasıl topladığımızı, kullandığımızı, sakladığımızı ve paylaştığımızı açıklar.
             </p>
 
-            <h2 className="text-xl font-bold text-white mt-8">1. Information We Collect</h2>
+            <h2 className="text-xl font-bold text-white mt-8">1. Topladığımız Bilgiler</h2>
             <p>
-              To provide a fully personalized learning experience, we collect certain details, including:
-            </p>
-            <ul className="list-disc list-inside space-y-2 ml-4">
-              <li><strong>Account Credentials:</strong> Your username, email address, and encrypted passwords used for authentication.</li>
-              <li><strong>Progress & Performance Data:</strong> Completed lessons, daily streak logs, song practice high scores, challenge histories, and leaderboard statistics.</li>
-              <li><strong>Technical Metadata:</strong> Device parameters, basic connection data, and browser cookies used strictly to sustain active user login sessions.</li>
-            </ul>
-
-            <h2 className="text-xl font-bold text-white mt-8">2. How We Use Your Information</h2>
-            <p>
-              The data collected is utilized solely to:
+              Tamamen kişiselleştirilmiş bir öğrenme deneyimi sunmak amacıyla şu detayları toplamaktayız:
             </p>
             <ul className="list-disc list-inside space-y-2 ml-4">
-              <li>Manage your active credentials, restore your account state, and sync your level progression.</li>
-              <li>Calculate and rank your XP score on the global live leaderboard.</li>
-              <li>Facilitate real-time competitive guitar duels and match-ups with other users.</li>
-              <li>Send system notifications regarding milestone achievements, friend requests, or system updates.</li>
+              <li><strong>Hesap Kimlik Bilgileri:</strong> Kimlik doğrulama için kullanılan kullanıcı adınız, e-posta adresiniz ve şifrelenmiş şifreleriniz.</li>
+              <li><strong>İlerleme ve Performans Verileri:</strong> Tamamlanan dersler, günlük çalışma serisi (streak) logları, şarkı pratiklerindeki en yüksek skorlar, düello geçmişleri ve liderlik tablosu istatistikleri.</li>
+              <li><strong>Teknik Üst Veriler (Metadata):</strong> Yalnızca aktif kullanıcı oturumlarını sürdürmek için kullanılan cihaz parametreleri, temel bağlantı verileri ve tarayıcı çerezleri.</li>
             </ul>
 
-            <h2 className="text-xl font-bold text-white mt-8">3. Data Sharing & Disclosure</h2>
+            <h2 className="text-xl font-bold text-white mt-8">2. Bilgilerinizi Nasıl Kullanıyoruz?</h2>
             <p>
-              Your personal information is secure. <strong>We do not sell, lease, trade, or share your data with any third-party marketing companies.</strong> Data is only disclosed when legally required or when essential to operate our secure database systems.
+              Toplanan veriler yalnızca şu amaçlarla kullanılır:
+            </p>
+            <ul className="list-disc list-inside space-y-2 ml-4">
+              <li>Aktif kimlik bilgilerinizi yönetmek, hesap durumunuzu geri yüklemek ve seviye ilerlemenizi senkronize etmek.</li>
+              <li>XP puanınızı hesaplayarak sizi küresel canlı liderlik tablosunda sıralamak.</li>
+              <li>Diğer kullanıcılarla gerçek zamanlı rekabetçi gitar düelloları ve eşleşmeler yapmanızı sağlamak.</li>
+              <li>Kazanılan rozetler, arkadaşlık istekleri veya sistem güncellemeleri hakkında bildirimler göndermek.</li>
+            </ul>
+
+            <h2 className="text-xl font-bold text-white mt-8">3. Veri Paylaşımı ve Açıklanması</h2>
+            <p>
+              Kişisel bilgileriniz tamamen güvendedir. <strong>Verilerinizi üçüncü taraf pazarlama şirketlerine kesinlikle satmayız, kiralamayız, ticaretini yapmayız veya paylaşmayız.</strong> Verileriniz yalnızca yasal olarak zorunlu kılındığında veya veritabanı sistemlerimizi güvenle çalıştırmak için zorunlu olduğunda paylaşılır.
             </p>
 
-            <h2 className="text-xl font-bold text-white mt-8">4. Data Security</h2>
+            <h2 className="text-xl font-bold text-white mt-8">4. Veri Güvenliği</h2>
             <p>
-              We implement strict industry-standard security and hashing protocols (such as bcrypt for password storage) to defend against unauthorized access, loss, or manipulation of user data. However, no database or network is 100% secure, and we urge you to use strong password protocols.
+              Kullanıcı verilerinin yetkisiz erişime, kayba veya manipülasyona karşı korunması amacıyla endüstri standardı güvenlik ve şifreleme protokolleri (örneğin şifre saklama için bcrypt) uygulamaktayız. Ancak hiçbir internet bağlantısı %100 güvenli değildir, bu yüzden güçlü şifre protokolleri kullanmanızı önemle tavsiye ederiz.
             </p>
 
-            <h2 className="text-xl font-bold text-white mt-8">5. Cookies and Session Storage</h2>
+            <h2 className="text-xl font-bold text-white mt-8">5. Çerezler ve Oturum Depolama</h2>
             <p>
-              We use secure localStorage and cookie-like session stores exclusively to verify authentication states and automatically restore your user progress on app page refreshes.
+              Yalnızca kimlik doğrulama durumlarını doğrulamak ve sayfa yenilemelerinde ilerlemenizi otomatik olarak geri yüklemek amacıyla tarayıcı localStorage alanını ve çerez benzeri oturum depolarını kullanırız.
             </p>
 
-            <h2 className="text-xl font-bold text-white mt-8">6. Your Rights</h2>
+            <h2 className="text-xl font-bold text-white mt-8">6. Haklarınız</h2>
             <p>
-              You have the right to request deletion of your account and clear all stored lesson history and score logs at any time. To execute account deletion or ask questions about our data policies, you can interact with our founders via the contact forms in the dashboard profile menu.
+              İstediğiniz zaman hesabınızın silinmesini talep etme ve tüm kayıtlı ders ilerleme ve skor geçmişinizi temizleme hakkına sahipsiniz. Hesap silme işlemini gerçekleştirmek veya veri politikalarımız hakkında soru sormak için profil menüsünde yer alan iletişim formları aracılığıyla kurucu ortaklarımızla iletişime geçebilirsiniz.
             </p>
           </div>
         </div>
       </main>
 
-      {/* Global Landing Footer */}
+      {/* Alt bilgi alanı */}
       <Footer />
     </div>
   );

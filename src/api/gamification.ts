@@ -2,23 +2,26 @@ import { apiClient } from './client';
 import type { GamificationProfile, Quest, Achievement } from '../types/api';
 
 /**
- * Gamification API Client Endpoints
- * Manages game systems: retrieving player XP profiles, active daily quests,
- * claiming completed quest rewards, achievements collection, and target milestones.
+ * Oyunlaştırma (Gamification) API Uç Noktaları
+ * 
+ * Bu dosya, FretFlow'un oyunlaştırma altyapısını yönetir. Kullanıcının seviyesi (level), 
+ * biriken toplam XP'si, günlük ders çalışma alışkanlığı serisi (streak), aktif günlük görevleri (quests),
+ * başarı rozetleri (achievements) ve kilit taşı hedefleri (milestones) bu servis aracılığıyla sunucudan çekilir.
  */
 export const gamificationApi = {
   /**
-   * Retrieves player stats (level, xp, streaks, active multipliers).
+   * getProfile - Oyuncunun seviye, tecrübe puanı (XP), günlük pratik streak'i gibi detaylı oyun istatistiklerini çeker.
    */
   getProfile: () => apiClient.get<GamificationProfile>('/api/gamification/profile'),
 
   /**
-   * Retrieves active daily or weekly quests.
+   * getQuests - Kullanıcının tamamlaması gereken günlük ve haftalık aktif görevleri (Daily Quests) çeker.
    */
   getQuests: () => apiClient.get<{ data: Quest[] }>('/api/gamification/quests'),
 
   /**
-   * Claims rewards and XP for a finished quest by its ID.
+   * claimQuest - Tamamlanan bir görevin ödülünü (XP ve rozet ödülleri) talep eder ve hesaba işler.
+   * @param questId - Ödülü talep edilecek görevin benzersiz ID'si
    */
   claimQuest: (questId: number) =>
     apiClient.post<{ success: boolean; xp_earned: number; quest_id: number }>(
@@ -27,13 +30,13 @@ export const gamificationApi = {
     ),
 
   /**
-   * Retrieves unlocked and locked achievements/badges.
+   * getAchievements - Kullanıcının kazandığı (kilidini açtığı) ve henüz açamadığı başarı rozetlerini (Badges) getirir.
    */
   getAchievements: () =>
     apiClient.get<{ data: Achievement[] }>('/api/gamification/achievements'),
 
   /**
-   * Retrieves locked progress milestones thresholds.
+   * getMilestones - Kullanıcının gelecekteki hedeflerini gösteren kilit taşı eşiklerini (Milestones) listeler.
    */
   getMilestones: () => apiClient.get<{ data: unknown[] }>('/api/gamification/milestones'),
 };

@@ -1,7 +1,7 @@
 import { apiClient } from './client';
 
 /**
- * Interface representing a player entry on the global podium/leaderboard.
+ * Global Sıralama Podyumu Kullanıcı Veri Arayüzü (LeaderboardEntry)
  */
 interface LeaderboardEntry {
   id: number;
@@ -14,7 +14,7 @@ interface LeaderboardEntry {
 }
 
 /**
- * Interface representing the paginated leaderboard server response.
+ * Sayfalanmış (Paginated) Sıralama Listesi Sunucu Cevap Arayüzü (LeaderboardResponse)
  */
 interface LeaderboardResponse {
   data: LeaderboardEntry[];
@@ -27,26 +27,32 @@ interface LeaderboardResponse {
 }
 
 /**
- * Scores API Client Endpoints
- * Bridges leaderboard metrics: fetches global leaderboards, gets personal scores,
- * submits song performance scores, and registers daily challenge high scores.
+ * Skorlar ve Sıralamalar (Scores & Leaderboard) API Uç Noktaları
+ * 
+ * Bu dosya, küresel liderlik tablosunu (leaderboard) sayfa sayfa çekmek, kullanıcının kişisel 
+ * en iyi performanslarını almak ve çalınan şarkı veya günlük meydan okuma (daily challenge) 
+ * sonuçlarını veritabanına işlemek için kullanılır.
  */
 export const scoresApi = {
   /**
-   * Retrieves the global paginated player leaderboard sorted by total XP.
+   * getLeaderboard - Genel tecrübe puanına (XP) göre sıralanmış küresel sıralama tablosunu çeker.
+   * @param page - İstenecek olan sayfa numarası (Boş bırakılırsa varsayılan: 1)
+   * @param limit - Sayfa başına listelenecek maksimum kullanıcı sayısı (Boş bırakılırsa varsayılan: 20)
    */
   getLeaderboard: (page?: number, limit?: number) =>
     apiClient.get<LeaderboardResponse>('/api/scores/leaderboard', { params: { page: page ?? 1, limit: limit ?? 20 } }),
 
   /**
-   * Retrieves list of all personal scores mapped against played songs.
+   * getMyScores - Aktif kullanıcının bugüne kadar çaldığı şarkıların detaylı skor geçmişini listeler.
    */
   getMyScores: () =>
     apiClient.get<{ data: unknown[]; pagination: unknown }>('/api/scores/me'),
 
   /**
-   * Submits song performance results (raw score and percentage accuracy),
-   * calculating XP boosts and updating personal high scores.
+   * submitScore - Seviye 4 şarkısı tamamlandığında başarı skorunu ve doğruluk yüzdesini kaydeder.
+   * @param songId - Çalınan şarkının ID numarası
+   * @param score - Elde edilen başarı skoru
+   * @param accuracyPercent - Vuruşların doğruluk yüzdesi (Örn: 98.5)
    */
   submitScore: (songId: number, score: number, accuracyPercent?: number) =>
     apiClient.post<{ success: boolean; score: number; xp_earned: number; accuracy_percent: number }>(
@@ -55,7 +61,8 @@ export const scoresApi = {
     ),
 
   /**
-   * Submits daily game challenges scores to record potential new personal high score cards.
+   * submitChallengeScore - Günlük meydan okuma (Daily Challenge) skorunu sunucuya gönderir ve yeni rekor kırılıp kırılmadığını raporlar.
+   * @param score - Meydan okumadan elde edilen nihai skor değeri
    */
   submitChallengeScore: (score: number) =>
     apiClient.post<{ success: boolean; best_score: number; new_record: boolean }>(

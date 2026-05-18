@@ -2,51 +2,60 @@ import { apiClient } from './client';
 import type { Duel } from '../types/api';
 
 /**
- * Interface representing the backend payload envelope for duels.
+ * Düello Veri Paketi Cevap Arayüzü (DuelResponse)
  */
 interface DuelResponse {
   data: Duel;
 }
 
 /**
- * Interface representing active song targets in challenges.
+ * Yeni Düello Odası Oluşturma Parametre Arayüzü (CreateDuelPayload)
  */
 interface CreateDuelPayload {
-  song_id?: number; // Optional reference to song targets
+  song_id?: number; // Düellonun hangi şarkı üzerinde yapılacağını belirten isteğe bağlı şarkı ID'si
 }
 
 /**
- * Duels API Client Endpoints
- * Bridges real-time multiplayer challenges: creating duel lobbies, querying match states,
- * joining matches via invite codes, and submitting scores/accuracy upon completion.
+ * Çevrimiçi Düellolar (Duels) API Uç Noktaları
+ * 
+ * Bu dosya, gitaristlerin oda davet kodu (invite-code) sistemi üzerinden eşleşerek
+ * gerçek zamanlı gitar çalma yarışmaları (düellolar) düzenlemesini sağlar. Lobi kurma,
+ * lobiye katılma, hazır durumunu bildirme ve bitiş skorlarını kaydetme işlemlerini yönetir.
  */
 export const duelsApi = {
   /**
-   * Spawns a new multiplayer duel match lobby.
+   * createDuel - Yeni bir multiplayer düello odası (lobi) oluşturur ve benzersiz davet kodu üretir.
+   * @param payload - Odanın kurulacağı şarkı ID'sini içeren parametre nesnesi (CreateDuelPayload)
    */
   createDuel: (payload?: CreateDuelPayload) =>
     apiClient.post<DuelResponse>('/api/duels', payload),
 
   /**
-   * Retrieves active duel lobby states by an invite code.
+   * getDuel - Davet kodu girilen düello odasının anlık durumunu (bağlı oyuncular, hazır durumları) sunucudan sorgular.
+   * @param inviteCode - Lobiye ait 6 haneli benzersiz davet kodu
    */
   getDuel: (inviteCode: string) =>
     apiClient.get<DuelResponse>(`/api/duels/${inviteCode}`),
 
   /**
-   * Joins a multiplayer duel lobby as Player 2 using an invite code.
+   * joinDuel - İkinci oyuncu (Rakip) olarak davet kodu girilen düello odasına giriş yapar.
+   * @param inviteCode - Katılınmak istenen lobinin davet kodu
    */
   joinDuel: (inviteCode: string) =>
     apiClient.post<DuelResponse>(`/api/duels/${inviteCode}/join`),
 
   /**
-   * Marks the current user as "Ready" to play inside the challenge lobby.
+   * readyDuel - Lobideki aktif oyuncuyu "HAZIR" (Ready) konumuna getirir. İki oyuncu da hazır olduğunda maç başlar.
+   * @param inviteCode - Hazır durumunun bildirileceği lobi kodu
    */
   readyDuel: (inviteCode: string) =>
     apiClient.post<DuelResponse>(`/api/duels/${inviteCode}/ready`),
 
   /**
-   * Submits score and accuracy records upon finishing the dueling song.
+   * finishDuel - Düello şarkısı bittiğinde elde edilen toplam puanı ve doğruluk yüzdesini sunucuya gönderir.
+   * @param inviteCode - Düellonun yapıldığı oda kodu
+   * @param score - Oyuncunun elde ettiği başarı skoru (Örn: 24500)
+   * @param accuracyPercent - Oyuncunun vuruş doğruluk yüzdesi (Örn: 94.5)
    */
   finishDuel: (inviteCode: string, score: number, accuracyPercent?: number) =>
     apiClient.post<DuelResponse>(`/api/duels/${inviteCode}/finish`, {

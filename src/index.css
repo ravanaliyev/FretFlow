@@ -1,28 +1,42 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
+/**
+ * ==========================================================================================
+ *                          FRETFLOW KÜRESEL TASARIM SİSTEMİ (index.css)
+ * ==========================================================================================
+ * 
+ * CORE DESIGN SYSTEM (Tema ve Renk Belirteçleri):
+ * TailwindCSS v4 mimarisiyle yazılmış, projenin tüm yazı fontunu, renk paletini, 
+ * glassmorphism (buzlu cam) efektlerini ve interaktif buton sınıflarını yöneten ana dosyadır.
+ * ==========================================================================================
+ */
+
+/* Karanlık Tema (Dark Mode) Renk Belirteçleri */
 @theme {
-  --color-dark-950: #050505;
-  --color-dark-900: #0a0a0a;
-  --color-dark-800: #141414;
-  --color-dark-700: #1e1e1e;
-  --color-primary-400: #66ff4d;
-  --color-primary-500: #39ff14;
-  --color-primary-600: #32cc11;
-  --color-accent-500: #ff8c00;
-  --color-ambient-500: #8a2be2;
-  --font-sans: 'Inter', sans-serif;
-  --color-idle-beat: rgba(255, 255, 255, 0.05);
+  --color-dark-950: #050505;                 // En koyu arka plan rengi
+  --color-dark-900: #0a0a0a;                 // Standart sayfa arka plan rengi
+  --color-dark-800: #141414;                 // Kart ve panel arka plan rengi
+  --color-dark-700: #1e1e1e;                 // Girdi kutuları ve hafif açık paneller
+  --color-primary-400: #66ff4d;               // Parlak neon yeşili (vurgu)
+  --color-primary-500: #39ff14;               // FretFlow kurumsal yeşili (ana renk)
+  --color-primary-600: #32cc11;               // Koyu yeşil kenarlık rengi
+  --color-accent-500: #ff8c00;               // Canlı turuncu vurgu (Seviyeler için)
+  --color-ambient-500: #8a2be2;              // Mor aura rengi
+  --font-sans: 'Inter', sans-serif;          // Modern ve temiz Google Fonts yazı tipi ailesi
+  --color-idle-beat: rgba(255, 255, 255, 0.05); // Ritim oyununda boşluk ritim rengi
 }
 
+/* Aydınlık Tema (Light Mode) Ayarları ve Renk Dönüşüm Kuralları */
+/* html elemanına .light sınıfı eklendiğinde tüm renk belirteçleri anında değişir */
 html.light {
-  /* Backgrounds: page is soft light-gray, panels are crisp pure white! */
+  /* Arka Planlar: Yumuşak açık gri tonları ve kar beyazı paneller */
   --color-dark-950: #e5e7eb;
   --color-dark-900: #f5f6f8;
   --color-dark-800: #ffffff;
   --color-dark-700: #f3f4f6;
   
-  /* Text & Elements: charcoal for high contrast, clean reading */
+  /* Yazı ve Elemanlar: Yüksek kontrastlı okuma için antrasit ve kömür grisi */
   --color-white: #111827;
   --color-gray-300: #1f2937;
   --color-gray-400: #374151;
@@ -30,7 +44,7 @@ html.light {
   --color-gray-600: #6b7280;
   --color-gray-800: #d1d5db;
   
-  /* Primary colors: premium grass green for contrast on light backgrounds */
+  /* Birincil Renkler: Aydınlık temada göz yormayan asil çimen yeşili */
   --color-primary-400: #22c55e;
   --color-primary-500: #16a34a;
   --color-primary-600: #15803d;
@@ -41,17 +55,23 @@ html.light {
   --color-idle-beat: rgba(0, 0, 0, 0.05);
 }
 
+/* Base (Temel) HTML Eleman Resetleri */
 @layer base {
   body {
+    /* Donanım ivmeli yazı pürüzsüzleştirme ve yatay kaydırma engelleme */
     @apply bg-dark-900 text-white font-sans antialiased overflow-x-hidden;
   }
 }
 
+/* Özel Tasarım Yardımcı Sınıfları (Utility Classes) */
 @layer utilities {
+  
+  /* Glass-Panel: Modern yarı saydam buzlu cam efekti */
   .glass-panel {
     @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)];
   }
   
+  /* Aydınlık temadaki glass-panel renk uyarlaması */
   html.light .glass-panel {
     background-color: rgba(255, 255, 255, 0.7) !important;
     border-color: rgba(0, 0, 0, 0.06) !important;
@@ -60,10 +80,12 @@ html.light {
     -webkit-backdrop-filter: blur(20px) !important;
   }
   
+  /* Glass-Input: Şeffaf form girdi kutusu tasarımı */
   .glass-input {
     @apply bg-white/5 border border-white/10 text-white placeholder-white/40 focus:bg-white/15 focus:border-primary-500/80 transition-all duration-300 outline-none ring-0 shadow-none;
   }
   
+  /* Aydınlık temadaki glass-input girdileri */
   html.light .glass-input {
     background-color: rgba(255, 255, 255, 0.9) !important;
     border-color: rgba(0, 0, 0, 0.1) !important;
@@ -79,6 +101,7 @@ html.light {
     background-color: #ffffff !important;
   }
 
+  /* Sabit Beyaz Renk Yardımcıları */
   .text-pure-white {
     color: #ffffff !important;
   }
@@ -91,6 +114,7 @@ html.light {
     border-color: #ffffff !important;
   }
   
+  /* Neon Parlayan Metin Gölgeleri */
   .neon-text-green {
     text-shadow: 0 0 10px rgba(57, 255, 20, 0.5), 0 0 20px rgba(57, 255, 20, 0.3);
   }
@@ -99,30 +123,34 @@ html.light {
     text-shadow: 0 0 10px rgba(255, 140, 0, 0.5), 0 0 20px rgba(255, 140, 0, 0.3);
   }
 
+  /* Duolingo Tipi 3D Buton Sınıfları (Duo Button System) */
+  /* Butona tıklandığında (active) Y ekseninde 1px aşağı kayarak fiziksel basılma hissi verir */
   .btn-duo {
     @apply relative inline-flex items-center justify-center font-bold uppercase tracking-wider transition-all duration-200 active:translate-y-1 active:border-b-0;
   }
 
+  /* Birincil Yeşil 3D Buton */
   .btn-duo-primary {
     @apply bg-primary-500 text-dark-900 border-b-4 border-primary-600 rounded-2xl hover:bg-primary-400;
   }
 
+  /* İkincil Koyu 3D Buton */
   .btn-duo-secondary {
     @apply bg-dark-800 text-white border-b-4 border-dark-700 rounded-2xl hover:bg-dark-700;
   }
 }
 
-/* Custom Scrollbar */
+/* Premium Kaydırma Çubuğu Tasarımı (Custom Scrollbar) */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 8px; /* Kaydırma çubuğu genişliği */
 }
 ::-webkit-scrollbar-track {
-  background: #0a0a0a;
+  background: #0a0a0a; /* Kaydırma kanalı arka planı */
 }
 ::-webkit-scrollbar-thumb {
-  background: #333;
+  background: #333; /* Kaydırma kolu rengi */
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: #555; /* Üzerine gelindiğindeki koyulaşma */
 }

@@ -1,23 +1,34 @@
 import type { ApiError } from '../types/api';
 
-// Storage key for persistent refresh tokens
+/**
+ * FretFlow HTTP İstemcisi Yapılandırma Dosyası
+ * 
+ * Bu dosya, backend sunucumuz ile kurulan tüm ağ (network) iletişimini yönetir.
+ * - Tarayıcıda oturum sürekliliğini sağlamak için Token Rotasyonunu (Silent Refresh Token) yönetir.
+ * - İsteklere otomatik olarak JWT token ekleyen interceptor (kesici) mantığına sahiptir.
+ * - 401 Unauthorized (Yetkisiz Giriş) hatası alındığında kullanıcıyı otomatik olarak giriş ekranına yönlendirir.
+ */
+
+// Oturumu taze tutmak için kullanılan Refresh Token'ın tarayıcı belleğindeki (localStorage) anahtarı
 const REFRESH_TOKEN_KEY = 'fretflow_refresh_token';
-// Backend route endpoint to invoke token rotations
+
+// Sunucuda token yenileme isteğinin yapılacağı uç nokta (API endpoint)
 const REFRESH_ENDPOINT = '/api/auth/refresh';
 
-// Synchronization states to prevent overlapping token renewal cycles
+// Aynı anda birden fazla istek yapıldığında, sunucuya mükerrer token tazeleme istekleri 
+// gönderilmesini engelleyen eşzamanlılık (synchronization) kilitleri
 let isRefreshing = false;
 let refreshSubscribers: Array<(token: string) => void> = [];
 
 /**
- * Queue callbacks that wait for active token renewals to complete.
+ * Token tazeleme işlemi devam ederken gelen diğer API isteklerini sıraya (kuyruğa) ekler.
  */
 function subscribeTokenRefresh(cb: (token: string) => void) {
   refreshSubscribers.push(cb);
 }
 
 /**
- * Flush the callback queue, passing the newly generated access token.
+ * Token başarıyla yenilendiğinde, kuyrukta bekleyen tüm istekleri yeni token ile tetikler.
  */
 function onTokenRefreshed(token: string) {
   refreshSubscribers.forEach(cb => cb(token));
@@ -25,7 +36,7 @@ function onTokenRefreshed(token: string) {
 }
 
 /**
- * Sends a physical HTTP call to backend services requesting new access and refresh tokens.
+ * Sunucuya fiziksel bir POST isteği atarak yeni Access Token ve Refresh Token çiftini talep eder.
  */
 async function doRefresh(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
   const baseUrl = import.meta.env.VITE_API_URL || '';
@@ -37,25 +48,26 @@ async function doRefresh(refreshToken: string): Promise<{ accessToken: string; r
     body: JSON.stringify({ refreshToken }),
   });
 
+  // Yenileme başarısız olursa tarayıcıdaki tüm eski oturum verilerini sil ve hata fırlat
   if (!res.ok) {
     localStorage.removeItem(REFRESH_TOKEN_KEY);
     throw new Error('Refresh failed');
   }
 
   const data = await res.json();
-  // Persist the new refresh token locally
+  // Yeni gelen Refresh Token'ı tarayıcıda güncelle
   localStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
   return data;
 }
 
 /**
- * Retrieves the fresh access token, queuing overlapping requests if a rotation is already active.
+ * Kuyruk kilidini kontrol ederek anlık erişim token'ını (Access Token) döndürür veya yeniler.
  */
 async function getAccessToken(): Promise<string | null> {
   const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
   if (!refreshToken) return null;
 
-  // Queue current request if another thread is already refreshing tokens
+  // Eğer arka planda zaten bir yenileme işlemi devam ediyorsa, isteği kuyruğa sok
   if (isRefreshing) {
     return new Promise(resolve => {
       subscribeTokenRefresh(resolve);
@@ -75,7 +87,7 @@ async function getAccessToken(): Promise<string | null> {
   }
 }
 
-// Security recovery timeout: resets lock if token refresh operations hang longer than 10 seconds
+// Güvenlik Kilidi: Eğer token yenileme işlemi herhangi bir sebeple 10 saniyeden uzun sürerse kilidi sıfırla
 setInterval(() => {
   if (isRefreshing) {
     isRefreshing = false;
@@ -84,41 +96,40 @@ setInterval(() => {
 }, 10000);
 
 /**
- * Extended HTTP fetch request configuration.
+ * Genişletilmiş HTTP istek parametre arayüzü.
  */
 interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean>;
 }
 
 /**
- * ApiClient Class
- * A lightweight wrapper over standard HTTP `fetch` client requests.
- * Automatically injects Authorization headers, handles token rotation loops,
- * and retries pending requests on 401 (Unauthorized) errors.
+ * ApiClient Sınıfı
+ * fetch API'sini saran hafif bir HTTP istemci sarmalayıcısıdır.
+ * İstek başlıklarına (headers) otomatik Authorization JWT ekler, hata yakalamalarını yapar.
  */
 class ApiClient {
   private baseUrl: string;
   private accessToken: string | null = null;
 
   constructor(baseUrl: string = '') {
-    // Strip trailing slashes to prevent double-slash (e.g. //api/...) routing bugs on backend
+    // Çift slaş hatasını (//api) önlemek için sondaki slaşları temizler
     this.baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
   }
 
   /**
-   * Sets the volatile access token in runtime memory.
+   * Çalışma zamanı hafızasındaki Access Token'ı günceller.
    */
   setToken(token: string) {
     this.accessToken = token;
   }
 
   /**
-   * Dispatches requests, injects auth headers, and processes auth recoveries or HTTP errors.
+   * Sunucuya asenkron HTTP isteği fırlatan ve JWT hatalarını yöneten ana gövde fonksiyonu.
    */
   private async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
     const { params, ...fetchOptions } = options;
 
-    // Append URL query parameters if present
+    // URL parametreleri (Query Params) varsa url sonuna ekle (Örn: ?page=1&limit=20)
     let url = `${this.baseUrl}${endpoint}`;
     if (params) {
       const searchParams = new URLSearchParams();
@@ -134,7 +145,7 @@ class ApiClient {
       ...(fetchOptions.headers as Record<string, string>),
     };
 
-    // Inject Bearer Authorization header if call is not targeting the token rotation endpoint
+    // Eğer istek token yenileme endpoint'ine gitmiyorsa, isteğe JWT Bearer ekle
     if (endpoint !== REFRESH_ENDPOINT) {
       if (!this.accessToken) {
         this.accessToken = await getAccessToken();
@@ -149,14 +160,14 @@ class ApiClient {
       headers,
     });
 
-    // 401 Unauthorized handling: attempt silent token renewal and retry
+    // 401 Yetkisiz Giriş Hatası Alındığında: Otomatik Token yenilemeyi dene ve isteği tekrar fırlat
     if (response.status === 401) {
       const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
       if (refreshToken && !isRefreshing && !refreshSubscribers.length) {
         try {
           const tokens = await doRefresh(refreshToken);
           this.accessToken = tokens.accessToken;
-          // Retry the original request with the fresh token
+          // İsteği yeni token ile tekrar fırlat (Retry)
           const retryResponse = await fetch(url, {
             ...fetchOptions,
             headers: { ...headers, 'Authorization': `Bearer ${this.accessToken}` },
@@ -165,7 +176,7 @@ class ApiClient {
             return retryResponse.json();
           }
         } catch {
-          // Silent refresh failed: wipe tokens and force redirect to login screen
+          // Token yenileme başarısızsa tüm yerel depoyu temizle ve giriş sayfasına postala
           localStorage.removeItem(REFRESH_TOKEN_KEY);
           if (typeof window !== 'undefined' && window.location.pathname !== '/login' && window.location.pathname !== '/register') {
             window.location.href = '/login';
@@ -181,7 +192,7 @@ class ApiClient {
       throw new Error('Unauthorized');
     }
 
-    // Capture other operational HTTP errors
+    // 401 dışındaki diğer tüm HTTP hatalarını (500, 400, 404 vb.) yakala ve hata fırlat
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Request failed', code: 'UNKNOWN' })) as ApiError;
       const error = new Error(errorData.error || 'Request failed') as Error & { code: string };
@@ -192,7 +203,7 @@ class ApiClient {
     return response.json();
   }
 
-  // RESTful Shortcut wrappers
+  // REST Kısayol Yardımcıları
 
   get<T>(endpoint: string, options?: RequestOptions): Promise<T> {
     return this.request<T>(endpoint, { ...options, method: 'GET' });
@@ -219,10 +230,10 @@ class ApiClient {
   }
 }
 
-// Export a single global instance of ApiClient with environment-based Base URL
+// Projede kullanılacak global apiClient nesnesini dışa aktarır
 export const apiClient = new ApiClient(import.meta.env.VITE_API_URL || '');
 
-// Token persistence helpers
+// Oturum temizleme ve kaydetme yardımcı fonksiyonları
 export function clearTokens() {
   localStorage.removeItem(REFRESH_TOKEN_KEY);
 }

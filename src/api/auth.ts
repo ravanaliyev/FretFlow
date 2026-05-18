@@ -2,36 +2,44 @@ import { apiClient } from './client';
 import type { AuthResponse } from '../types/api';
 
 /**
- * Authentication API Client Endpoints
- * Bridges credential logins, accounts registration, session refresh rotations,
- * user logouts, and token verification checks.
+ * Kimlik Doğrulama (Authentication) API Uç Noktaları
+ * 
+ * Bu dosya, kullanıcıların sisteme kaydolması, giriş yapması, sistemden güvenli çıkış yapması
+ * ve aktif oturum bilgilerini (kullanıcı detayları, seviye, toplam XP) backend sunucusundan talep etmesi
+ * için gerekli API çağrılarını tanımlar.
  */
 export const authApi = {
   /**
-   * Logs in a user with email and password.
+   * login - Mevcut bir kullanıcıyı e-posta ve şifresi ile sisteme dahil eder (Giriş yapar).
+   * @param email - Kullanıcının kayıtlı e-posta adresi
+   * @param password - Kullanıcının şifresi
    */
   login: (email: string, password: string) =>
     apiClient.post<AuthResponse>('/api/auth/login', { email, password }),
 
   /**
-   * Registers a new user account with email, password, and username.
+   * register - Sisteme sıfırdan yeni bir kullanıcı kaydeder (Üye olur).
+   * @param email - Kaydolacak e-posta adresi
+   * @param password - Belirlenen şifre
+   * @param username - Benzersiz kullanıcı adı
    */
   register: (email: string, password: string, username: string) =>
     apiClient.post<AuthResponse>('/api/auth/register', { email, password, username }),
 
   /**
-   * Performs silent token rotation by sending a stored refresh token.
+   * refresh - Oturum süresi dolan kullanıcıların sessizce arka planda yeni token almasını sağlar.
+   * @param refreshToken - Tarayıcıda saklanan güvenli oturum yenileme token'ı
    */
   refresh: (refreshToken: string) =>
     apiClient.post<AuthResponse>('/api/auth/refresh', { refreshToken }),
 
   /**
-   * Ends the user's active session, purging token listings.
+   * logout - Aktif kullanıcı oturumunu veritabanından silerek sonlandırır (Çıkış yapar).
    */
   logout: () => apiClient.post('/api/auth/logout', {}),
 
   /**
-   * Queries profile metadata for the currently logged in user session.
+   * me - O an giriş yapmış olan aktif kullanıcının profil bilgilerini (XP, seviye, avatar vb.) çeker.
    */
   me: () => apiClient.get<AuthResponse['user']>('/api/auth/me'),
 };

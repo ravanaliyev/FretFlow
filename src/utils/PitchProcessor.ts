@@ -1,32 +1,43 @@
 /**
- * YIN Pitch Detection Algorithm
- * An advanced time-domain fundamental frequency estimation algorithm.
- * Implements three key stages to reliably identify absolute musical pitches while preventing subharmonic errors:
+ * ==========================================================================================
+ *                          YIN RİTİM VE FREKANS TESPİT ALGORİTMASI (utils/PitchProcessor.ts)
+ * ==========================================================================================
  * 
- * Step 1: Difference Function
- * - Measures the difference between the original signal buffer and a time-shifted (lagged by tau) copy of itself.
- * - Formula: d_t(tau) = sum_{i=1}^{W} (x_i - x_{i+tau})^2
+ * CORE ALGORITHM DETAILS (YIN Algoritması Aşamaları):
+ * Zaman domeninde çalışan (time-domain) ve müzikal temel frekansı (fundamental frequency - f0)
+ * son derece yüksek doğrulukla bulup alt-harmonik kilitlenme hatalarını (oktav hatalarını) önleyen 
+ * gelişmiş bir DSP algoritmasıdır.
  * 
- * Step 2: Cumulative Mean Normalized Difference Function
- * - Reduces subharmonic locks by dividing the raw difference function by its average running sum.
- * - Prevents the algorithm from falsely latching onto octaves.
+ * Aşama 1: Fark Fonksiyonu (Difference Function)
+ * - Ses tamponu (buffer) ile kendisinin 'tau' kadar kaydırılmış (lagged) kopyası arasındaki farkı ölçer.
+ * - Formül: d_t(tau) = sum_{i=1}^{W} (x_i - x_{i+tau})^2
  * 
- * Step 3: Absolute Thresholding
- * - Scans the normalized values for the first local minimum that falls below a pre-set threshold (default 0.1).
- * - Employs parabolic interpolation on adjacent buffer points to calculate precise fractional frequencies.
+ * Aşama 2: Kümülatif Ortalama Normalize Fark Fonksiyonu (Cumulative Mean Normalized Difference Function)
+ * - Oktav hatalarını azaltmak için ham fark fonksiyonunu, o ana kadar olan farkların koşan ortalamasına böler.
+ * - Algoritmanın yanlışlıkla bir üst oktavı (frekansın 2 katını) kilitlenmesini kesin olarak önler.
  * 
- * @param buffer - Floating point array representing audio samples.
- * @param sampleRate - Sample rate of active AudioContext (typically 44100Hz or 48000Hz).
- * @param threshold - Absolute threshold below which local minima are accepted.
- * @returns The estimated fundamental frequency in Hertz (Hz), or 0 if undetected.
+ * Aşama 3: Mutlak Eşik Değeri (Absolute Thresholding & Minima Search)
+ * - Normalize edilmiş fark dizisini tarar ve önceden belirlenmiş bir eşik değerinin (varsayılan 0.1)
+ *   altına düşen ilk yerel minimum noktasını (first local minimum) bulur.
+ * - Ardından, tamsayı örneklemelerinin ötesinde hassasiyet elde etmek için komşu noktalar arasında
+ *   parabolik interpolasyon uygulayarak milimetrik küsuratlı frekans tespiti yapar.
+ * ==========================================================================================
+ */
+
+/**
+ * yinDetector - Ham ses dalgalarından temel nota frekansını (Hz) ayırt eder.
+ * @param buffer - Mikrofon girişinden alınan 32-bit kayan noktalı ses tampon dizisi (Float32Array).
+ * @param sampleRate - Aktif AudioContext örnekleme hızı (genellikle 44100Hz veya 48000Hz).
+ * @param threshold - Eşik değeri (Bu değerin altındaki dalgalanmalar gerçek nota olarak kabul edilir).
+ * @returns Tespit edilen temel frekans (Hertz - Hz) değeri veya ses algılanamadıysa 0.
  */
 function yinDetector(buffer: Float32Array, sampleRate: number, threshold = 0.1): number {
     const bufferSize = buffer.length;
     const halfBufferSize = Math.floor(bufferSize / 2);
     const yinBuffer = new Array(halfBufferSize).fill(0);
 
-    // STEP 1: Compute Difference Function
-    // Quantifies distance between the original wave segment and itself when lagged by 'tau'
+    // AŞAMA 1: Fark Fonksiyonunun Hesaplanması
+    // Orijinal ses sinyali ile 'tau' kadar kaydırılmış sinyal arasındaki fark kareleri toplanır.
     for (let tau = 0; tau < halfBufferSize; tau++) {
         for (let i = 0; i < halfBufferSize; i++) {
             const delta = buffer[i] - buffer[i + tau];
@@ -34,8 +45,8 @@ function yinDetector(buffer: Float32Array, sampleRate: number, threshold = 0.1):
         }
     }
 
-    // STEP 2: Cumulative Mean Normalized Difference
-    // Prevents octave error tracking by dividing values by a running average
+    // AŞAMA 2: Kümülatif Ortalama Normalizasyon
+    // Üst oktavlara kayma hatasını (octave error) koşan toplam ortalamaya bölerek engeller.
     yinBuffer[0] = 1;
     let runningSum = 0;
     for (let tau = 1; tau < halfBufferSize; tau++) {
@@ -43,18 +54,18 @@ function yinDetector(buffer: Float32Array, sampleRate: number, threshold = 0.1):
         yinBuffer[tau] *= tau / runningSum;
     }
 
-    // STEP 3: Absolute Threshold & Minima Search
-    // Scans for early dips under the threshold, applying parabolic interpolation for high precision
+    // AŞAMA 3: Mutlak Eşik & Minimum Nokta Araması
+    // Belirlenen eşik değerinin altındaki ilk vadi noktası aranır ve parabolik interpolasyon ile Hertz'e çevrilir.
     for (let tau = 2; tau < halfBufferSize; tau++) {
         if (yinBuffer[tau] < threshold) {
             let betterTau = tau;
-            // Search for local minimum
+            // Yerel minimumu (vadi dip noktasını) ara
             for (let i = tau + 1; i < halfBufferSize; i++) {
                 if (yinBuffer[i] < yinBuffer[betterTau]) {
                     betterTau = i;
                 }
             }
-            // Interpolate peaks parabolically and convert to Hertz (Hz)
+            // En dik dip noktayı komşularıyla parabolik olarak hizala ve gerçek frekansa (Hz) çevir
             return sampleRate / parabolicInterpolation(yinBuffer, betterTau);
         }
     }
@@ -62,9 +73,9 @@ function yinDetector(buffer: Float32Array, sampleRate: number, threshold = 0.1):
 }
 
 /**
- * Parabolic Interpolation helper.
- * Fits a parabola to three adjacent buffer points to pinpoint the exact fractional peak,
- * boosting precision beyond integer samples.
+ * parabolicInterpolation - Parabolik İnterpolasyon Yardımcısı.
+ * Tam sayı indeksli örnek noktalarının (tau) komşularına parabol fit ederek, 
+ * gerçek nota tepe noktasının kesirli/küsuratlı konumunu nokta atışı bulur.
  */
 function parabolicInterpolation(yinBuffer: number[], tau: number): number {
     const x1 = tau - 1;
@@ -76,20 +87,22 @@ function parabolicInterpolation(yinBuffer: number[], tau: number): number {
     const y2 = yinBuffer[x2];
     const y3 = yinBuffer[x3];
     
+    // Parabol denkleminin a katsayısını hesaplar
     const a = (y1 - 2 * y2 + y3) / 2;
     if (a === 0) return tau;
+    // Parabol denkleminin b katsayısını hesaplar
     const b = (y3 - y1) / 2;
     return x2 - b / (2 * a);
 }
 
 /**
- * AudioProcessor Class
- * Coordinates hardware microphone streams and handles real-time guitar pitch detection:
- * - Prompts users for permission to capture audio streams.
- * - Chains a lowpass hardware filter (BiquadFilterNode at 1000Hz) to cut high-frequency ambient noises.
- * - Extracts time-domain buffers via an AnalyserNode (FFT Size 4096).
- * - Calculates raw RMS (root-mean-square) volumes, ignoring signals below a 0.8 volume threshold.
- * - Feeds active signals to the YIN detector, smoothing pitch flutter over a sliding buffer.
+ * AudioProcessor - Donanım mikrofon akışını yöneten ve gerçek zamanlı gitar nota tespiti yapan sınıf.
+ * 
+ * - Kullanıcıdan mikrofon kayıt izni talep eder.
+ * - Yüksek frekanslı tel sürtünme gürültülerini kesmek için 1000Hz Alçak Geçiren Filtre (Lowpass Biquad Filter) bağlar.
+ * - AnalyserNode (FFT boyutu 4096) ile ses tamponlarını zaman domeninde okur.
+ * - RMS (Root Mean Square) yöntemiyle ses gücünü (hacmini) hesaplar ve 0.8 RMS altındaki sessiz ortamları pas geçer.
+ * - Gelen temiz ses sinyalini YIN dedektörüne besler ve nota titreşimlerini (jitter) stabilize etmek için son 3 ölçümün modunu alır.
  */
 export class AudioProcessor {
     private audioContext: AudioContext | null = null;
@@ -99,48 +112,48 @@ export class AudioProcessor {
     public isRunning = false;
     private animationId: number | null = null;
     
-    // Callback event listener when a pitch is successfully mapped
+    // Geçerli bir nota başarıyla haritalandığında tetiklenen geri çağırım (Callback) olay dinleyicisi
     public onNoteDetected: (frequency: number, note: string) => void = () => {}; 
-    private recentNotes: string[] = []; // History array to stabilize pitch jitters
+    private recentNotes: string[] = []; // Frekans dalgalanmalarını (titremeyi) stabilize etmek için son notaların geçmiş kuyruğu
 
     /**
-     * Initializes hardware microphone access, connects filters, and starts the processing loop.
+     * start - Donanım mikrofon erişimini başlatır, ses filtre zincirini kurar ve işlem döngüsünü tetikler.
      */
     async start() {
         try {
-            // Instantiate AudioContext cross-browser
+            // Tarayıcılar arası uyumlu AudioContext nesnesini oluşturur
             this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
             if (this.audioContext.state === 'suspended') {
                 await this.audioContext.resume();
             }
             
-            // Request hardware mic stream permissions
+            // Mikrofon yakalama iznini tarayıcıdan ister
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             this.microphone = this.audioContext.createMediaStreamSource(stream);
 
-            // Set up a lowpass filter at 1000Hz to eliminate string squeaks or high-frequency ambient noise
+            // Gitar telleri dışındaki tizlikteki (1000Hz üstü) gürültüleri yok etmek için Lowpass filtre kurar
             this.filter = this.audioContext.createBiquadFilter();
             this.filter.type = 'lowpass';
             this.filter.frequency.setValueAtTime(1000, this.audioContext.currentTime);
 
-            // Configure AnalyserNode with high sample resolution (4096 fftSize)
+            // Yüksek frekans çözünürlüğü için FFT (Hızlı Fourier Dönüşümü) penceresini 4096 seçer
             this.analyser = this.audioContext.createAnalyser();
             this.analyser.fftSize = 4096;
 
-            // Chain Node: Mic Source -> Lowpass Filter -> Analyser
+            // Düğüm Bağlantı Zinciri: Mikrofon -> Lowpass Filtre -> Analizör (FFT Analyser)
             this.microphone.connect(this.filter);
             this.filter.connect(this.analyser);
 
             this.isRunning = true;
-            this.animate();
+            this.animate(); // Gerçek zamanlı okuma döngüsünü başlatır
         } catch (error) {
-            console.error('Microphone access failed:', error);
+            console.error('Mikrofona erişim sağlanamadı:', error);
             throw error;
         }
     }
 
     /**
-     * Disconnects nodes, closes audio context, and halts anim frame loops.
+     * stop - Donanım bağlantılarını söker, AudioContext'i kapatır ve animasyon döngüsünü durdurur.
      */
     stop() {
         this.isRunning = false;
@@ -149,8 +162,7 @@ export class AudioProcessor {
     }
 
     /**
-     * High-frequency animation frame callback.
-     * Computes RMS sound pressure volumes, executes pitch checks, and runs smoothing.
+     * animate - requestAnimationFrame ile ekran tazeleme hızında (60-120 FPS) çalışan ses işleme döngüsü.
      */
     private animate() {
         if (!this.isRunning || !this.analyser || !this.audioContext) return;
@@ -159,38 +171,40 @@ export class AudioProcessor {
         const dataArray = new Float32Array(bufferLength);
         this.analyser.getFloatTimeDomainData(dataArray);
 
-        // Calculate Root Mean Square (RMS) volume level
+        // Kök Ortalama Kare (RMS) yöntemiyle ses seviyesinin (hacminin) gücünü hesaplar
         let sum = 0;
         for (let i = 0; i < bufferLength; i++) sum += dataArray[i] * dataArray[i];
         const rms = Math.sqrt(sum / bufferLength);
         const volume = rms * 100;
 
-        // Perform YIN Pitch Detection only if signal exceeds the minimum threshold limit
+        // Yalnızca ortam sesi belirli bir eşik gücünün (0.8 RMS) üzerindeyse YIN analizini başlatır
         if (volume > 0.8) { 
             const frequency = yinDetector(dataArray, this.audioContext.sampleRate);
-            // Limit checks to frequencies under 2000Hz (encompassing standard guitar registers)
+            
+            // Sadece standart gitar frekans aralığına giren (0 ile 2000Hz) temiz frekansları kabul eder
             if (frequency > 0 && frequency < 2000) {
                 const rawNote = this.frequencyToNote(frequency);
                 
-                // Keep the last 3 note scans to prevent pitch detection jitters
+                // Nota titremelerini önlemek için son 3 ölçümü hafızada tutar
                 this.recentNotes.push(rawNote);
                 if (this.recentNotes.length > 3) this.recentNotes.shift();
                 
+                // Hafızadaki son notaların en sık tekrar edenini (mod) bulup kararlı nota olarak iletir
                 const mostFrequent = this.getMostFrequent(this.recentNotes);
                 this.onNoteDetected(frequency, mostFrequent);
             }
         } else {
-            // Signal too quiet: reset buffers
+            // Ortam tamamen sessizleştiğinde veri geçmişini temizler
             this.recentNotes = [];
             this.onNoteDetected(0, '--');
         }
 
-        // Keep loop ticking
+        // Bir sonraki ekran yenilemesinde döngüyü sürdürür
         this.animationId = requestAnimationFrame(() => this.animate());
     }
 
     /**
-     * Helper returning the most common note string inside the sliding history buffer.
+     * getMostFrequent - Kayan geçmiş penceresindeki en sık tekrar eden nota dizgisini (mod) döner.
      */
     private getMostFrequent(arr: string[]): string {
         const counts: Record<string, number> = {};
@@ -208,12 +222,14 @@ export class AudioProcessor {
     }
 
     /**
-     * Maps fundamental Hertz frequencies to standard scientific musical notes (e.g. "E2", "A4").
-     * Uses standard A4 = 440 Hz reference. Formula: midi = round(12 * log2(freq / 440)) + 69
+     * frequencyToNote - Hertz cinsinden frekansı bilimsel müzik notasına (Örn: "E2", "A4") dönüştürür.
+     * Referans olarak standard A4 = 440 Hz alır.
+     * Formül: midi_numarasi = yuvarla(12 * log2(frekans / 440)) + 69
      */
     private frequencyToNote(frequency: number): string {
         const A4 = 440;
         const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        // MIDI nota numarasını logaritmik formülle bulur
         const midiNote = Math.round(12 * Math.log2(frequency / A4)) + 69;
         const noteIndex = midiNote % 12;
         const octave = Math.floor(midiNote / 12) - 1;

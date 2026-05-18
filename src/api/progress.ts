@@ -2,7 +2,7 @@ import { apiClient } from './client';
 import type { Progress } from '../types/api';
 
 /**
- * Interface representing backend lists of lesson progress metadata.
+ * Ders İlerleme Durumu Listeleme Cevap Arayüzü (ProgressResponse)
  */
 interface ProgressResponse {
   data: Array<Progress & {
@@ -13,30 +13,35 @@ interface ProgressResponse {
 }
 
 /**
- * Interface representing successful lesson completion reports.
+ * Ders Tamamlama Raporlama Cevap Arayüzü (SubmitProgressResponse)
  */
 interface SubmitProgressResponse {
   success: boolean;
   is_completed: boolean;
-  xp_earned: number;      // Calculated XP reward based on lesson difficulty and accuracy
-  accuracy: number;       // Average hit accuracy (percentage)
+  xp_earned: number;      // Dersin zorluğuna ve başarı oranına göre kazanılan tecrübe puanı (XP)
+  accuracy: number;       // Doğru basılan notaların yüzdelik oranı (Doğruluk oranı)
 }
 
 /**
- * Progress API Client Endpoints
- * Bridges progress checks: retrieves all user lesson progress records
- * and submits finished lesson scores, accuracy, and note attempts.
+ * Ders İlerleme (Progress) API Uç Noktaları
+ * 
+ * Bu dosya, kullanıcının hangi dersleri tamamladığını, hangilerinde kaldığını veya 
+ * ders başarı performanslarını çeken ve ders tamamlandığında çalınan notaların doğruluk
+ * oranını sunucuya raporlayan API fonksiyonlarını barındırır.
  */
 export const progressApi = {
   /**
-   * Retrieves all completed or in-progress lesson records for the authenticated user.
+   * getLessonProgress - Giriş yapmış kullanıcının tamamladığı veya çalışmaya devam ettiği tüm derslerin ilerleme kayıtlarını getirir.
    */
   getLessonProgress: () =>
     apiClient.get<ProgressResponse>('/api/progress/lessons'),
 
   /**
-   * Submits lesson results (accuracy rates and recorded notes played) to calculate
-   * completion parameters, award XP bonuses, and unlock subsequent levels.
+   * submitProgress - Kullanıcının tamamladığı ders seansının detaylarını (doğruluk yüzdesi ve çalınan nota isimleri) sunucuya kaydeder.
+   * Sunucu bu verileri işleyerek ders kilit açma durumlarını günceller ve XP ödülü hesaplar.
+   * @param lessonId - Tamamlanan dersin benzersiz ID'si
+   * @param accuracy - Başarı doğruluk oranı yüzdesi (Örn: 92)
+   * @param notesPlayed - Kullanıcı tarafından çalınan notaların isimlerini içeren dizi
    */
   submitProgress: (lessonId: number, accuracy: number, notesPlayed: string[]) =>
     apiClient.post<SubmitProgressResponse>('/api/progress/lessons', {

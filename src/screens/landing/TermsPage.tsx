@@ -3,74 +3,79 @@ import Navbar from './Navbar';
 import Footer from './Footer';
 
 /**
- * TermsPage Component
- * Renders a static glassmorphic document card containing FretFlow's official service terms and user responsibilities.
+ * TermsPage (Kullanım Koşulları Sayfası) Bileşeni
+ * 
+ * Bu sayfa, FretFlow platformunun yasal kullanım koşullarını, fikri mülkiyet haklarını,
+ * kullanıcı sorumluluklarını ve kurucu ortakların yasal haklarını belirten glassmorphism
+ * tasarımlı statik bir dokümantasyon ekranıdır.
  */
 const TermsPage: React.FC = () => {
   return (
+    // Sayfanın genel yerleşimi ve arka planı
     <div className="min-h-screen bg-dark-900 overflow-x-hidden font-sans text-white relative flex flex-col">
-      {/* Decorative backdrop graphics */}
+      {/* Animasyonlu parlayan gökyüzü arka planı */}
       <AnimatedBackground />
       
-      {/* Global Landing Navbar */}
+      {/* Üst navigasyon barı */}
       <Navbar />
 
+      {/* Ana yasal metin alanı */}
       <main className="relative z-10 max-w-4xl mx-auto px-6 pt-32 pb-20 flex-grow w-full">
-        {/* Document Card panel */}
+        {/* Belge Kartı Paneli */}
         <div className="bg-dark-800/50 backdrop-blur-xl border border-white/10 rounded-3xl p-8 md:p-14 shadow-2xl relative overflow-hidden group hover:border-primary-500/30 transition-all duration-500">
           
-          {/* Radiant auroral glow overlay */}
+          {/* Hover edildiğinde parlayan yeşil/turuncu arka plan aurası */}
           <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-primary-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-700"></div>
 
-          {/* Page Heading */}
+          {/* Sayfa Ana Başlığı */}
           <h1 className="text-4xl md:text-5xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-primary-600">
-            Terms of Service
+            Kullanım Koşulları
           </h1>
 
-          {/* Service terms content */}
+          {/* Koşul Maddeleri Metin İçeriği */}
           <div className="space-y-6 text-base text-gray-300 leading-relaxed relative z-10">
-            <p className="text-gray-400 text-xs">Last updated: May 18, 2026</p>
+            <p className="text-gray-400 text-xs">Son güncelleme: 18 Mayıs 2026</p>
             
-            <h2 className="text-xl font-bold text-white mt-8">1. Acceptance of Terms</h2>
+            <h2 className="text-xl font-bold text-white mt-8">1. Koşulların Kabulü</h2>
             <p>
-              Welcome to FretFlow ("we," "our," "us"). By accessing or using our website, services, lessons, interactive game modes, and tools (collectively, the "Platform"), you agree to be bound by these Terms of Service. If you do not agree with any part of these terms, you must immediately discontinue your use of the Platform.
+              FretFlow'a ("biz", "bizim", "bize") hoş geldiniz. Web sitemize, hizmetlerimize, derslerimize, interaktif oyun modlarımıza ve araçlarımıza (topluca "Platform") erişerek veya bunları kullanarak, bu Kullanım Koşullarına bağlı kalmayı kabul etmiş olursunuz. Bu koşulların herhangi bir kısmını kabul etmiyorsanız, Platformu kullanmayı derhal sonlandırmalısınız.
             </p>
 
-            <h2 className="text-xl font-bold text-white mt-8">2. Intellectual Property Rights</h2>
+            <h2 className="text-xl font-bold text-white mt-8">2. Fikri Mülkiyet Hakları</h2>
             <p>
-              The Platform and its entire contents, features, and functionality—including but not limited to all source code, software, algorithms, lesson curricula, song sheets, designs, audios, animations, logos, and graphics—are the exclusive intellectual property of the co-founders: Ravan Aliyev, Emirhan Alptekin, and Hüseyin Poyraz Küçükarslan. They are protected by international copyright, trademark, patent, trade secret, and other intellectual property or proprietary rights laws. No part of the Platform may be copied, modified, distributed, or republished without prior written authorization.
+              Platform ve onun tüm içeriği, özellikleri ve işlevselliği — kaynak kodları, yazılımları, algoritmaları, ders müfredatları, nota tablaları, tasarımları, sesleri, animasyonları, logoları ve grafikleri dahil ancak bunlarla sınırlı olmamak üzere — kurucu ortaklar: Ravan Aliyev, Emirhan Alptekin ve Hüseyin Poyraz Küçükarslan'ın özel fikri mülkiyetindedir. Uluslararası telif hakkı, ticari marka, patent, ticari sır ve diğer fikri mülkiyet yasalarıyla korunmaktadır. Önceden yazılı izin alınmaksızın Platformun hiçbir parçası kopyalanamaz, değiştirilemez, dağıtılamaz veya yeniden yayınlanamaz.
             </p>
 
-            <h2 className="text-xl font-bold text-white mt-8">3. User Accounts</h2>
+            <h2 className="text-xl font-bold text-white mt-8">3. Kullanıcı Hesapları</h2>
             <p>
-              To access certain features of the Platform, including progress tracking, duels, and leaderboards, you must register for an account. You agree to provide accurate, current, and complete information during registration. You are solely responsible for maintaining the confidentiality of your credentials and for all activities that occur under your account. We reserve the right to suspend or terminate accounts that violate these terms.
+              Gelişim takibi, düellolar ve liderlik tabloları dahil olmak üzere Platformun belirli özelliklerine erişmek için bir hesap oluşturmalısınız. Kayıt sırasında doğru, güncel ve eksiksiz bilgiler vermeyi kabul edersiniz. Şifrenizin gizliliğini korumaktan ve hesabınız altında gerçekleşen tüm faaliyetlerden yalnızca siz sorumlusunuz. Bu koşulları ihlal eden hesapları askıya alma veya sonlandırma hakkını saklı tutarız.
             </p>
 
-            <h2 className="text-xl font-bold text-white mt-8">4. Acceptable Use</h2>
+            <h2 className="text-xl font-bold text-white mt-8">4. Kabul Edilebilir Kullanım</h2>
             <p>
-              You agree to use the Platform only for lawful purposes. You must not:
+              Platformu yalnızca yasal amaçlarla kullanmayı kabul edersiniz. Şunları yapmamalısınız:
             </p>
             <ul className="list-disc list-inside space-y-2 ml-4">
-              <li>Use any automated device, script, spider, or manual process to monitor or copy our web content.</li>
-              <li>Introduce any viruses, trojan horses, worms, logic bombs, or other malicious or technologically harmful materials.</li>
-              <li>Attempt to gain unauthorized access to, interfere with, damage, or disrupt any parts of the Platform or the hosting database.</li>
-              <li>Sublicense, lease, sell, or commercially exploit your account or the curriculum access.</li>
+              <li>Web içeriğimizi izlemek veya kopyalamak için herhangi bir otomatik cihaz, komut dosyası, örümcek veya manuel işlem kullanmak.</li>
+              <li>Sisteme virüs, truva atı, solucan, mantık bombası veya teknolojik olarak zararlı diğer materyalleri dahil etmek.</li>
+              <li>Platformun herhangi bir bölümüne veya barındırıcı veritabanına yetkisiz erişim sağlamaya, müdahale etmeye veya bunları bozmaya çalışmak.</li>
+              <li>Hesabınızı veya müfredat erişiminizi alt lisanslamak, kiralamak, satmak veya ticari olarak kötüye kullanmak.</li>
             </ul>
 
-            <h2 className="text-xl font-bold text-white mt-8">5. Disclaimer of Warranties</h2>
+            <h2 className="text-xl font-bold text-white mt-8">5. Garantilerin Reddi</h2>
             <p>
-              The Platform is provided on an "as-is" and "as-available" basis. We make no representations or warranties of any kind, express or implied, regarding the accuracy, completeness, availability, security, or reliability of the services, audio algorithms, or materials provided.
+              Platform "olduğu gibi" ve "mevcut olduğu sürece" esasıyla sunulmaktadır. Sunulan hizmetlerin, ses algoritmalarının veya materyallerin doğruluğu, eksiksizliği, kullanılabilirliği, güvenliği veya güvenilirliği konusunda açık veya zımni hiçbir garanti vermemekteyiz.
             </p>
 
-            <h2 className="text-xl font-bold text-white mt-8">6. Limitation of Liability</h2>
+            <h2 className="text-xl font-bold text-white mt-8">6. Sorumluluğun Sınırlandırılması</h2>
             <p>
-              To the maximum extent permitted by applicable law, in no event shall FretFlow, its founders, or affiliates be liable for any indirect, incidental, special, consequential, or punitive damages arising out of or related to your use of or inability to use the Platform.
+              Yürürlükteki yasaların izin verdiği azami ölçüde, FretFlow, kurucuları veya bağlı kuruluşları, Platformu kullanmanızdan veya kullanamamanızdan kaynaklanan hiçbir dolaylı, arızi, özel veya cezai zarardan sorumlu tutulamaz.
             </p>
           </div>
         </div>
       </main>
 
-      {/* Global Landing Footer */}
+      {/* Alt bilgi alanı */}
       <Footer />
     </div>
   );

@@ -3,18 +3,18 @@ import { apiClient, clearTokens, setRefreshToken } from '../api/client';
 import type { User, AuthResponse } from '../types/api';
 
 /**
- * Interface representing the volatile core authentication state.
+ * Kimlik Doğrulama Durum Arayüzü (AuthState)
  */
 interface AuthState {
-  user: User | null;          // Currently authenticated user object
-  isAuthenticated: boolean;   // Quick boolean accessor for auth status
-  isLoading: boolean;         // Initial loading state while restoring session from localStorage
-  accessToken: string | null; // Volatile JWT access token in memory
-  authError: string | null;   // Active authentication error messages
+  user: User | null;          // Giriş yapmış kullanıcının profil detaylarını barındıran nesne (yoksa null)
+  isAuthenticated: boolean;   // Oturumun açık olup olmadığını hızlıca kontrol eden boolean
+  isLoading: boolean;         // Sayfa ilk açıldığında localStorage'dan oturum kurtarılırken aktif olan yükleniyor durumu
+  accessToken: string | null; // Çalışma zamanı RAM belleğinde saklanan geçici JWT Access Token'ı
+  authError: string | null;   // Oturum açma/kayıt işlemleri sırasında oluşan hata mesajları
 }
 
 /**
- * Interface representing the exported context actions and states.
+ * React Context Tarafından Dışa Aktarılan Fonksiyonlar ve Durumlar Arayüzü (AuthContextValue)
  */
 interface AuthContextValue extends AuthState {
   login: (email: string, password: string) => Promise<void>;
@@ -24,14 +24,16 @@ interface AuthContextValue extends AuthState {
   clearAuthError: () => void;
 }
 
-// Instantiate React Context
+// React Context nesnesinin oluşturulması
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 /**
- * AuthProvider Component
- * The top-level global authentication state wrapper.
- * - Restores user session automatically on boot by querying `/api/auth/me`.
- * - Exposes callbacks for logging in, signing up new accounts, logging out, and updating profile settings.
+ * AuthProvider Bileşeni
+ * 
+ * Uygulamanın en tepesinde yer alan ve tüm alt sayfalara (components) oturum durumunu
+ * dağıtan global sağlayıcıdır.
+ * - Tarayıcı ilk açıldığında localStorage'daki refresh token ile sessiz oturum açma (`/api/auth/me`) gerçekleştirir.
+ * - Giriş yapma, üye olma, çıkış yapma ve kullanıcı XP puanı güncellemelerini tek bir merkezden yönetir.
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -39,38 +41,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // Clears active authentication errors from state
+  // Hata mesajlarını sıfırlayan yardımcı fonksiyon
   const clearAuthError = useCallback(() => {
     setAuthError(null);
   }, []);
 
-  // Updates current user metadata (e.g. on XP rewards or username changes)
+  // Kullanıcı nesnesini günceller (Örn: Ders bitiminde XP arttığında veya avatar değiştiğinde çağrılır)
   const updateUser = useCallback((newUser: User) => {
     setUser(newUser);
   }, []);
 
-  // Signs out the user, invalidating tokens and informing the backend service
+  // Kullanıcı oturumunu tarayıcıda ve sunucuda kalıcı olarak sonlandırır (Çıkış yapar)
   const logout = useCallback(() => {
     const refreshToken = localStorage.getItem('fretflow_refresh_token');
     setUser(null);
     setAccessToken(null);
-    clearTokens();
+    clearTokens(); // Tarayıcıdaki token'ları temizler
     if (refreshToken) {
+      // Sunucuya da çıkış yapıldığını bildirir ki token geçersiz kılınsın
       apiClient.post('/api/auth/logout', { refreshToken }).catch(() => { });
     }
   }, []);
 
-  // Auto-restore session from localStorage on application boot
+  // Uygulama ilk açıldığında (App Boot) çalışarak eski oturumu otomatik kurtarır (Auto-login)
   useEffect(() => {
     const refreshToken = localStorage.getItem('fretflow_refresh_token');
     if (refreshToken) {
-      // apiClient automatically rotates the access token internally if expired
+      // apiClient sınıfı token süresi bittiyse arka planda otomatik yenileme (refresh) yapar
       apiClient.get<User>('/api/auth/me')
         .then(userData => {
           setUser(userData);
         })
         .catch(() => {
-          // Invalidate and sign out if the session is fully expired
+          // Oturum tamamen eskimiş veya geçersiz kılınmışsa token'ları temizle
           clearTokens();
           setUser(null);
         })
@@ -83,7 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   /**
-   * Logs in a user.
+   * login - E-posta ve şifre ile sisteme giriş yapar.
+   * Başarılı olursa dönen Access Token ve Refresh Token'ları belleğe ve localStorage'a işler.
    */
   const login = async (email: string, password: string) => {
     const data = await apiClient.post<AuthResponse>('/api/auth/login', { email, password });
@@ -94,7 +98,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   /**
-   * Registers a new user.
+   * register - Belirlenen e-posta, şifre ve kullanıcı adı ile yeni bir üyelik oluşturur.
+   * Başarılı olursa otomatik olarak sisteme giriş yaptırır.
    */
   const register = async (email: string, password: string, username: string) => {
     const data = await apiClient.post<AuthResponse>('/api/auth/register', { email, password, username });
@@ -125,7 +130,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 /**
- * Custom hook to easily consume authentication contexts.
+ * useAuth - Kimlik doğrulama verilerine ve metotlarına (login, logout, register)
+ * alt bileşenlerden kolayca erişmek için kullanılan özel React Hook'u.
  */
 export function useAuth(): AuthContextValue {
   const context = useContext(AuthContext);

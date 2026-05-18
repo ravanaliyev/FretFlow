@@ -1,31 +1,32 @@
 /**
  * ==========================================================================================
- *                                    FRETFLOW DASHBOARD ORCHESTRATOR
+ *                                    FRETFLOW DASHBOARD ORKESTRASYON MERKEZİ
  * ==========================================================================================
  * 
- * CORE PURPOSE:
- * This is the central hub/dashboard of the FretFlow platform. It acts as a major orchestrator
- * coordinating the gamified learning path, live guitar audio processing, real-time multiplayer
- * duels, and user profile management.
+ * ANA AMAÇ:
+ * Bu dosya, FretFlow platformunun merkezi yönetim paneli ve ana beynidir (Hub).
+ * Oyunlaştırılmış gitar eğitim yol haritasını, tarayıcı mikrofonu üzerinden çalışan canlı gitar ses 
+ * işlemcisini (Pitch Detection), gerçek zamanlı çok oyunculu düelloları ve kullanıcı profil
+ * tercihlerini tek bir çatı altında koordine eden devasa bir orkestratördür.
  * 
- * MAIN STATE DOMAINS:
- * 1. USER AUTH & STATS: Exposes authentication data (XP, Levels) and tracks rolling 7-day practice streaks.
- * 2. CURRICULUM PATHWAYS: Handles Standard Levels (1 to 5) including foundational lessons, fret mastery, 
- *    interactive song libraries, and ear training, fetched dynamically from backend APIs.
- * 3. REAL-TIME AUDIO SYNCHRONIZATION: Instantiates the browser pitch detection system (via AudioProcessor)
- *    to analyze microphone frequencies and match them to target guitar notes on the fretboard.
- * 4. MULTIPLAYER DUEL SYSTEM: Manages real-time 30-second challenges against other students with shared
- *    invite codes, live ready states, and automated high-score submissions.
- * 5. PROFILE & PREFERENCES: Allows personalization of settings like Light/Dark theme, Left-Handed mode, 
- *    and Scientific (C, D, E) vs. Syllabic (Do, Re, Mi) musical notation.
+ * ANA DURUM (STATE) ALANLARI:
+ * 1. KULLANICI YETKİ & SKORLAR: Kullanıcı XP/Seviye durumunu sunar ve 7 günlük pratik streak serilerini izler.
+ * 2. MÜFREDAT YOL HARİTASI: Seviye 1'den 5'e kadar olan temel egzersizleri, perde (fret) hakimiyetini, 
+ *    ritim oyunu kütüphanesini ve kulak egzersizlerini backend API'leri üzerinden yönetir.
+ * 3. CANLI SES SENKRONİZASYONU: Web Audio API tabanlı PitchProcessor modülünü ayağa kaldırarak 
+ *    mikrofondan gelen gitar nota frekanslarını yakalar ve ekrandaki hedef notayla eşleştirir.
+ * 4. ÇOK OYUNCULU DÜELLO ALTYAPISI: Davet koduyla lobiler kurarak iki oyuncunun 30 saniye boyunca 
+ *    aynı şarkıda yarışmasını ve bitişte skorlarının otomatik kaydedilmesini sağlar.
+ * 5. KULLANICI AYARLARI: Açık/Koyu tema, Solak Gitar modu ve bilimsel (C, D, E) veya hece (Do, Re, Mi) 
+ *    müzik notasyon sistemi tercihlerini tarayıcı bazlı kişiselleştirir.
  * 
- * NAVIGATION & VIEWS Structure:
- * Subviews are derived dynamically from the URL route segments (e.g. `/dashboard/<view>/<param>`):
- * - "levels": Main roadmap containing level cards (Level 1-5).
- * - "lessons": Displays the specific grid of lessons for the chosen level ID.
- * - "practice": Interactive pitch-matching guitar practice board.
- * - "ear-training": Interactive game to guess played notes by ear.
- * - "duel": Real-time user vs. user note matching competition arena.
+ * NAVİGASYON VE GÖRÜNÜM (ROUTE) YAPISI:
+ * Alt görünümler, tarayıcı URL yol segmentlerinden dinamik olarak çözümlenir (`/dashboard/<görünüm>/<param>`):
+ * - "levels": 5 temel seviye kartını içeren ana müfredat yol haritası.
+ * - "lessons": Seçilen seviyeye ait ders egzersizlerinin grid listesi.
+ * - "practice": Mikrofon etkileşimli, canlı nota basmalı pratik ekranı.
+ * - "ear-training": Duyulan sesin hangi notaya ait olduğunu tahmin etme oyunu.
+ * - "duel": Gerçek zamanlı çok oyunculu düello arenası.
  * ==========================================================================================
  */
 
@@ -258,36 +259,49 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // global AuthContext kancasından giriş yapmış aktif kullanıcı bilgilerini çeker
   const { user, isAuthenticated, isLoading, logout, updateUser } = useAuth();
+  
+  // Rol Tabanlı Yetkilendirme (RBAC): Kullanıcı rolünü çeker (ADMIN veya STUDENT)
   const userRole = user?.role || 'STUDENT';
 
+  // Oturum kontrolü: Eğer sayfa yüklenmesi tamamlanmışsa ve kullanıcı yetkisizse anında login ekranına yolla
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       navigate('/login');
     }
   }, [isLoading, isAuthenticated, navigate]);
 
-  // Parse view and IDs from URL
+  // URL Segmentlerini ayrıştırarak SPA (Single Page Application) yönlendirmesini yönetir
+  // URL formatı: /dashboard/<view>/<param> (Örn: /dashboard/lessons/3 veya /dashboard/practice/12)
   const pathParts = location.pathname.split('/').filter(Boolean);
-  // Expected: ['dashboard'] or ['dashboard', 'lessons', '1'] or ['dashboard', 'practice', '1']
-  const urlView = pathParts[1] || 'levels';
+  const urlView = pathParts[1] || 'levels'; // Varsayılan ekran: levels (Müfredat Haritası)
   const urlLevelId = pathParts[2] ? parseInt(pathParts[2]) : null;
   const urlLessonId = pathParts[2] ? parseInt(pathParts[2]) : null;
   const urlInviteCode = pathParts[2] || '';
-  const currentView = urlView;
+  const currentView = urlView; // Aktif alt görünüm
   const [isTunerOpen] = useState(false);
 
+  // Geçmişi temizleme modalı görünürlük durumu
   const [showHistoryClearModal, setShowHistoryClearModal] = useState(false);
+  
+  // Backend'den çekilen müfredat ders listesi (LevelRoadmap ve LessonGrid bu diziyi kullanır)
   const [lessons, setLessons] = useState<Lesson[]>([]);
 
+  // Kullanıcının son ders pratik geçmişi dökümü dizisi
   const [history, setHistory] = useState<HistoryItem[]>([]);
 
+  // Kullanıcının anlık tecrübe puanı (XP) ve seviyesi (Level) durumları
   const [userXp, setUserXp] = useState(0);
   const [userLevel, setUserLevel] = useState(1);
 
+  // İnteraktif pratik yaparken sıradaki çalınacak notanın sekans dizisindeki indeksi
   const [currentSequenceIndex, setCurrentSequenceIndex] = useState(0);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [difficultyFilter, setDifficultyFilter] = useState('all');
+  
+  // Arama ve Filtreleme Durumları (LessonGrid.tsx bileşeninde kullanılır)
+  const [searchTerm, setSearchTerm] = useState(''); // Kullanıcının ders arama kutusuna yazdığı kelime
+  const [difficultyFilter, setDifficultyFilter] = useState('all'); // Filtrelenecek zorluk seviyesi ('all', 'easy', 'medium', 'hard')
   const [statusFilter] = useState('all');
   const [currentFrequency, setCurrentFrequency] = useState(0);
   const [isListening, setIsListening] = useState(false);
@@ -306,20 +320,28 @@ const Dashboard: React.FC = () => {
       return [];
     }
   });
+  // Kullanıcının tema (koyu/açık) tercihini yerel hafızadan (localStorage) çeker, yoksa varsayılan olarak 'dark' (koyu) atar
   const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('fretflow_theme') === 'light' ? 'light' : 'dark'));
+  
+  // Nota notasyon stilini hece (Do, Re, Mi) ya da bilimsel (C, D, E) olarak yerel depolamadan yükler
   const [notationStyle, setNotationStyle] = useState<'scientific' | 'syllabic'>(
     () => (localStorage.getItem('fretflow_notation') === 'syllabic' ? 'syllabic' : 'scientific')
   );
+
+  // Solak gitar çalma arayüzü tercihini yerel hafızadan yükler
   const [isLefty, setIsLefty] = useState<boolean>(
     () => localStorage.getItem('fretflow_is_lefty') === 'true'
   );
+  
   const [supportMessage, setSupportMessage] = useState('');
   const [supportSubmitted, setSupportSubmitted] = useState(false);
   const notificationsRef = useRef<HTMLDivElement | null>(null);
 
+  // Bildirimler her değiştiğinde yerel depolama alanını (localStorage) senkronize eder
   useEffect(() => {
     localStorage.setItem('fretflow_notifications', JSON.stringify(notifications));
   }, [notifications]);
+
   const achievementsInitializedRef = useRef(false);
   const previousEarnedAchievementsRef = useRef<number[]>([]);
   const [, setAdminTab] = useState<'Add New' | 'Manage'>('Add New');
@@ -329,35 +351,38 @@ const Dashboard: React.FC = () => {
   const [showStreakModal, setShowStreakModal] = useState(false);
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
 
-  // Game States
+  // --- Hızlı Oyun / Meydan Okuma (Game States) ---
   const [gamePhase, setGamePhase] = useState<'idle' | 'countdown' | 'playing' | 'result'>('idle');
-  const [gameTimeLeft, setGameTimeLeft] = useState(30);
+  const [gameTimeLeft, setGameTimeLeft] = useState(30); // 30 saniyelik oyun süresi sayacı
   const [gameScore, setGameScore] = useState(0);
   const [gameTargetNote, setGameTargetNote] = useState('');
   const [gameHighScore, setGameHighScore] = useState(() => Number(localStorage.getItem('fretflow_highscore') || 0));
   const [gameCountdown, setGameCountdown] = useState(3);
 
+  // Sıralama, Düello ve Çok Oyunculu Oda Durumları
   const [leaderboard, setLeaderboard] = useState<LeaderboardItem[]>([]);
-  const [duel, setDuel] = useState<Duel | null>(null);
-  const [duelCodeInput, setDuelCodeInput] = useState('');
+  const [duel, setDuel] = useState<Duel | null>(null); // Anlık düello odasının bilgileri (host, guest)
+  const [duelCodeInput, setDuelCodeInput] = useState(''); // Davet kodu kutusuna girilen 6 haneli lobi kodu
   const [duelScore, setDuelScore] = useState(0);
   const [duelAccuracy, setDuelAccuracy] = useState(0);
   const [duelMessage, setDuelMessage] = useState<string | null>(null);
   const [duelError, setDuelError] = useState<string | null>(null);
   const [duelReadyInProgress, setDuelReadyInProgress] = useState(false);
 
+  // Kullanıcının düellodaki rolünü (Ev Sahibi veya Misafir Oyuncu) belirler
   const isDuelParticipant = Boolean(duel && user && (user.id === duel.host_user_id || user.id === duel.guest_user_id));
   const isDuelHost = Boolean(duel && user?.id === duel.host_user_id);
   const userIsReady = Boolean(duel && (isDuelHost ? duel.host_ready : duel?.guest_ready));
   const opponentIsReady = Boolean(duel && (isDuelHost ? duel?.guest_ready : duel?.host_ready));
 
+  // Seçilen temaya göre HTML dokümanının class listesine 'dark' veya 'light' sınıfını ekler (Koyu/Açık Tema Değişimi)
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
     document.documentElement.classList.toggle('light', theme === 'light');
     localStorage.setItem('fretflow_theme', theme);
   }, [theme]);
 
-  // Sync state with user profile from DB
+  // Kullanıcı profili değiştiğinde veritabanındaki notasyon stili ve solaklık tercihlerini state'e eşitler
   useEffect(() => {
     if (user) {
       if (user.notation_style) setNotationStyle(user.notation_style);
@@ -365,40 +390,51 @@ const Dashboard: React.FC = () => {
     }
   }, [user]);
 
+  /**
+   * handleUpdateNotation - Nota notasyon sistemini günceller ve sunucuyla senkronize eder.
+   * @param style - Seçilen gösterim biçimi ('scientific' | 'syllabic')
+   */
   const handleUpdateNotation = async (style: 'scientific' | 'syllabic') => {
     setNotationStyle(style);
     localStorage.setItem('fretflow_notation', style);
     if (isAuthenticated) {
       try {
+        // Tercihi veritabanına kalıcı olarak kaydeder
         const updated = await usersApi.updateMe({ notation_style: style });
-        updateUser(updated);
+        updateUser(updated); // Global Auth Context'indeki kullanıcı nesnesini günceller
       } catch (err) {
-        console.error('Failed to save notation preference:', err);
+        console.error('Notasyon tercihi sunucuya kaydedilemedi:', err);
       }
     }
   };
 
+  /**
+   * handleUpdateLefty - Solak veya sağlak arayüz modunu günceller ve sunucuya yazar.
+   * @param val - Solak modu aktif mi? (boolean)
+   */
   const handleUpdateLefty = async (val: boolean) => {
     setIsLefty(val);
     localStorage.setItem('fretflow_is_lefty', val.toString());
     if (isAuthenticated) {
       try {
+        // Tercihi veritabanına kalıcı olarak kaydeder
         const updated = await usersApi.updateMe({ is_lefty: val });
         updateUser(updated);
       } catch (err) {
-        console.error('Failed to save lefty preference:', err);
+        console.error('Solaklık tercihi sunucuya kaydedilemedi:', err);
       }
     }
   };
 
+  // Yeni giriş yapan kullanıcılara otomatik ilk hoş geldin bildirimini oluşturur ve listeye ekler
   useEffect(() => {
     const welcomeSeen = localStorage.getItem('fretflow_welcome_seen') === 'true';
     if (!welcomeSeen) {
       setNotifications(prev => [
         {
           id: Date.now(),
-          title: 'Welcome!',
-          message: 'After logging into FretFlow, we\'ll keep you updated with new notifications here.',
+          title: 'Hoş Geldiniz! 🎸',
+          message: 'FretFlow\'a adım attınız. Derslerinizdeki ilerlemeniz ve başarı duyurularınız burada listelenecek.',
           type: 'welcome',
           timestamp: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
           read: false,
@@ -409,6 +445,7 @@ const Dashboard: React.FC = () => {
     }
   }, []);
 
+  // Bildirim panelinin dışına fareyle tıklanıldığında bildirimler kutusunu kapatır (Click Outside)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
@@ -424,6 +461,7 @@ const Dashboard: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Sunucudaki küresel liderlik sıralamasını çekerek podyumu ve şeref kürsüsünü besler
   useEffect(() => {
     scoresApi.getLeaderboard().then(res => {
       const mapped = res.data.map((item: any) => ({
@@ -438,50 +476,65 @@ const Dashboard: React.FC = () => {
     });
   }, []);
 
+  /**
+   * fetchDuel - Davet kodu girilen düello odasının güncel durumunu sunucudan sorgular.
+   * @param inviteCode - Düellonun 6 haneli benzersiz davet kodu
+   */
   const fetchDuel = async (inviteCode: string) => {
     if (!inviteCode) return;
     try {
       const res = await duelsApi.getDuel(inviteCode);
-      setDuel(res.data);
+      setDuel(res.data); // Gelen düello lobisi verilerini state'e kaydeder
       setDuelError(null);
     } catch (err: any) {
-      setDuelError('Could not load duel. Check the code or try again.');
+      setDuelError('Düello yüklenemedi. Kodu kontrol edip tekrar deneyin.');
       console.error('Failed to load duel:', err);
     }
   };
 
+  /**
+   * createDuel - Yeni bir düello odası (lobi) oluşturur ve anında o odaya yönlendirir.
+   */
   const createDuel = async () => {
     try {
       const res = await duelsApi.createDuel();
       setDuel(res.data);
+      // Kullanıcıyı yeni oluşturulan düello URL'sine uçurur
       navigate(`/dashboard/duel/${res.data.invite_code}`);
       setDuelError(null);
-      setDuelMessage('Duel created! Share the link with a friend.');
+      setDuelMessage('Düello başarıyla oluşturuldu! Davet kodunu arkadaşınla paylaş.');
     } catch (err: any) {
       console.error('Failed to create duel:', err);
-      setDuelError('Unable to create duel room right now.');
+      setDuelError('Şu an düello odası oluşturulamıyor.');
     }
   };
 
+  /**
+   * joinDuel - Davet kodu girilen mevcut düello lobisine Player 2 (Misafir) olarak katılır.
+   */
   const joinDuel = async () => {
     if (!urlInviteCode) {
-      setDuelError('Enter a duel code to join.');
+      setDuelError('Katılmak için bir düello kodu girmelisiniz.');
       return;
     }
     try {
       const res = await duelsApi.joinDuel(urlInviteCode);
       setDuel(res.data);
       setDuelError(null);
-      setDuelMessage('You joined the duel! Click ready when you are set.');
+      setDuelMessage('Düelloya katıldınız! Hazır olduğunuzda Hazır butonuna tıklayın.');
     } catch (err: any) {
       console.error('Failed to join duel:', err);
-      setDuelError('Unable to join the duel. It may already be full or invalid.');
+      setDuelError('Düelloya katılım başarısız. Oda dolmuş veya kod geçersiz olabilir.');
     }
   };
 
+  /**
+   * readyDuel - Lobideki aktif oyuncuyu "Hazır" (Ready) konumuna getirir.
+   * Her iki oyuncu da hazır olduğunda maç otomatik olarak 'started' (başladı) konumuna geçer.
+   */
   const readyDuel = async () => {
     if (!urlInviteCode) {
-      setDuelError('No duel code available.');
+      setDuelError('Düello kodu bulunamadı.');
       return;
     }
 
@@ -489,24 +542,29 @@ const Dashboard: React.FC = () => {
     try {
       const res = await duelsApi.readyDuel(urlInviteCode);
       setDuel(res.data);
-      setDuelMessage('You are ready! Waiting for your opponent...');
+      setDuelMessage('Hazır durumunuz kaydedildi! Rakibiniz bekleniyor...');
 
-      // If we're already started, ensure we're in idle to trigger the challenge
+      // Eğer sunucuda oyun başladı durumuna geçtiyse geri sayımı tetikler
       if (res.data.status === 'started' && gamePhase !== 'idle') {
         setGamePhase('idle');
       }
       setDuelError(null);
     } catch (err: any) {
       console.error('Failed to ready duel:', err);
-      setDuelError('Could not set ready state. Try again.');
+      setDuelError('Hazır durumu güncellenemedi. Lütfen tekrar deneyin.');
     } finally {
       setDuelReadyInProgress(false);
     }
   };
 
+  /**
+   * submitDuelResult - Düello şarkısı veya süresi bittiğinde toplanan skoru sunucuya kaydeder.
+   * @param scoreToSubmit - Gönderilecek başarı skoru
+   * @param accuracyToSubmit - Gönderilecek doğruluk yüzdesi
+   */
   const submitDuelResult = async (scoreToSubmit?: number, accuracyToSubmit?: number) => {
     if (!urlInviteCode) {
-      setDuelError('No duel code available.');
+      setDuelError('Düello kodu bulunamadı.');
       return;
     }
     const finalScore = typeof scoreToSubmit === 'number' ? scoreToSubmit : duelScore;
@@ -514,17 +572,17 @@ const Dashboard: React.FC = () => {
     try {
       const res = await duelsApi.finishDuel(urlInviteCode, finalScore, finalAccuracy);
       setDuel(res.data);
-      // setDuelMessage('Your duel score is registered.');
       setDuelError(null);
     } catch (err: any) {
       console.error('Failed to submit duel result:', err);
-      setDuelError('Failed to submit duel score. Make sure you are joined to the duel.');
+      setDuelError('Düello skoru kaydedilemedi. Lobide olduğunuzdan emin olun.');
     }
   };
 
+  // Düello sayfasına ilk girildiğinde veya URL kodu değiştiğinde tüm düello oyun parametrelerini sıfırlar
   useEffect(() => {
     if (currentView === 'duel') {
-      setDuel(null); // Clear previous duel data immediately
+      setDuel(null); // Eski lobi verilerini anında temizler
       setGamePhase('idle');
       setGameTimeLeft(30);
       setGameScore(0);
@@ -532,12 +590,12 @@ const Dashboard: React.FC = () => {
       setDuelMessage(null);
       setDuelError(null);
       setDuelAccuracy(0);
-      setGameScore(0); // Reset score for new duel
-      setGameTimeLeft(30); // Reset timer for new duel
+      setGameScore(0);
+      setGameTimeLeft(30);
     }
   }, [urlInviteCode, currentView]);
 
-  // Automatically close all modals and drawers when the URL or view changes
+  // Sayfa yönlendirmesi veya URL adresi her değiştiğinde açık olan tüm yan menüleri (drawers) ve pencereleri otomatik kapatır
   useEffect(() => {
     setShowStreakModal(false);
     setShowAdminModal(false);
@@ -550,6 +608,8 @@ const Dashboard: React.FC = () => {
     setShowNotifications(false);
   }, [location.pathname]);
 
+  // Düello odasındayken, her 5 saniyede bir (Short Polling) lobinin durumunu arka planda sunucudan çeker
+  // Bu sayede rakibin odaya girip girmediği ve hazır tuşuna basıp basmadığı anlık izlenir.
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
     if (currentView === 'duel' && urlInviteCode) {
@@ -1023,18 +1083,27 @@ const Dashboard: React.FC = () => {
   }, [currentView, activeLesson, isVictory, showAdminModal, showStreakModal, showHistoryDrawer, showHistoryClearModal, gamePhase, currentSequenceIndex]);
 
 
+  /**
+   * startPractice - Seçilen bir dersin gitar çalışmasını başlatır.
+   * Son oynanan ders ID'sini yerel depolama alanına kaydeder ve pratik zamanlayıcısını başlatır.
+   * @param lesson - Çalışılacak olan ders nesnesi
+   */
   const startPractice = (lesson: Lesson) => {
     setLastPlayedLessonId(lesson.id);
     localStorage.setItem('fretflow_last_lesson', lesson.id.toString());
-    practiceStartTimeRef.current = Date.now();
+    practiceStartTimeRef.current = Date.now(); // Pratik seansı başlangıç zamanı
     navigate(`/dashboard/practice/${lesson.id}`);
   };
 
+  /**
+   * updatePracticeTime - Pratik seansı boyunca geçen süreyi hesaplar ve
+   * bunu yerel analitik istatistik depolama alanına kaydeder.
+   */
   const updatePracticeTime = () => {
     if (practiceStartTimeRef.current) {
       const durationSec = (Date.now() - practiceStartTimeRef.current) / 1000;
-      const durationMin = durationSec / 60; // No rounding here for precision
-      if (durationSec >= 1) { // Any practice over 1 second counts
+      const durationMin = durationSec / 60; // Analitik grafikler için dakika hesabı
+      if (durationSec >= 1) { // 1 saniyeden uzun süren her çalışma kaydedilir
         const today = new Date().toLocaleDateString('en-US', { weekday: 'short' });
         setPracticeStats(prev => {
           const updated = { ...prev, [today]: (prev[today] || 0) + durationMin };
@@ -1046,39 +1115,63 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  /**
+   * playSuccessSound - Web Audio API kullanarak bir başarı sesi (A Majör Akoru) sentezler.
+   * Fiziksel bir ses dosyasına ihtiyaç duymadan tarayıcı üzerinde 4 adet sentezleyici osilatör
+   * yardımıyla melodik tınılar üretir.
+   */
   const playSuccessSound = () => {
+    // Tarayıcının ses motorunu (AudioContext) başlatır
     const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const notes = [440, 554.37, 659.25, 880]; // A major chord
+    
+    // La Majör Akoru frekansları (A4, C#5, E5, A5)
+    const notes = [440, 554.37, 659.25, 880];
+    
     notes.forEach((freq, i) => {
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'triangle';
+      const osc = audioCtx.createOscillator(); // Ses dalgası üretici
+      const gain = audioCtx.createGain(); // Ses seviyesi (Volume) kontrolcüsü
+      
+      osc.type = 'triangle'; // Yumuşak bir gitar/flüt sesi için üçgen dalga
       osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      
+      // Ses yüksekliği zarfı (Envelope): Ses yavaşça açılır (fade-in) ve azalarak kaybolur (fade-out)
       gain.gain.setValueAtTime(0, audioCtx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1);
+      gain.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.05); // 50ms fade-in
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1); // 1s exponential decay
+      
       osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start(audioCtx.currentTime + i * 0.05);
-      osc.stop(audioCtx.currentTime + 1.5);
+      gain.connect(audioCtx.destination); // Sesi tarayıcı hoparlörüne bağlar
+      
+      osc.start(audioCtx.currentTime + i * 0.05); // Notaları arpej şeklinde (50ms arayla) başlatır
+      osc.stop(audioCtx.currentTime + 1.5); // 1.5 saniye sonra osilatörü durdurur
     });
   };
 
+  /**
+   * handleMatch - Gitarist doğru notayı bastığında veya ders sekansını tamamladığında çağrılır.
+   * - İki vuruş arasında 1 saniyelik bekleme süresi (cooldown) uygular.
+   * - Ders sekansı tamamen bittiğinde başarı akorunu çalar, ekranda konfeti patlatır, 
+   *   sıradaki dersin kilidini açar, yerel/backend pratik geçmişini günceller ve streak serisini arttırır.
+   */
   const handleMatch = () => {
     const now = Date.now();
-    if (now - lastMatchTimeRef.current < 1000) return; // 1 second cooldown
+    if (now - lastMatchTimeRef.current < 1000) return; // 1 saniyelik anti-spam filtresi
     lastMatchTimeRef.current = now;
 
     setCurrentSequenceIndex(prev => {
       const next = prev + 1;
+      
+      // Eğer dersin tüm nota hedefleri başarıyla çalındıysa (Ders bittiyse):
       if (activeLesson && next >= activeLesson.sequence.length) {
-        playSuccessSound();
+        playSuccessSound(); // Başarı akorunu çal
+        
+        // Konfeti (Victory Confetti) Ayarları
         const duration = 3 * 1000;
         const animationEnd = Date.now() + duration;
         const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
-
         const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
+        // 3 saniye boyunca aralıklı konfeti patlatma döngüsü
         const interval: any = setInterval(function () {
           const timeLeft = animationEnd - Date.now();
 
@@ -1087,11 +1180,12 @@ const Dashboard: React.FC = () => {
           }
 
           const particleCount = 50 * (timeLeft / duration);
-          // since particles fall down, start a bit higher than random
+          // Ekranın sol ve sağ alt köşelerinden yukarı doğru yeşil-beyaz-altın yıldız konfetiler fırlatır
           confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }, colors: ['#39FF14', '#ffffff', '#FFD700'], shapes: ['star', 'circle'] });
           confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }, colors: ['#39FF14', '#ffffff', '#FFD700'], shapes: ['star', 'circle'] });
         }, 250);
 
+        // Müfredatta tamamlanan dersin statüsünü günceller ve sonraki kilitli dersi açar (Level Progress)
         setLessons(prevLessons => {
           const currentIndex = prevLessons.findIndex(l => l.id === activeLesson.id);
           const nextLesson = prevLessons[currentIndex + 1];
@@ -1108,6 +1202,7 @@ const Dashboard: React.FC = () => {
           return updated;
         });
 
+        // Yerel çalışma geçmişi dökümüne yeni kayıt ekler
         setHistory(prev => {
           if (prev.length > 0 && prev[0].title === activeLesson.title) return prev;
           return [
@@ -1116,15 +1211,15 @@ const Dashboard: React.FC = () => {
           ];
         });
 
-        // Sync to backend history
+        // Backend veritabanına pratik geçmişini senkronize eder
         historyApi.add(activeLesson.id, activeLesson.title, 0).catch(console.error);
 
-        setIsVictory(true);
+        setIsVictory(true); // Zafer ekranı (VictoryModal) penceresini tetikler
 
-        // Sync progress to backend
+        // Backend veritabanına ders ilerlemesini (Tamamlandı statüsü) kaydeder
         progressApi.submitProgress(activeLesson.id, 100, activeLesson.sequence).catch(console.error);
 
-        // Update Streak
+        // Günlük Pratik Serisi (Streak) verisini günceller
         setStreakData((prev: { count: number; isFrozen: boolean; lastUpdated: string; history: string[] }) => {
           const today = new Date().toDateString();
           if (prev.lastUpdated === today && !prev.isFrozen) return prev;

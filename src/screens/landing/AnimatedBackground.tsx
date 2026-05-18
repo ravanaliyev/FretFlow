@@ -1,22 +1,24 @@
 import { motion } from 'framer-motion';
 
 /**
- * AnimatedBackground Component
- * Renders a high-fidelity visual ambient background for the landing and login sections:
- * - Includes smooth animating radial glow gradients.
- * - Simulates six neon guitar strings vibrating to represent a musical theme.
- * - Spawns 20 floating ambient circular light particles drifting upwards using Framer Motion.
+ * AnimatedBackground (Animasyonlu Arka Plan) Bileşeni
+ * 
+ * Landing ve giriş ekranları için premium kalitede dinamik bir atmosfer arka planı oluşturur:
+ * - Yumuşak hareket eden dairesel parlayan degrade (gradient) alanları sunar.
+ * - Gitar temasını yansıtmak amacıyla titreşen 6 adet neon gitar telini simüle eder.
+ * - Framer Motion kullanarak ekranın altından yukarıya doğru süzülen 20 adet ışık partikülü üretir.
  */
 const AnimatedBackground: React.FC = () => {
-  // Array representing floating particle nodes
+  // Yukarı doğru süzülecek ışık partiküllerini temsil eden boş bir dizi oluşturur
   const particles = Array.from({ length: 20 });
 
   return (
+    // Arka planın tıklamaları engellemesi için pointer-events-none ve en arkada durması için z-0 eklenmiştir
     <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-      {/* Dark backing base layer */}
+      {/* Koyu lacivert/siyah renkli taban arka plan katmanı */}
       <div className="absolute inset-0 bg-dark-900" />
       
-      {/* Dynamic ambient color gradients */}
+      {/* Sol üst köşede yumuşakça büyüyüp küçülen parlayan degrade aurası */}
       <motion.div 
         className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-ambient-500/20 blur-[120px]"
         animate={{ 
@@ -25,6 +27,8 @@ const AnimatedBackground: React.FC = () => {
         }}
         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
       />
+      
+      {/* Sağ alt köşede yumuşakça parıldayan FretFlow yeşili aurası */}
       <motion.div 
         className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-primary-500/10 blur-[150px]"
         animate={{ 
@@ -34,7 +38,8 @@ const AnimatedBackground: React.FC = () => {
         transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
       />
 
-      {/* Abstract neon guitar strings (renders six parallel lines that pulse neon green shadows simulating guitar string vibration) */}
+      {/* Soyut Titreşen Gitar Telleri (Gitar sapı hissi için 12 derece eğik yerleştirilmiştir) */}
+      {/* 6 adet paralel çizgi, rastgele sürelerde neon yeşil gölge efektiyle titreşerek gitar teli simülasyonu yapar */}
       <div className="absolute inset-0 flex items-center justify-center opacity-30 transform -rotate-12 scale-150">
         {[1, 2, 3, 4, 5, 6].map((string) => (
           <motion.div
@@ -52,7 +57,7 @@ const AnimatedBackground: React.FC = () => {
         ))}
       </div>
 
-      {/* Floating upward music particles */}
+      {/* Aşağıdan yukarı süzülen yüzen müzik partikülleri */}
       {particles.map((_, i) => (
         <motion.div
           key={i}
@@ -63,9 +68,9 @@ const AnimatedBackground: React.FC = () => {
             opacity: Math.random() * 0.5 + 0.2
           }}
           animate={{
-            y: -100, // Float up off screen top boundary
-            x: `+=${Math.random() * 100 - 50}`, // Drift slightly left/right
-            opacity: [0, 0.8, 0] // Fade in and out
+            y: -100, // Ekranın üst sınırının da dışına çıkmasını sağlar
+            x: `+=${Math.random() * 100 - 50}`, // Çıkarken hafif sağa sola salınım yapar
+            opacity: [0, 0.8, 0] // Yükselirken belirip zirvede kaybolur
           }}
           transition={{
             duration: 10 + Math.random() * 10,

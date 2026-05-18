@@ -2,29 +2,32 @@ import { apiClient } from './client';
 import type { PracticeStats, StatsSummary } from '../types/api';
 
 /**
- * Stats API Client Endpoints
- * Bridges analytical metrics: fetches weekly/monthly practice charts,
- * accuracy timelines, activity grids, and profile summaries.
+ * Kullanıcı Analitik İstatistikleri (Stats) API Uç Noktaları
+ * 
+ * Bu dosya, kullanıcının çalışma performansını görselleştirmek amacıyla kullanılır.
+ * Haftalık/aylık pratik süreleri (dakika), nota basma doğruluk yüzdeleri, kronolojik aktivite
+ * dökümleri ve dashboard genel başarı özetleri (özet XP, ders sayıları) bu API'lerden çekilir.
  */
 export const statsApi = {
   /**
-   * Retrieves practice volumes (minutes spent practicing) over a chosen period.
+   * getPractice - Belirli bir zaman aralığında kullanıcının kaç dakika pratik yaptığını çeker.
+   * @param period - Analiz zaman aralığı ('today' | 'week' | 'month' | 'all', Varsayılan: 'week')
    */
   getPractice: (period: 'today' | 'week' | 'month' | 'all' = 'week') =>
     apiClient.get<PracticeStats>('/api/stats/practice', { params: { period } }),
 
   /**
-   * Retrieves average hit accuracy rates plotted across dates.
+   * getAccuracy - Zaman içerisindeki ortalama nota basma doğruluk oranlarını grafik için çeker.
    */
   getAccuracy: () => apiClient.get<{ data: Array<{ date: string; avg_accuracy: number }> }>('/api/stats/accuracy'),
 
   /**
-   * Retrieves chronological user event metrics.
+   * getActivity - Kullanıcının yaptığı tüm kronolojik hareketleri (öğrenim etkinlikleri) listeler.
    */
   getActivity: () => apiClient.get<{ data: unknown[] }>('/api/stats/activity'),
 
   /**
-   * Retrieves aggregate user dashboard parameters (streak, lessons count, average accuracy, total XP).
+   * getSummary - Kullanıcının genel başarı özetini (streak, tamamlanan ders sayısı, ortalama doğruluk, toplam XP) tek seferde getirir.
    */
   getSummary: () => apiClient.get<StatsSummary>('/api/stats/summary'),
 };

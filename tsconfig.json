@@ -1,4 +1,14 @@
 {
+  /**
+   * FRETFLOW ANA TYPESCRIPT YAPILANDIRMASI (tsconfig.json)
+   * 
+   * CORE PURPOSE (Ana Amaç):
+   * Bu dosya, projenin TypeScript derleme kurallarının yönetim merkezidir.
+   * Monorepo tarzı bir referans (Project References) yapısı kullanarak derleme işlerini ikiye böler:
+   * 
+   * 1. `./tsconfig.app.json`: React tarayıcı uygulaması kaynak kodlarının (src/ klasörü) derleme ayarları.
+   * 2. `./tsconfig.node.json`: Vite yapılandırma dosyası (vite.config.ts) gibi Node.js ortamında çalışan araçların derleme ayarları.
+   */
   "files": [],
   "references": [
     { "path": "./tsconfig.app.json" },

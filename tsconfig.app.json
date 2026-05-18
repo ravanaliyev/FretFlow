@@ -1,25 +1,32 @@
 {
+  /**
+   * FRETFLOW REACT UYGULAMASI TYPESCRIPT DERLEME AYARLARI (tsconfig.app.json)
+   * 
+   * CORE PURPOSE (Ana Amaç):
+   * Bu dosya, `src/` klasöründeki React ve TypeScript kodlarının tarayıcıda çalışmak üzere 
+   * nasıl yorumlanacağını ve hangi sıkı (strict) tip kurallarına tabii tutulacağını tanımlar.
+   */
   "compilerOptions": {
-    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
-    "target": "es2023",
-    "lib": ["ES2023", "DOM"],
-    "module": "esnext",
-    "types": ["vite/client"],
-    "skipLibCheck": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo", // Derleme hızını artırmak için önbellek dosyası
+    "target": "es2023",                   // Derlenecek hedef JavaScript standardı (Modern Tarayıcılar için ES2023)
+    "lib": ["ES2023", "DOM"],             // Tarayıcı DOM nesnelerinin (window, document vb.) tip tanımlamalarını yükler
+    "module": "esnext",                   // Modül sistemi olarak en güncel ESNext (import/export) standardını kullanır
+    "types": ["vite/client"],             // Vite istemci ortamı (örneğin .png, .mp4 importları) tiplerini tanır
+    "skipLibCheck": true,                 // Hazır kütüphanelerin (node_modules) iç tip kontrollerini atlayarak hızı artırır
 
-    /* Bundler mode */
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-    "moduleDetection": "force",
-    "noEmit": true,
-    "jsx": "react-jsx",
+    /* Bundler (Vite Paketleyici) Ayarları */
+    "moduleResolution": "bundler",        // Vite gibi modern paketleyicilerin dosya bulma algoritmasını kullanır
+    "allowImportingTsExtensions": true,   // Dosya importlarında doğrudan .ts uzantısı yazılmasına izin verir
+    "verbatimModuleSyntax": true,         // import/export ifadelerini derlerken standartlara tam olarak uyar
+    "moduleDetection": "force",           // Tüm dosyaları varsayılan olarak modül (private scope) olarak kabul eder
+    "noEmit": true,                       // Fiziksel .js çıktıları üretmez (Tip kontrolünü tsc yapar, derlemeyi Vite yapar)
+    "jsx": "react-jsx",                   // React 17+ otomatik JSX dönüştürücüsünü (React import etmeden JSX yazımı) aktif eder
 
-    /* Linting */
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true
+    /* Kod Kalitesi Kuralları (Linting & Strict Checks) */
+    "noUnusedLocals": true,               // Kullanılmayan yerel değişkenler varsa hata verir (Temiz kod kuralı)
+    "noUnusedParameters": true,           // Fonksiyonlarda kullanılmayan parametreler varsa hata verir
+    "erasableSyntaxOnly": true,           // Sadece çalışma zamanında silinebilir temiz TypeScript sözdizimini zorunlu kılar
+    "noFallthroughCasesInSwitch": true    // Switch-case yapılarında break unutulursa hata fırlatır (Güvenlik önlemi)
   },
-  "include": ["src"]
+  "include": ["src"]                      // Sadece src/ klasöründeki dosyaları derleme kapsamına alır
 }
