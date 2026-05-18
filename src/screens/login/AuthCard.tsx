@@ -52,7 +52,7 @@ const AuthCard: React.FC = () => {
       } else {
         // Yeni üyelik doğrulamalarını yap ve kaydet
         if (!username.trim()) {
-          setError('Kullanıcı adı boş bırakılamaz!');
+          setError('Username cannot be empty!');
           setIsSubmitting(false);
           return;
         }
@@ -61,7 +61,7 @@ const AuthCard: React.FC = () => {
       // Giriş işlemi başarılıysa kullanıcıyı anında pratik sayfasına (Dashboard) uçur
       navigate('/dashboard');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Kimlik doğrulama başarısız oldu!');
+      setError(err instanceof Error ? err.message : 'Authentication failed!');
     } finally {
       setIsSubmitting(false);
     }
@@ -81,13 +81,13 @@ const AuthCard: React.FC = () => {
             className={`flex-1 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${isLogin ? 'bg-primary-500 text-dark-900 shadow-lg' : 'text-gray-400 hover:text-white'}`}
             onClick={() => { setSearchParams({ mode: 'login' }); setIsLogin(true); setError(''); }}
           >
-            Giriş Yap
+            Sign In
           </button>
           <button
             className={`flex-1 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${!isLogin ? 'bg-primary-500 text-dark-900 shadow-lg' : 'text-gray-400 hover:text-white'}`}
             onClick={() => { setSearchParams({ mode: 'signup' }); setIsLogin(false); setError(''); }}
           >
-            Kayıt Ol
+            Sign Up
           </button>
         </div>
 
@@ -99,7 +99,7 @@ const AuthCard: React.FC = () => {
             <div className="relative group">
               <input
                 type="text"
-                placeholder="Kullanıcı Adı"
+                placeholder="Username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="glass-input w-full px-4 py-3 rounded-xl text-sm"
@@ -112,7 +112,7 @@ const AuthCard: React.FC = () => {
             <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-primary-500 transition-colors" />
             <input
               type="email"
-              placeholder="E-posta adresi"
+              placeholder="Email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="glass-input w-full pl-12 pr-4 py-3 rounded-xl text-sm"
@@ -125,7 +125,7 @@ const AuthCard: React.FC = () => {
             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-primary-500 transition-colors" />
             <input
               type="password"
-              placeholder="Şifre"
+              placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="glass-input w-full pl-12 pr-4 py-3 rounded-xl text-sm"
@@ -149,9 +149,9 @@ const AuthCard: React.FC = () => {
             <div className="flex items-center justify-between mt-2">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" className="rounded bg-white/10 border-white/20 text-primary-500 focus:ring-primary-500/50" />
-                <span className="text-sm text-gray-400">Beni hatırla</span>
+                <span className="text-sm text-gray-400">Remember me</span>
               </label>
-              <a href="#" className="text-sm text-primary-500 hover:text-primary-600 transition-colors">Şifremi unuttum?</a>
+              <a href="#" className="text-sm text-primary-500 hover:text-primary-600 transition-colors">Forgot password?</a>
             </div>
           )}
 
@@ -167,7 +167,7 @@ const AuthCard: React.FC = () => {
               <Loader2 className="w-5 h-5 animate-spin" /> // Sunucuyla konuşurken dönen yükleniyor simgesi
             ) : (
               <>
-                {isLogin ? 'Çalmaya Başla' : 'Hesap Oluştur'}
+                {isLogin ? 'Start Playing' : 'Create Account'}
                 <ArrowRight className="w-5 h-5" />
               </>
             )}

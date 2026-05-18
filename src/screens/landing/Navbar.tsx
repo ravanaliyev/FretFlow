@@ -27,11 +27,11 @@ const Navbar: React.FC = () => {
       <div className="hidden sm:flex items-center gap-4">
         {/* Giriş Yap butonu - mode=login parametresiyle auth sayfasına yönlendirir */}
         <Link to="/login?mode=login" className="btn-duo btn-duo-secondary py-3 px-6 text-sm">
-          GİRİŞ YAP
+          SIGN IN
         </Link>
         {/* Üye Ol butonu - mode=signup parametresiyle auth sayfasına yönlendirir */}
         <Link to="/login?mode=signup" className="btn-duo btn-duo-primary py-3 px-6 text-sm">
-          HEMEN BAŞLA
+          GET STARTED
         </Link>
       </div>
     </nav>

@@ -29,56 +29,56 @@ const PrivacyPage: React.FC = () => {
 
           {/* Sayfa Ana Başlığı */}
           <h1 className="text-4xl md:text-5xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-primary-600">
-            Gizlilik Politikası
+            Privacy Policy
           </h1>
 
           {/* Gizlilik Politikası Maddeleri */}
           <div className="space-y-6 text-base text-gray-300 leading-relaxed relative z-10">
-            <p className="text-gray-400 text-xs">Son güncelleme: 18 Mayıs 2026</p>
+            <p className="text-gray-400 text-xs">Last updated: May 18, 2026</p>
 
             <p>
-              FretFlow olarak gizliliğinizi korumaya kararlıyız. Bu Gizlilik Politikası, interaktif gitar eğitimi platformumuzu kullandığınızda kişisel bilgilerinizi nasıl topladığımızı, kullandığımızı, sakladığımızı ve paylaştığımızı açıklar.
+              At FretFlow, we are committed to protecting your privacy. This Privacy Policy explains how we collect, use, store, and share your personal information when you use our interactive guitar training platform.
             </p>
 
-            <h2 className="text-xl font-bold text-white mt-8">1. Topladığımız Bilgiler</h2>
+            <h2 className="text-xl font-bold text-white mt-8">1. Information We Collect</h2>
             <p>
-              Tamamen kişiselleştirilmiş bir öğrenme deneyimi sunmak amacıyla şu detayları toplamaktayız:
-            </p>
-            <ul className="list-disc list-inside space-y-2 ml-4">
-              <li><strong>Hesap Kimlik Bilgileri:</strong> Kimlik doğrulama için kullanılan kullanıcı adınız, e-posta adresiniz ve şifrelenmiş şifreleriniz.</li>
-              <li><strong>İlerleme ve Performans Verileri:</strong> Tamamlanan dersler, günlük çalışma serisi (streak) logları, şarkı pratiklerindeki en yüksek skorlar, düello geçmişleri ve liderlik tablosu istatistikleri.</li>
-              <li><strong>Teknik Üst Veriler (Metadata):</strong> Yalnızca aktif kullanıcı oturumlarını sürdürmek için kullanılan cihaz parametreleri, temel bağlantı verileri ve tarayıcı çerezleri.</li>
-            </ul>
-
-            <h2 className="text-xl font-bold text-white mt-8">2. Bilgilerinizi Nasıl Kullanıyoruz?</h2>
-            <p>
-              Toplanan veriler yalnızca şu amaçlarla kullanılır:
+              To provide a personalized learning experience, we collect the following details:
             </p>
             <ul className="list-disc list-inside space-y-2 ml-4">
-              <li>Aktif kimlik bilgilerinizi yönetmek, hesap durumunuzu geri yüklemek ve seviye ilerlemenizi senkronize etmek.</li>
-              <li>XP puanınızı hesaplayarak sizi küresel canlı liderlik tablosunda sıralamak.</li>
-              <li>Diğer kullanıcılarla gerçek zamanlı rekabetçi gitar düelloları ve eşleşmeler yapmanızı sağlamak.</li>
-              <li>Kazanılan rozetler, arkadaşlık istekleri veya sistem güncellemeleri hakkında bildirimler göndermek.</li>
+              <li><strong>Account Credentials:</strong> Your username, email address, and encrypted passwords used for authentication.</li>
+              <li><strong>Progress and Performance Data:</strong> Completed lessons, daily streak logs, high scores on song practices, duel history, and leaderboard stats.</li>
+              <li><strong>Technical Metadata:</strong> Device parameters, connection data, and browser cookies used solely to maintain active user sessions.</li>
             </ul>
 
-            <h2 className="text-xl font-bold text-white mt-8">3. Veri Paylaşımı ve Açıklanması</h2>
+            <h2 className="text-xl font-bold text-white mt-8">2. How We Use Your Information</h2>
             <p>
-              Kişisel bilgileriniz tamamen güvendedir. <strong>Verilerinizi üçüncü taraf pazarlama şirketlerine kesinlikle satmayız, kiralamayız, ticaretini yapmayız veya paylaşmayız.</strong> Verileriniz yalnızca yasal olarak zorunlu kılındığında veya veritabanı sistemlerimizi güvenle çalıştırmak için zorunlu olduğunda paylaşılır.
+              Collected data is used only for the following purposes:
+            </p>
+            <ul className="list-disc list-inside space-y-2 ml-4">
+              <li>To manage your active credentials, restore your account state, and sync your level progress.</li>
+              <li>To calculate your XP points and rank you on the global live leaderboard.</li>
+              <li>To allow you to engage in real-time competitive guitar duels and matches with other users.</li>
+              <li>To send notifications about earned badges, friend requests, or system updates.</li>
+            </ul>
+
+            <h2 className="text-xl font-bold text-white mt-8">3. Data Sharing and Disclosure</h2>
+            <p>
+              Your personal information is secure. <strong>We never sell, rent, trade, or share your data with third-party marketing companies.</strong> Your data is only shared when legally required or essential for safely running our database systems.
             </p>
 
-            <h2 className="text-xl font-bold text-white mt-8">4. Veri Güvenliği</h2>
+            <h2 className="text-xl font-bold text-white mt-8">4. Data Security</h2>
             <p>
-              Kullanıcı verilerinin yetkisiz erişime, kayba veya manipülasyona karşı korunması amacıyla endüstri standardı güvenlik ve şifreleme protokolleri (örneğin şifre saklama için bcrypt) uygulamaktayız. Ancak hiçbir internet bağlantısı %100 güvenli değildir, bu yüzden güçlü şifre protokolleri kullanmanızı önemle tavsiye ederiz.
+              We implement industry-standard security and encryption protocols (such as bcrypt for password storage) to protect user data from unauthorized access, loss, or manipulation. However, no internet transmission is 100% secure, so we recommend using strong passwords.
             </p>
 
-            <h2 className="text-xl font-bold text-white mt-8">5. Çerezler ve Oturum Depolama</h2>
+            <h2 className="text-xl font-bold text-white mt-8">5. Cookies and Session Storage</h2>
             <p>
-              Yalnızca kimlik doğrulama durumlarını doğrulamak ve sayfa yenilemelerinde ilerlemenizi otomatik olarak geri yüklemek amacıyla tarayıcı localStorage alanını ve çerez benzeri oturum depolarını kullanırız.
+              We only use browser localStorage and session storage to verify authentication states and automatically restore your progress upon page refresh.
             </p>
 
-            <h2 className="text-xl font-bold text-white mt-8">6. Haklarınız</h2>
+            <h2 className="text-xl font-bold text-white mt-8">6. Your Rights</h2>
             <p>
-              İstediğiniz zaman hesabınızın silinmesini talep etme ve tüm kayıtlı ders ilerleme ve skor geçmişinizi temizleme hakkına sahipsiniz. Hesap silme işlemini gerçekleştirmek veya veri politikalarımız hakkında soru sormak için profil menüsünde yer alan iletişim formları aracılığıyla kurucu ortaklarımızla iletişime geçebilirsiniz.
+              You have the right to request the deletion of your account and clear all stored lesson progress and score history at any time. To request deletion or ask questions about our data policies, you can contact the co-founders through the support channels in the profile menu.
             </p>
           </div>
         </div>

@@ -48,7 +48,7 @@ function LoginPage() {
 
       {/* Ekran Dengesini Sağlayan Sade Alt Bilgi Alanı */}
       <footer className="relative z-20 w-full py-6 text-center text-[10px] sm:text-xs text-gray-500 tracking-wider uppercase font-bold shrink-0">
-        &copy; 2026 FretFlow. Tüm hakları saklıdır.
+        &copy; 2026 FretFlow. All rights reserved.
       </footer>
     </div>
   );

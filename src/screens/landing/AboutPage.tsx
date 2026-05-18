@@ -30,43 +30,43 @@ const AboutPage: React.FC = () => {
 
           {/* Sayfa Ana Başlığı */}
           <h1 className="text-4xl md:text-5xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-primary-600">
-            Hakkımızda
+            About Us
           </h1>
 
           {/* Misyon & Vizyon Açıklama Yazıları */}
           <div className="space-y-6 text-lg text-gray-300 leading-relaxed relative z-10">
             <p className="text-xl font-medium text-white/90">
-              Müzik, yalnızca seslerden ibaret değildir; o duygu, tutku ve kendini ifade etme biçimidir. Platformumuz, insanlara gitar çalmayı modern, basit ve ilham verici bir şekilde öğretmek için yaratıldı.
+              Music is more than just sound—it is emotion, passion, and self-expression. Our platform was created to teach people guitar in a modern, simple, and inspiring way.
             </p>
 
             <p>
-              Gitarı elinize ilk kez alıyor olun ya da mevcut becerilerinizi geliştirin; öğrenmeyi eğlenceli ve etkili kılmak için tasarlanmış dersler, pratik araçları ve interaktif içerikler sunuyoruz.
+              Whether you are picking up a guitar for the first time or leveling up your skills, we provide lessons, practice tools, and interactive content designed to make learning fun and effective.
             </p>
 
             <p>
-              Doğru rehberlik, kararlılık ve motivasyonla herkesin gitar çalmayı öğrenebileceğine inanıyoruz. Bu yüzden hem yeni başlayanlar hem de müziğe gönül verenler için pürüzsüz bir eğitim deneyimi oluşturmaya odaklanıyoruz.
+              We believe that with the right guidance, consistency, and motivation, anyone can learn to play. That's why we focus on creating a seamless educational experience for beginners and music lovers alike.
             </p>
 
             <p>
-              Temel akorlardan ileri düzey tekniklere kadar amacımız, müzikal yolculuğunuzun her anından keyif alarak adım adım gelişmenize yardımcı olmaktır.
+              From basic chords to advanced techniques, our goal is to help you grow step by step, enjoying every moment of your musical journey.
             </p>
 
             {/* Alıntı Bloğu / Slogan Banner */}
             <div className="py-8 my-10 border-y border-white/10 relative">
               <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-full bg-primary-500 rounded-full"></div>
               <p className="text-2xl md:text-3xl font-bold text-white text-center italic tracking-wide">
-                "Gitarını eline al. Çalmaya başla. <span className="text-primary-400">Kendi sesini yarat.</span>"
+                "Pick up your guitar. Start playing. <span className="text-primary-400">Create your own sound.</span>"
               </p>
             </div>
 
             {/* Kurucu Ekip Kartları (Co-Founders Team deck) */}
             <div className="mt-16 pt-10 border-t border-white/5">
-              <h3 className="text-center text-xs uppercase tracking-[0.3em] text-gray-400 font-bold mb-10">Vizyonerler & Geliştiriciler</h3>
+              <h3 className="text-center text-xs uppercase tracking-[0.3em] text-gray-400 font-bold mb-10">Visionaries & Developers</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
                 {[
-                  { name: "Ravan Aliyev", role: "Kurucu Ortak", initial: "R", link: "https://www.linkedin.com/in/ravanaliyev01/" },
-                  { name: "Emirhan Alptekin", role: "Kurucu Ortak", initial: "E", link: "https://github.com/Emirhan156" },
-                  { name: "Hüseyin Poyraz Küçükarslan", role: "Kurucu Ortak", initial: "H", link: "https://github.com/poyrazK" }
+                  { name: "Ravan Aliyev", role: "Co-Founder", initial: "R", link: "https://www.linkedin.com/in/ravanaliyev01/" },
+                  { name: "Emirhan Alptekin", role: "Co-Founder", initial: "E", link: "https://github.com/Emirhan156" },
+                  { name: "Hüseyin Poyraz Küçükarslan", role: "Co-Founder", initial: "H", link: "https://github.com/poyrazK" }
                 ].map((creator, i) => (
                   <motion.a 
                     key={i}

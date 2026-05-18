@@ -20,13 +20,13 @@ const HeroSection: React.FC = () => {
       >
         {/* Ana Slogan Başlığı - Parlayan yeşil neon efektiyle zenginleştirilmiştir */}
         <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-7xl font-bold tracking-tight mb-2 md:mb-6 leading-tight drop-shadow-lg">
-          Her <span className="text-primary-500 neon-text-green">Gitar Efsanesi</span><br />
-          Bir Gün Bir Yerden Başladı.
+          Every <span className="text-primary-500 neon-text-green">Guitar Legend</span><br />
+          Started Somewhere.
         </h1>
         
         {/* Destekleyici Açıklama Metni (Mobilde ekran alanından tasarruf etmek için gizlenir) */}
         <p className="text-lg lg:text-xl text-gray-200 max-w-xl mb-6 leading-relaxed drop-shadow-md font-medium hidden md:block">
-          Günlük çalışma serileri (streak) yapın, interaktif derslerin kilidini açın ve her zaman olmayı hayal ettiğiniz gitariste dönüşün. Ustalığa giden yolculuğunuz bu gece başlıyor.
+          Build daily streaks, unlock interactive lessons, and become the guitarist you always wanted to be. Your journey to mastery starts tonight.
         </p>
       </motion.div>
     </div>

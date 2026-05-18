@@ -26,14 +26,14 @@ const Footer: React.FC = () => {
         
         {/* Bilgilendirme ve Hukuki Sayfa Bağlantıları */}
         <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-400 font-medium">
-          <Link to="/about" className="hover:text-primary-500 transition-colors">Hakkımızda</Link>
-          <Link to="/terms" className="hover:text-primary-500 transition-colors">Kullanım Koşulları</Link>
-          <Link to="/privacy" className="hover:text-primary-500 transition-colors">Gizlilik Politikası</Link>
+          <Link to="/about" className="hover:text-primary-500 transition-colors">About</Link>
+          <Link to="/terms" className="hover:text-primary-500 transition-colors">Terms of Service</Link>
+          <Link to="/privacy" className="hover:text-primary-500 transition-colors">Privacy Policy</Link>
         </div>
         
         {/* Dinamik Telif Hakkı (Copyright) Damgası */}
         <p className="text-sm text-gray-500">
-          © {new Date().getFullYear()} FretFlow. Tüm hakları saklıdır.
+          © {new Date().getFullYear()} FretFlow. All rights reserved.
         </p>
       </div>
     </footer>

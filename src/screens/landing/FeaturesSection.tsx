@@ -3,22 +3,22 @@ import { motion } from 'framer-motion';
 // FretFlow'un 3 temel eğitimsel değerini tanımlayan özellikler dizisi
 const features = [
   {
-    title: "Öğrenim bilimine dayalı.",
-    description: "Kısa ve öz derslerimiz, öğrendiklerinizi kolayca hatırlamanıza yardımcı olmak için eğlenceli, etkili ve mükemmel bir hızda tasarlanmıştır.",
+    title: "Science-based learning.",
+    description: "Our bite-sized lessons are designed to be fun, effective, and paced perfectly to help you retain what you learn.",
     icon: "🧠",
     color: "bg-accent-500",      // Özel mavi tema arka planı
     border: "border-[#1899d6]"  // Özel mavi alt gölge kenarlığı
   },
   {
-    title: "Motivasyonunu koru.",
-    description: "Oyun benzeri özellikler, eğlenceli meydan okumalar ve günlük hatırlatıcılarla gitar öğrenme alışkanlığı kazanmanızı kolaylaştırıyoruz.",
+    title: "Stay motivated.",
+    description: "We make it easy to form a daily habit with game-like features, fun challenges, and friendly reminders.",
     icon: "🔥",
     color: "bg-ambient-500",     // Özel turuncu tema arka planı
     border: "border-[#d6a500]"  // Özel turuncu alt gölge kenarlığı
   },
   {
-    title: "İnteraktif geri bildirim.",
-    description: "Gerçek gitarınızı çalın; uygulamamız mikrofondan aldığı seslerle doğru notaları doğru zamanda çalıp çalmadığınızı anında söylesin.",
+    title: "Interactive feedback.",
+    description: "Play your real guitar while our app listens through the mic to give you instant feedback on your timing and notes.",
     icon: "⚡",
     color: "bg-primary-500",     // Özel yeşil tema arka planı
     border: "border-[#58a700]"  // Özel yeşil alt gölge kenarlığı
