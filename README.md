@@ -13,6 +13,8 @@
 
 **A premium real-time pitch-detection, interactive fretboard learning, and gamified practice platform entirely run in the browser.**
 
+🚀 **[Live Demo — Try FretFlow Now!](https://fretfloww.onrender.com)**
+
 [Features](#-key-features--user-journey) • [Design](#-uiux-design-aesthetic) • [Architecture](#-technical-architecture--engineering-superiority) • [Tech Stack](#-tech-stack) • [Installation](#-local-setup-guide)
 
 </div>
